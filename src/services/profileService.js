@@ -5,10 +5,15 @@ import { supabase } from '../config/supabaseClient';
  * mobile_number is NEVER in this list.
  */
 const PUBLIC_PROFILE_FIELDS = `
-  user_id, name, gender, dob, height, religion, caste, education,
+  user_id, name, first_name, last_name, gender, dob, height, religion, caste, education,
   profession, city, state, country, bio, marital_status,
   mobile_verified, photo_visibility, profile_visibility,
-  admin_verified, created_at
+  admin_verified, created_at,
+  profile_for, diet, mother_tongue, sub_community, college_name,
+  company_name, company_type, hobbies,
+  family_mother_occupation, family_father_occupation,
+  num_sisters, num_brothers, family_financial_status,
+  live_with_family, caste_no_bar
 `;
 
 /**
@@ -32,7 +37,7 @@ export const profileService = {
   async createProfile(userId, profileData) {
     const { data, error } = await supabase
       .from('profiles')
-      .insert({ user_id: userId, ...profileData })
+      .upsert({ user_id: userId, ...profileData }, { onConflict: 'user_id' })
       .select(FULL_PROFILE_FIELDS)
       .single();
     if (error) throw error;

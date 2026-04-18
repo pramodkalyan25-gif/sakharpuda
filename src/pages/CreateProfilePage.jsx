@@ -1,68 +1,129 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { useForm } from 'react-hook-form';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
 import { profileService } from '../services/profileService';
+import { photoService } from '../services/photoService';
 import { useAuth } from '../hooks/useAuth';
+import './CreateProfileWizard.css';
+import {
+  PROFILE_FOR_OPTIONS, RELIGIONS, MARITAL_STATUSES, HEIGHTS, DIETS,
+  EDUCATIONS, COMPANY_TYPES, PROFESSIONS, INCOME_RANGES, MOTHER_TONGUES,
+  FAMILY_OCCUPATIONS, FAMILY_FINANCIAL_STATUSES, HOBBIES, SUB_COMMUNITIES,
+} from './wizardData';
 
-const STEPS = ['Basic Info', 'Background', 'About You', 'Partner Preferences'];
-
-const RELIGIONS = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Jain', 'Buddhist', 'Parsi', 'Other'];
-const EDUCATIONS = ['High School', 'Diploma', "Bachelor's", "Master's", 'MBA', 'PhD', 'Other'];
-const PROFESSIONS = ['IT / Software', 'Doctor', 'Engineer', 'Teacher', 'Business', 'Lawyer', 'Government', 'Other'];
-const MARITAL_STATUSES = ['never_married', 'divorced', 'widowed', 'awaiting_divorce'];
+const TOTAL_STEPS = 12;
 
 export default function CreateProfilePage() {
   const navigate = useNavigate();
   const { user, refreshProfile } = useAuth();
+  const fileInputRef = useRef(null);
+
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [profileData, setProfileData] = useState({});
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
 
-  const { register, handleSubmit, formState: { errors }, getValues } = useForm();
+  // All form data in one state object
+  const [data, setData] = useState({
+    profile_for: '',
+    first_name: '', last_name: '',
+    dob_day: '', dob_month: '', dob_year: '',
+    gender: 'male',
+    religion: '',
+    city: '', live_with_family: true, sub_community: '', caste_no_bar: false,
+    marital_status: 'never_married', height: '', diet: '',
+    education: '', college_name: '',
+    salary: '', company_type: '', profession: '', company_name: '',
+    bio: '',
+    hobbies: [],
+    family_mother_occupation: '', family_father_occupation: '',
+    num_sisters: 0, num_brothers: 0,
+    family_financial_status: 'middle',
+    // Partner preferences
+    pref_age_min: 22, pref_age_max: 35,
+    pref_religion: '', pref_caste: '', pref_city: '',
+  });
 
-  const mergeAndNext = () => {
-    const vals = getValues();
-    setProfileData((prev) => ({ ...prev, ...vals }));
-    setStep((s) => s + 1);
+  const set = (field, value) => setData(prev => ({ ...prev, [field]: value }));
+  const progress = ((step + 1) / TOTAL_STEPS) * 100;
+
+  const next = () => setStep(s => Math.min(s + 1, TOTAL_STEPS - 1));
+  const back = () => setStep(s => Math.max(s - 1, 0));
+
+  const toggleHobby = (hobby) => {
+    setData(prev => {
+      const arr = prev.hobbies.includes(hobby)
+        ? prev.hobbies.filter(h => h !== hobby)
+        : [...prev.hobbies, hobby];
+      return { ...prev, hobbies: arr };
+    });
+  };
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Photo must be less than 15 MB');
+      return;
+    }
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
   const handleFinalSubmit = async () => {
-    const vals = getValues();
-    const finalData = { ...profileData, ...vals };
     setSaving(true);
     try {
-      // Create profile
+      const dob = `${data.dob_year}-${String(data.dob_month).padStart(2,'0')}-${String(data.dob_day).padStart(2,'0')}`;
+      const fullName = `${data.first_name} ${data.last_name}`.trim();
+
       await profileService.createProfile(user.id, {
-        name:           finalData.name,
-        gender:         finalData.gender,
-        dob:            finalData.dob,
-        height:         finalData.height ? parseInt(finalData.height) : null,
-        religion:       finalData.religion,
-        caste:          finalData.caste,
-        education:      finalData.education,
-        profession:     finalData.profession,
-        salary:         finalData.salary,
-        city:           finalData.city,
-        state:          finalData.state,
-        country:        finalData.country || 'India',
-        bio:            finalData.bio,
-        marital_status: finalData.marital_status,
+        name: fullName,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        gender: data.gender,
+        dob,
+        height: data.height ? parseInt(data.height) : null,
+        religion: data.religion,
+        caste: data.sub_community,
+        sub_community: data.sub_community,
+        education: data.education,
+        profession: data.profession,
+        salary: data.salary,
+        city: data.city,
+        state: '',
+        country: 'India',
+        bio: data.bio,
+        marital_status: data.marital_status,
+        profile_for: data.profile_for.toLowerCase(),
+        diet: data.diet,
+        mother_tongue: '',
+        college_name: data.college_name,
+        company_name: data.company_name,
+        company_type: data.company_type,
+        hobbies: data.hobbies,
+        family_mother_occupation: data.family_mother_occupation,
+        family_father_occupation: data.family_father_occupation,
+        num_sisters: parseInt(data.num_sisters) || 0,
+        num_brothers: parseInt(data.num_brothers) || 0,
+        family_financial_status: data.family_financial_status,
+        live_with_family: data.live_with_family,
+        caste_no_bar: data.caste_no_bar,
       });
 
-      // Save preferences
       await profileService.savePreferences(user.id, {
-        preferred_age_min:    parseInt(finalData.pref_age_min) || 18,
-        preferred_age_max:    parseInt(finalData.pref_age_max) || 40,
-        preferred_religion:   finalData.pref_religion,
-        preferred_caste:      finalData.pref_caste,
-        preferred_city:       finalData.pref_city,
+        preferred_age_min: parseInt(data.pref_age_min) || 22,
+        preferred_age_max: parseInt(data.pref_age_max) || 35,
+        preferred_religion: data.pref_religion,
+        preferred_caste: data.pref_caste,
+        preferred_city: data.pref_city,
       });
+
+      if (photoFile) {
+        try { await photoService.uploadPhoto(user.id, photoFile, true); } catch { /* ignore photo errors */ }
+      }
 
       await refreshProfile();
-      toast.success('Profile created successfully!');
+      toast.success('🎉 Profile created successfully!');
       navigate('/dashboard');
     } catch (err) {
       toast.error(err.message || 'Failed to create profile');
@@ -71,151 +132,417 @@ export default function CreateProfilePage() {
     }
   };
 
+  const subCommunities = SUB_COMMUNITIES[data.religion] || [];
+
   return (
-    <div className="create-profile-page">
-      <div className="create-profile-card">
-        {/* Logo */}
-        <div className="auth-logo">
-          <span className="auth-logo-icon">💍</span>
-          <span className="auth-logo-text">ManglaSutra</span>
+    <div className="wizard-page">
+      <div className="wizard-card">
+        <div className="wizard-progress">
+          <div className="wizard-progress-fill" style={{ width: `${progress}%` }} />
         </div>
+        {step > 0 && <button className="wizard-back" onClick={back}>←</button>}
 
-        {/* Progress */}
-        <div className="step-progress">
-          {STEPS.map((label, i) => (
-            <div
-              key={label}
-              className={`step-dot ${i === step ? 'active' : i < step ? 'done' : ''}`}
-              title={label}
-            />
-          ))}
-        </div>
-        <p className="step-label">{STEPS[step]}</p>
+        <div className="wizard-content">
 
-        <form className="profile-form" noValidate>
-
-          {/* Step 0: Basic Info */}
+          {/* Step 0: Profile For */}
           {step === 0 && (
-            <div className="form-step">
-              <Input id="name" label="Full Name" placeholder="Your name" {...register('name', { required: 'Name is required' })} error={errors.name?.message} />
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="input-label">Gender</label>
-                  <select className="filter-select" {...register('gender', { required: true })}>
-                    <option value="">Select</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="input-label">Date of Birth</label>
-                  <input className="input-field" type="date" max={new Date(Date.now() - 18*365*24*60*60*1000).toISOString().split('T')[0]} {...register('dob', { required: true })} />
-                </div>
-              </div>
-              <div className="form-row">
-                <Input id="city" label="City" placeholder="Mumbai" {...register('city')} containerClass="flex-1" />
-                <Input id="state" label="State" placeholder="Maharashtra" {...register('state')} containerClass="flex-1" />
-              </div>
-              <Button type="button" fullWidth onClick={mergeAndNext}>Continue →</Button>
-            </div>
-          )}
-
-          {/* Step 1: Background */}
-          {step === 1 && (
-            <div className="form-step">
-              <div className="form-row">
-                <div className="form-group flex-1">
-                  <label className="input-label">Religion</label>
-                  <select className="filter-select" {...register('religion')}>
-                    <option value="">Select Religion</option>
-                    {RELIGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </div>
-                <Input id="caste" label="Caste / Community" placeholder="Optional" {...register('caste')} containerClass="flex-1" />
-              </div>
-              <div className="form-row">
-                <div className="form-group flex-1">
-                  <label className="input-label">Education</label>
-                  <select className="filter-select" {...register('education')}>
-                    <option value="">Select</option>
-                    {EDUCATIONS.map((e) => <option key={e} value={e}>{e}</option>)}
-                  </select>
-                </div>
-                <div className="form-group flex-1">
-                  <label className="input-label">Profession</label>
-                  <select className="filter-select" {...register('profession')}>
-                    <option value="">Select</option>
-                    {PROFESSIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="form-row">
-                <Input id="height" label="Height (cm)" type="number" placeholder="165" {...register('height')} containerClass="flex-1" />
-                <Input id="salary" label="Annual Income" placeholder="e.g. 8-12 LPA" {...register('salary')} containerClass="flex-1" />
-              </div>
-              <div className="form-group">
-                <label className="input-label">Marital Status</label>
-                <select className="filter-select" {...register('marital_status')}>
-                  <option value="">Select</option>
-                  {MARITAL_STATUSES.map((m) => (
-                    <option key={m} value={m}>{m.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+            <>
+              <div className="wizard-icon orange">👤</div>
+              <h2 className="wizard-title">This Profile is for</h2>
+              <div className="wizard-fields">
+                <div className="wizard-pills" style={{ justifyContent: 'center', marginTop: 20 }}>
+                  {PROFILE_FOR_OPTIONS.map(opt => (
+                    <button key={opt} type="button"
+                      className={`wizard-pill ${data.profile_for === opt ? 'active' : ''}`}
+                      onClick={() => set('profile_for', opt)}>
+                      <span className="pill-radio" />{opt}
+                    </button>
                   ))}
-                </select>
+                </div>
+                <div style={{
+                  background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8,
+                  padding: '14px 18px', marginTop: 30, fontSize: 13, color: '#666', lineHeight: 1.6
+                }}>
+                  <strong style={{color:'#ef6c00'}}>ℹ</strong> ManglaSutra is built for genuine match-seekers. Any falsification, commercial use or marriage bureaus is strictly prohibited & may be reported to law enforcement.
+                </div>
               </div>
-              <div className="form-nav">
-                <Button type="button" variant="ghost" onClick={() => setStep(0)}>← Back</Button>
-                <Button type="button" onClick={mergeAndNext}>Continue →</Button>
-              </div>
-            </div>
+              <button className="wizard-continue" disabled={!data.profile_for} onClick={next}>Continue</button>
+            </>
           )}
 
-          {/* Step 2: About */}
+          {/* Step 1: Name & DOB & Gender */}
+          {step === 1 && (
+            <>
+              <div className="wizard-icon purple">👤</div>
+              <h2 className="wizard-title">Your name</h2>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <input className="wizard-input" placeholder="First name" value={data.first_name}
+                    onChange={e => set('first_name', e.target.value)} autoFocus />
+                </div>
+                <div className="wizard-field-group">
+                  <input className="wizard-input" placeholder="Last name" value={data.last_name}
+                    onChange={e => set('last_name', e.target.value)} />
+                </div>
+                <div className="wizard-field-group">
+                  <label>Gender</label>
+                  <div className="wizard-pills">
+                    {['male','female','other'].map(g => (
+                      <button key={g} type="button"
+                        className={`wizard-pill ${data.gender === g ? 'active' : ''}`}
+                        onClick={() => set('gender', g)}>
+                        <span className="pill-radio" />{g.charAt(0).toUpperCase() + g.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="wizard-field-group">
+                  <label>Date of birth</label>
+                  <div className="wizard-row">
+                    <div>
+                      <small style={{color:'#888',fontSize:11}}>Day</small>
+                      <input className="wizard-input" placeholder="DD" type="number" min="1" max="31"
+                        value={data.dob_day} onChange={e => set('dob_day', e.target.value)} />
+                    </div>
+                    <div>
+                      <small style={{color:'#888',fontSize:11}}>Month</small>
+                      <input className="wizard-input" placeholder="MM" type="number" min="1" max="12"
+                        value={data.dob_month} onChange={e => set('dob_month', e.target.value)} />
+                    </div>
+                    <div>
+                      <small style={{color:'#888',fontSize:11}}>Year</small>
+                      <input className="wizard-input" placeholder="YYYY" type="number" min="1960" max="2008"
+                        value={data.dob_year} onChange={e => set('dob_year', e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button className="wizard-continue"
+                disabled={!data.first_name || !data.dob_day || !data.dob_month || !data.dob_year}
+                onClick={next}>Continue</button>
+            </>
+          )}
+
+          {/* Step 2: Religion */}
           {step === 2 && (
-            <div className="form-step">
-              <div className="form-group">
-                <label className="input-label" htmlFor="bio">About Yourself</label>
-                <textarea
-                  id="bio"
-                  className="input-field textarea"
-                  placeholder="Tell potential partners about yourself, your interests, family, and what you're looking for..."
-                  rows={5}
-                  {...register('bio')}
-                />
-              </div>
-              <div className="form-nav">
-                <Button type="button" variant="ghost" onClick={() => setStep(1)}>← Back</Button>
-                <Button type="button" onClick={mergeAndNext}>Continue →</Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Partner Preferences */}
-          {step === 3 && (
-            <div className="form-step">
-              <p className="form-section-hint">Help us find the right matches for you</p>
-              <div className="form-row">
-                <Input id="pref_age_min" label="Min Age" type="number" defaultValue={22} {...register('pref_age_min')} containerClass="flex-1" />
-                <Input id="pref_age_max" label="Max Age" type="number" defaultValue={35} {...register('pref_age_max')} containerClass="flex-1" />
-              </div>
-              <div className="form-group">
-                <label className="input-label">Preferred Religion</label>
-                <select className="filter-select" {...register('pref_religion')}>
-                  <option value="">Any</option>
-                  {RELIGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            <>
+              <div className="wizard-icon green">👥</div>
+              <h2 className="wizard-title">Your religion</h2>
+              <div className="wizard-fields">
+                <select className="wizard-select" value={data.religion}
+                  onChange={e => set('religion', e.target.value)}>
+                  <option value="">Religion</option>
+                  {RELIGIONS.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
-              <Input id="pref_caste" label="Preferred Caste" placeholder="Any" {...register('pref_caste')} />
-              <Input id="pref_city" label="Preferred City" placeholder="Any city" {...register('pref_city')} />
-              <div className="form-nav">
-                <Button type="button" variant="ghost" onClick={() => setStep(2)}>← Back</Button>
-                <Button type="button" loading={saving} onClick={handleFinalSubmit}>
-                  Create My Profile 🎉
-                </Button>
-              </div>
-            </div>
+              <button className="wizard-continue" disabled={!data.religion} onClick={next}>Continue</button>
+            </>
           )}
-        </form>
+
+          {/* Step 3: City, Live with family, Sub-community */}
+          {step === 3 && (
+            <>
+              <div className="wizard-icon red">📍</div>
+              <h2 className="wizard-title">Now let's build your Profile</h2>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <label>City</label>
+                  <input className="wizard-input" placeholder="City you live in?" value={data.city}
+                    onChange={e => set('city', e.target.value)} />
+                </div>
+                <div className="wizard-field-group">
+                  <label>You live with your family?</label>
+                  <div className="wizard-pills">
+                    <button type="button" className={`wizard-pill ${data.live_with_family ? 'active' : ''}`}
+                      onClick={() => set('live_with_family', true)}>
+                      <span className="pill-radio" />Yes
+                    </button>
+                    <button type="button" className={`wizard-pill ${!data.live_with_family ? 'active' : ''}`}
+                      onClick={() => set('live_with_family', false)}>
+                      <span className="pill-radio" />No
+                    </button>
+                  </div>
+                </div>
+                {subCommunities.length > 0 && (
+                  <div className="wizard-field-group">
+                    <label>Sub-community</label>
+                    <select className="wizard-select" value={data.sub_community}
+                      onChange={e => set('sub_community', e.target.value)}>
+                      <option value="">Your Sub-community</option>
+                      {subCommunities.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <label style={{display:'flex',alignItems:'center',gap:8,marginTop:12,fontSize:14,color:'#666',fontWeight:400,cursor:'pointer'}}>
+                      <input type="checkbox" checked={data.caste_no_bar}
+                        onChange={e => set('caste_no_bar', e.target.checked)} />
+                      Not particular about my Partner's Community (caste no bar)
+                    </label>
+                  </div>
+                )}
+              </div>
+              <button className="wizard-continue" disabled={!data.city} onClick={next}>Continue</button>
+              <span className="wizard-required">* Required fields</span>
+            </>
+          )}
+
+          {/* Step 4: Marital status, Height, Diet */}
+          {step === 4 && (
+            <>
+              <div className="wizard-icon purple">👥</div>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <label>Marital status</label>
+                  <select className="wizard-select" value={data.marital_status}
+                    onChange={e => set('marital_status', e.target.value)}>
+                    {MARITAL_STATUSES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                </div>
+                <div className="wizard-field-group">
+                  <label>Height</label>
+                  <select className="wizard-select" value={data.height}
+                    onChange={e => set('height', e.target.value)}>
+                    <option value="">Your Height *</option>
+                    {HEIGHTS.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+                  </select>
+                </div>
+                <div className="wizard-field-group">
+                  <label>Diet</label>
+                  <div className="wizard-pills">
+                    {DIETS.map(d => (
+                      <button key={d} type="button"
+                        className={`wizard-pill ${data.diet === d ? 'active' : ''}`}
+                        onClick={() => set('diet', d)}>
+                        <span className="pill-radio" />{d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <button className="wizard-continue" onClick={next}>Continue</button>
+              <span className="wizard-required">* Required fields</span>
+            </>
+          )}
+
+          {/* Step 5: Education & College */}
+          {step === 5 && (
+            <>
+              <div className="wizard-icon blue">🎓</div>
+              <h2 className="wizard-title">Great! Few more details</h2>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <label>Highest qualification</label>
+                  <select className="wizard-select" value={data.education}
+                    onChange={e => set('education', e.target.value)}>
+                    <option value="">Your highest qualification *</option>
+                    {EDUCATIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                </div>
+                <div className="wizard-field-group">
+                  <label>College name</label>
+                  <input className="wizard-input" placeholder="College you attended"
+                    value={data.college_name} onChange={e => set('college_name', e.target.value)} />
+                </div>
+              </div>
+              <button className="wizard-continue" onClick={next}>Continue</button>
+              <span className="wizard-required">* Required fields</span>
+            </>
+          )}
+
+          {/* Step 6: Income & Work */}
+          {step === 6 && (
+            <>
+              <div className="wizard-icon teal">💼</div>
+              <h2 className="wizard-title">You are almost done!</h2>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <label>Income</label>
+                  <select className="wizard-select" value={data.salary}
+                    onChange={e => set('salary', e.target.value)}>
+                    <option value="">Select your income *</option>
+                    {INCOME_RANGES.map(i => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div className="wizard-field-group">
+                  <label>Work details</label>
+                  <select className="wizard-select" value={data.company_type}
+                    onChange={e => set('company_type', e.target.value)} style={{marginBottom:12}}>
+                    <option value="">You work with</option>
+                    {COMPANY_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select className="wizard-select" value={data.profession}
+                    onChange={e => set('profession', e.target.value)} style={{marginBottom:12}}>
+                    <option value="">You work as</option>
+                    {PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <input className="wizard-input" placeholder="Your current company name"
+                    value={data.company_name} onChange={e => set('company_name', e.target.value)} />
+                  <small style={{color:'#00897b',fontSize:12,marginTop:4,display:'block'}}>Specify current organization</small>
+                </div>
+              </div>
+              <button className="wizard-continue green-btn" onClick={next}>Create Profile</button>
+              <span className="wizard-required">* Required fields</span>
+            </>
+          )}
+
+          {/* Step 7: About Yourself */}
+          {step === 7 && (
+            <>
+              <div className="wizard-icon yellow">📝</div>
+              <p className="wizard-subtitle">We have added a short description about you</p>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <label>About yourself *</label>
+                  <textarea className="wizard-textarea" value={data.bio}
+                    onChange={e => set('bio', e.target.value)}
+                    placeholder="Let me introduce myself..."
+                    maxLength={4000} />
+                  <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}>
+                    <small style={{color:'#888',fontStyle:'italic'}}>Edit the text above to make it more personal.</small>
+                    <small style={{color:'#00897b'}}>{data.bio.length} /4000</small>
+                  </div>
+                </div>
+              </div>
+              <button className="wizard-continue" onClick={next}>Continue</button>
+              <span className="wizard-required">* Required fields</span>
+            </>
+          )}
+
+          {/* Step 8: Photo Upload */}
+          {step === 8 && (
+            <>
+              <h2 className="wizard-title" style={{color:'#6a1b9a'}}>Congrats! Your Profile has been created.</h2>
+              <p className="wizard-subtitle">Upload Photo and get better Matches</p>
+              <div className="wizard-fields">
+                <div className="wizard-photo-area">
+                  <div className="wizard-photo-circle">
+                    {photoPreview ? <img src={photoPreview} alt="Preview" /> : '👤'}
+                    <span className="wizard-photo-camera">📷</span>
+                  </div>
+                  <p className="wizard-photo-privacy">🔒 100% Privacy controls available</p>
+                  <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handlePhotoSelect} />
+                  <button className="wizard-photo-upload-btn" onClick={() => fileInputRef.current?.click()}>
+                    🖥 Upload From Computer
+                  </button>
+                </div>
+                <div className="wizard-photo-guidelines">
+                  <h4>Photo guidelines</h4>
+                  <ul>
+                    <li className="do">✅ Your Photo should be front facing and your entire face should be visible.</li>
+                    <li className="do">✅ Ensure that your Photo is recent and not with a group.</li>
+                    <li className="do">✅ You can upload upto 20 Photos to your Profile.</li>
+                    <li className="do">✅ Each Photo must be less than 15 MB in size.</li>
+                    <li className="dont">❌ Watermarked, digitally enhanced, or morphed Photos will be rejected.</li>
+                    <li className="dont">❌ Irrelevant Photographs will lead to deactivation of your Profile.</li>
+                  </ul>
+                </div>
+              </div>
+              <button className="wizard-continue" onClick={next}>
+                {photoFile ? 'Continue' : 'Skip for now'}
+              </button>
+            </>
+          )}
+
+          {/* Step 9: Hobbies & Interests */}
+          {step === 9 && (
+            <>
+              <h2 className="wizard-title">Now let's add hobbies & interests</h2>
+              <p className="wizard-subtitle">This will help find better Matches</p>
+              <div className="wizard-fields" style={{maxHeight:400,overflowY:'auto'}}>
+                {Object.entries(HOBBIES).map(([category, items]) => (
+                  <div key={category} className="wizard-chip-section">
+                    <h4>{category}</h4>
+                    <div className="wizard-chips">
+                      {items.map(hobby => (
+                        <button key={hobby} type="button"
+                          className={`wizard-chip ${data.hobbies.includes(hobby) ? 'selected' : ''}`}
+                          onClick={() => toggleHobby(hobby)}>
+                          {hobby}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="wizard-continue" onClick={next}>
+                Save & continue ({data.hobbies.length}/5)
+              </button>
+            </>
+          )}
+
+          {/* Step 10: Family Details */}
+          {step === 10 && (
+            <>
+              <div className="wizard-icon pink">👨‍👩‍👧</div>
+              <h2 className="wizard-title">Add family details</h2>
+              <p className="wizard-subtitle">This really helps find common connections</p>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <small style={{color:'#888'}}>Mother's details</small>
+                  <select className="wizard-select" value={data.family_mother_occupation}
+                    onChange={e => set('family_mother_occupation', e.target.value)}>
+                    <option value="">Select</option>
+                    {FAMILY_OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div className="wizard-field-group">
+                  <small style={{color:'#888'}}>Father's details</small>
+                  <select className="wizard-select" value={data.family_father_occupation}
+                    onChange={e => set('family_father_occupation', e.target.value)}>
+                    <option value="">Select</option>
+                    {FAMILY_OCCUPATIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div className="wizard-row">
+                  <div className="wizard-field-group">
+                    <small style={{color:'#888'}}>No. of Sisters</small>
+                    <select className="wizard-select" value={data.num_sisters}
+                      onChange={e => set('num_sisters', e.target.value)}>
+                      {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n === 0 ? 'None' : n}</option>)}
+                    </select>
+                  </div>
+                  <div className="wizard-field-group">
+                    <small style={{color:'#888'}}>No. of Brothers</small>
+                    <select className="wizard-select" value={data.num_brothers}
+                      onChange={e => set('num_brothers', e.target.value)}>
+                      {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n === 0 ? 'None' : n}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <button className="wizard-continue" onClick={next}>Continue</button>
+            </>
+          )}
+
+          {/* Step 11: Family Financial Status */}
+          {step === 11 && (
+            <>
+              <div className="wizard-icon pink">👨‍👩‍👧</div>
+              <h2 className="wizard-title">Add family details</h2>
+              <p className="wizard-subtitle">This really helps find common connections</p>
+              <div className="wizard-fields">
+                <div className="wizard-field-group">
+                  <label>Your Family's Financial Status</label>
+                  {FAMILY_FINANCIAL_STATUSES.map(fs => (
+                    <div key={fs.value}
+                      className={`wizard-financial-option ${data.family_financial_status === fs.value ? 'selected' : ''}`}
+                      onClick={() => set('family_financial_status', fs.value)}>
+                      <span className="fin-radio" />
+                      <div>
+                        <div className="fin-label">{fs.label}</div>
+                        {data.family_financial_status === fs.value && (
+                          <div className="fin-desc">{fs.desc}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button className="wizard-continue" onClick={handleFinalSubmit} disabled={saving}>
+                {saving ? 'Saving...' : 'Submit'}
+              </button>
+            </>
+          )}
+
+        </div>
       </div>
     </div>
   );

@@ -6,27 +6,74 @@ import { supabase } from '../config/supabaseClient';
  * Swap this file's internals to migrate to Node.js/JWT backend.
  */
 export const authService = {
+
+  // =========================================================
+  // SIGN UP (Email + Password → OTP Verification)
+  // =========================================================
+
   /**
-   * Send OTP to email for signup (creates account if not exists)
+   * Register a new account with email + password.
+   * Supabase sends a confirmation OTP email automatically.
    * @param {string} email
+   * @param {string} password
    */
-  async signupWithEmail(email) {
-    const { data, error } = await supabase.auth.signInWithOtp({
+  async signupWithPassword(email, password) {
+    const { data, error } = await supabase.auth.signUp({
       email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: window.location.origin + '/dashboard',
-      },
+      password,
+    });
+    if (error) throw error;
+
+    // Supabase returns a fake user with empty identities if email already exists
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      throw new Error('This email is already registered. Please login instead.');
+    }
+
+    return data;
+  },
+
+  /**
+   * Verify OTP after signup (type: 'signup')
+   * @param {string} email
+   * @param {string} token - 6-digit OTP
+   */
+  async verifySignupOTP(email, token) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup',
     });
     if (error) throw error;
     return data;
   },
 
+  // =========================================================
+  // LOGIN — Option 1: Email + Password
+  // =========================================================
+
   /**
-   * Send OTP to email for login (does NOT create account)
+   * Login with Email and Password
+   * @param {string} email
+   * @param {string} password
+   */
+  async loginWithPassword(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  // =========================================================
+  // LOGIN — Option 2: Email + OTP (passwordless)
+  // =========================================================
+
+  /**
+   * Send OTP to email for login (does NOT create a new account)
    * @param {string} email
    */
-  async loginWithEmail(email) {
+  async sendLoginOTP(email) {
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -38,77 +85,61 @@ export const authService = {
   },
 
   /**
-   * Verify the 6-digit OTP token entered by the user
+   * Verify OTP for login (type: 'email')
    * @param {string} email
    * @param {string} token - 6-digit OTP
    */
-  async verifyOTP(email, token) {
-    console.log('[authService] Verifying OTP...', { email, token });
-    
-    // Add a strict 10-second timeout to prevent infinite hanging
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Network Timeout: Supabase took too long to respond.')), 10000)
-    );
-
-    const supabasePromise = supabase.auth.verifyOtp({
+  async verifyLoginOTP(email, token) {
+    const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: 'magiclink', // Changed to magiclink as it covers both new/existing OTP flows more reliably
+      type: 'email',
     });
-
-    try {
-      const { data, error } = await Promise.race([supabasePromise, timeoutPromise]);
-      console.log('[authService] OTP Response:', { data, error });
-      
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      console.error('[authService] OTP Error:', err);
-      throw err;
-    }
+    if (error) throw error;
+    return data;
   },
 
+  // =========================================================
+  // PASSWORD RESET
+  // =========================================================
+
   /**
-   * Sign out the current user and clear session
+   * Send password reset email
+   * @param {string} email
    */
+  async resetPassword(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset-password',
+    });
+    if (error) throw error;
+  },
+
+  // =========================================================
+  // SESSION & UTILITIES
+  // =========================================================
+
   async logout() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   },
 
-  /**
-   * Get the current active session (null if not logged in)
-   */
   async getSession() {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error) throw error;
     return session;
   },
 
-  /**
-   * Get the current authenticated user object
-   */
   async getUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) throw error;
     return user;
   },
 
-  /**
-   * Subscribe to auth state changes (login, logout, token refresh)
-   * @param {Function} callback - (event, session) => void
-   * @returns Subscription object with .unsubscribe()
-   */
   onAuthStateChange(callback) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
     return subscription;
   },
 
-  /**
-   * Check if a user has admin privileges
-   * Admin flag stored in user metadata
-   * @param {object} user - Supabase user object
-   */
   isAdmin(user) {
     return user?.user_metadata?.is_admin === true;
   },

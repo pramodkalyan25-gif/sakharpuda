@@ -31,17 +31,22 @@ export default function DashboardPage() {
   const age = profile?.dob ? differenceInYears(new Date(), parseISO(profile.dob)) : null;
 
   const loadData = useCallback(async () => {
-    if (!user?.id || !profile) return;
+    if (!user?.id) return;
     setLoadingRecent(true);
     try {
-      const [recent, viewers, photo] = await Promise.all([
-        searchService.getRecentProfiles(8),
-        profileService.getProfileViewers(user.id),
-        photoService.getPrimaryPhoto(user.id),
-      ]);
+      // Always load recent profiles so user can browse
+      const recent = await searchService.getRecentProfiles(12);
       setRecent(recent.filter((p) => p.user_id !== user.id));
-      setViewers(viewers);
-      if (photo?.signed_url) setAvatarUrl(photo.signed_url);
+
+      // Only load personal data if user has a profile
+      if (profile) {
+        const [viewers, photo] = await Promise.all([
+          profileService.getProfileViewers(user.id),
+          photoService.getPrimaryPhoto(user.id),
+        ]);
+        setViewers(viewers);
+        if (photo?.signed_url) setAvatarUrl(photo.signed_url);
+      }
     } catch {
       // Fail silently
     } finally {
@@ -61,10 +66,37 @@ export default function DashboardPage() {
 
   if (!profile) {
     return (
-      <div className="dashboard-no-profile">
-        <h2>Complete Your Profile</h2>
-        <p>You need to create your profile before you can use the platform.</p>
-        <Link to="/create-profile"><Button>Create Profile →</Button></Link>
+      <div style={{ minHeight: '100vh', background: '#f5f5f5', fontFamily: 'Outfit, sans-serif' }}>
+        {/* Top banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, #e53935, #d32f2f)', color: 'white',
+          padding: '18px 30px', textAlign: 'center', fontSize: '15px',
+        }}>
+          ⚠️ Your profile is incomplete.{' '}
+          <Link to="/create-profile" style={{ color: '#fff', fontWeight: '700', textDecoration: 'underline' }}>
+            Complete it now →
+          </Link>
+        </div>
+
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '30px 20px' }}>
+          <h2 style={{ fontSize: '22px', color: '#333', marginBottom: '20px' }}>
+            Browse Profiles
+          </h2>
+          {loadingRecent ? <Spinner /> : (
+            recentProfiles.length > 0 ? (
+              <div className="dash-profiles-grid">
+                {recentProfiles.map((p) => (
+                  <ProfileCard key={p.user_id} profile={p} />
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
+                No profiles yet. Be the first to{' '}
+                <Link to="/create-profile" style={{ color: '#00bcd4' }}>create yours!</Link>
+              </p>
+            )
+          )}
+        </div>
       </div>
     );
   }
