@@ -1,0 +1,25 @@
+{
+  "name": "matrimony-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.0.4"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "date-fns": "^4.1.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-hook-form": "^7.72.1",
+    "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^7.14.1"
+  }
+}
