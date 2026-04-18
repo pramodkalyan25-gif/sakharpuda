@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
  * Owner can set primary photo and delete photos.
  * Other users see photos based on photo_visibility + watermark.
  */
-export default function PhotoGallery({ userId, isOwner = false }) {
+export default function PhotoGallery({ userId, isOwner = false, canSeePhotos = true }) {
   const { user } = useAuth();
   const [photos, setPhotos]     = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -85,7 +85,7 @@ export default function PhotoGallery({ userId, isOwner = false }) {
           <div className="gallery-grid">
             {photos.map((photo) => (
               <div key={photo.id} className={`gallery-item ${photo.is_primary ? 'gallery-primary' : ''}`}>
-                {photo.display_url ? (
+                {photo.display_url && canSeePhotos ? (
                   <img
                     src={photo.display_url}
                     alt="Profile"
@@ -93,7 +93,10 @@ export default function PhotoGallery({ userId, isOwner = false }) {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="gallery-img-placeholder">🔒</div>
+                  <div className="gallery-img-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#eee' }}>
+                    <span style={{ fontSize: '32px' }}>🔒</span>
+                    {!canSeePhotos && <span style={{ fontSize: '10px', color: '#666', marginTop: '4px', textAlign: 'center', padding: '0 4px' }}>Hidden</span>}
+                  </div>
                 )}
                 {photo.is_primary && <span className="gallery-primary-badge">Primary</span>}
                 {isOwner && (

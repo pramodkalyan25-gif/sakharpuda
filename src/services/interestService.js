@@ -20,10 +20,11 @@ export const interestService = {
       throw new Error('You cannot send interest to yourself.');
     }
 
-    // Client-side guard: mobile must be verified
-    if (!senderProfile?.mobile_verified) {
-      throw new Error('PHONE_UNVERIFIED: Please verify your mobile number before sending interest.');
-    }
+    // Client-side guard: mobile verification is currently optional
+    // (We skipped phone OTP for now based on user requirements)
+    // if (!senderProfile?.mobile_verified) {
+    //   throw new Error('PHONE_UNVERIFIED: Please verify your mobile number before sending interest.');
+    // }
 
     // Client-side daily limit check (DB trigger is the hard enforcement)
     const today = new Date().toDateString();

@@ -30,6 +30,15 @@ export default function ViewProfilePage() {
   const isOwn = user?.id === id;
   const age   = profile?.dob ? differenceInYears(new Date(), parseISO(profile.dob)) : null;
 
+  // Determine if photo should be visible based on visibility setting + interest status
+  const canSeePhoto = () => {
+    if (isOwn) return true;
+    if (profile?.photo_visibility === 'public') return true;
+    if (profile?.photo_visibility === 'members_only' && user) return true;
+    if (profile?.photo_visibility === 'after_mutual_interest' && interestStatus?.status === 'accepted') return true;
+    return false;
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -67,8 +76,9 @@ export default function ViewProfilePage() {
   }, [id, user?.id, isOwn, navigate]);
 
   const handleSendInterest = async () => {
-    if (!myProfile?.mobile_verified) {
-      toast.error('Please verify your mobile number first.');
+    if (!myProfile) {
+      toast.error('Please complete your profile first.');
+      navigate('/create-profile');
       return;
     }
     setSending(true);
@@ -76,6 +86,43 @@ export default function ViewProfilePage() {
       await interestService.sendInterest(user.id, id, myProfile);
       setInterestStatus({ status: 'pending', sender_id: user.id });
       toast.success('Interest sent!');
+    } catch (err) {
+      if (err.message.includes('DAILY_LIMIT_REACHED')) {
+        toast.error('Daily limit reached. You can send 10 interests per day.');
+      } else if (err.message.includes('PHONE_UNVERIFIED')) {
+        toast.error('Interest sent, but verify your phone for better visibility!');
+      } else {
+        toast.error(err.message);
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleAcceptInterest = async () => {
+    if (!interestStatus?.id) return;
+    setSending(true);
+    try {
+      await interestService.acceptInterest(interestStatus.id);
+      setInterestStatus({ ...interestStatus, status: 'accepted' });
+      toast.success(`You and ${profile.name} are now connected!`);
+      // Update contact access status as it might have become accessible
+      const contact = await contactService.getContactAccessStatus(user.id, id);
+      setContactStatus(contact);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleRejectInterest = async () => {
+    if (!interestStatus?.id) return;
+    setSending(true);
+    try {
+      await interestService.rejectInterest(interestStatus.id);
+      setInterestStatus({ ...interestStatus, status: 'rejected' });
+      toast('Interest declined.', { icon: '👋' });
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -136,7 +183,18 @@ export default function ViewProfilePage() {
         {/* Left: Photo + Actions */}
         <aside className="profile-left">
           <div className="profile-avatar-wrap">
-            <Avatar src={avatarUrl} name={profile.name} size="xl" verified={profile.admin_verified} />
+            {canSeePhoto() ? (
+              <Avatar src={avatarUrl} name={profile.name} size="xl" verified={profile.admin_verified} />
+            ) : (
+              <div style={{
+                width: '100%', height: '100%', minHeight: '200px', background: 'linear-gradient(135deg, #e0e0e0, #bdbdbd)',
+                borderRadius: '50%', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', flexDirection: 'column', gap: '6px',
+              }}>
+                <span style={{ fontSize: '48px', filter: 'blur(0px)' }}>👤</span>
+                <span style={{ fontSize: '11px', color: '#777', textAlign: 'center', padding: '0 10px' }}>🔒 Photo visible after connection</span>
+              </div>
+            )}
           </div>
 
           <div className="profile-badges-col">
@@ -206,7 +264,7 @@ export default function ViewProfilePage() {
 
           <div className="profile-gallery-section">
             <h3>Photos</h3>
-            <PhotoGallery userId={id} isOwner={isOwn} />
+            <PhotoGallery userId={id} isOwner={isOwn} canSeePhotos={canSeePhoto()} />
           </div>
         </main>
       </div>
