@@ -18,7 +18,21 @@ export default function PhoneVerifyModal({ isOpen, onClose, onVerified }) {
   const [mobile, setMobile]     = useState('');
   const [otp, setOtp]           = useState('');
   const [loading, setLoading]   = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
   const [e164, setE164]         = useState('');
+
+  const startResendTimer = () => {
+    setResendTimer(60);
+    const interval = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const handleSendOTP = async () => {
     const { isValid, e164: formatted, error } = phoneService.validateMobileFormat(mobile);
@@ -32,6 +46,7 @@ export default function PhoneVerifyModal({ isOpen, onClose, onVerified }) {
       await phoneService.sendMobileOTP(formatted);
       await profileService.saveMobileNumber(user.id, formatted);
       setStep('otp');
+      startResendTimer();
       toast.success('OTP sent to your mobile number');
     } catch (err) {
       toast.error(err.message || 'Failed to send OTP');
@@ -55,6 +70,7 @@ export default function PhoneVerifyModal({ isOpen, onClose, onVerified }) {
       onClose?.();
     } catch (err) {
       toast.error(err.message || 'Invalid OTP. Please try again.');
+      setOtp(''); // clear invalid OTP for easy retry
     } finally {
       setLoading(false);
     }
@@ -108,15 +124,33 @@ export default function PhoneVerifyModal({ isOpen, onClose, onVerified }) {
               loading={loading}
               fullWidth
               disabled={otp.length < 6}
+              style={{ marginBottom: '12px' }}
             >
               Verify OTP
             </Button>
-            <button
-              className="link-btn"
-              onClick={() => { setStep('phone'); setOtp(''); }}
-            >
-              ← Change number
-            </button>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: '8px' }}>
+              <button
+                className="link-btn"
+                onClick={() => { setStep('phone'); setOtp(''); }}
+                style={{ fontSize: '13px' }}
+              >
+                ← Change number
+              </button>
+              
+              <button
+                className="link-btn"
+                onClick={handleSendOTP}
+                disabled={loading || resendTimer > 0}
+                style={{ 
+                  fontSize: '13px', 
+                  opacity: (loading || resendTimer > 0) ? 0.5 : 1,
+                  cursor: (loading || resendTimer > 0) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+              </button>
+            </div>
           </div>
         )}
       </div>

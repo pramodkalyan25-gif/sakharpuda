@@ -90,7 +90,7 @@ export default function ViewProfilePage() {
       if (err.message.includes('DAILY_LIMIT_REACHED')) {
         toast.error('Daily limit reached. You can send 10 interests per day.');
       } else if (err.message.includes('PHONE_UNVERIFIED')) {
-        toast.error('Interest sent, but verify your phone for better visibility!');
+        toast.error('Please verify your mobile number before sending interest.');
       } else {
         toast.error(err.message);
       }
@@ -130,33 +130,36 @@ export default function ViewProfilePage() {
     }
   };
 
-  const handleRevealContact = async () => {
-    if (contactStatus === 'accessible') {
-      setRevealing(true);
-      try {
-        const phone = await contactService.getFullContactDetails(id);
-        setFullPhone(phone);
-      } catch (err) {
-        toast.error(err.message);
-      } finally {
-        setRevealing(false);
-      }
-    } else if (contactStatus === 'not_requested') {
-      setRevealing(true);
-      try {
-        await contactService.requestContactReveal(user.id, id);
-        setContactStatus('pending');
-        toast.success('Contact reveal request submitted. Pending admin approval.');
-      } catch (err) {
-        toast.error(err.message);
-      } finally {
-        setRevealing(false);
-      }
+  const handleWithdrawInterest = async () => {
+    if (!interestStatus?.id) return;
+    if (!window.confirm('Withdraw your interest request?')) return;
+    setSending(true);
+    try {
+      await interestService.withdrawInterest(interestStatus.id);
+      setInterestStatus(null);
+      toast.success('Interest withdrawn.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSending(false);
     }
   };
 
   if (loading) return <div className="page-loading"><Spinner size="lg" /></div>;
   if (!profile) return null;
+
+  if (interestStatus?.is_blocked) {
+    return (
+      <div className="view-profile-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div className="dash-empty-state">
+          <span style={{ fontSize: '48px' }}>🚫</span>
+          <h3>Profile Unavailable</h3>
+          <p>This profile is no longer available to you.</p>
+          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   const sections = [
     { label: 'Age', value: age ? `${age} years` : null },
@@ -176,8 +179,14 @@ export default function ViewProfilePage() {
     <div className="view-profile-page">
       <div className="profile-page-topbar">
         <Button variant="ghost" onClick={() => navigate(-1)}>← Back</Button>
-        {isOwn && <Link to="/dashboard"><Button variant="outline" size="sm">Edit Profile</Button></Link>}
+        {isOwn && <Link to="/dashboard"><Button variant="outline" size="sm">Go to Dashboard</Button></Link>}
       </div>
+
+      {isOwn && (
+        <div style={{ background: 'rgba(96,165,250,0.1)', color: 'var(--clr-info)', padding: '12px', textAlign: 'center', fontWeight: '600', marginBottom: '30px', borderRadius: 'var(--radius)', border: '1px solid rgba(96,165,250,0.2)' }}>
+          👁️ This is how your profile looks to other members.
+        </div>
+      )}
 
       <div className="profile-page-layout">
         {/* Left: Photo + Actions */}
@@ -186,34 +195,44 @@ export default function ViewProfilePage() {
             {canSeePhoto() ? (
               <Avatar src={avatarUrl} name={profile.name} size="xl" verified={profile.admin_verified} />
             ) : (
-              <div style={{
-                width: '100%', height: '100%', minHeight: '200px', background: 'linear-gradient(135deg, #e0e0e0, #bdbdbd)',
-                borderRadius: '50%', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', flexDirection: 'column', gap: '6px',
-              }}>
-                <span style={{ fontSize: '48px', filter: 'blur(0px)' }}>👤</span>
-                <span style={{ fontSize: '11px', color: '#777', textAlign: 'center', padding: '0 10px' }}>🔒 Photo visible after connection</span>
+              <div className="photo-placeholder">
+                <span className="placeholder-icon">👤</span>
+                <span className="placeholder-text">Photo visible after connection</span>
               </div>
             )}
           </div>
 
           <div className="profile-badges-col">
             {profile.mobile_verified && <Badge variant="success">📱 Mobile Verified</Badge>}
-            {profile.admin_verified  && <Badge variant="gold">✅ Admin Verified</Badge>}
+            {profile.admin_verified  && <Badge variant="gold">✓ Admin Verified</Badge>}
           </div>
 
           {!isOwn && (
             <div className="profile-actions-col">
               {/* Interest button */}
               {!interestStatus ? (
-                <Button fullWidth loading={sending} onClick={handleSendInterest}>
-                  💌 Send Interest
-                </Button>
+                interestService.getRemainingInterests(myProfile) === 0 ? (
+                  <Button fullWidth disabled variant="outline">
+                    Limit Reached
+                  </Button>
+                ) : (
+                  <Button fullWidth loading={sending} onClick={handleSendInterest}>
+                    💌 Send Interest
+                  </Button>
+                )
               ) : (
-                <Button fullWidth variant="secondary" disabled>
-                  {interestStatus.status === 'accepted' ? '✓ Connected' :
-                   interestStatus.sender_id === user?.id ? 'Interest Sent' : 'Respond in Dashboard'}
-                </Button>
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <Button fullWidth variant="secondary" disabled>
+                    {interestStatus.status === 'accepted' ? '✓ Matched!' :
+                     interestStatus.sender_id === user?.id ? 'Interest Sent' : 'Interest Received'}
+                  </Button>
+                  
+                  {interestStatus.status === 'pending' && interestStatus.sender_id === user?.id && (
+                    <Button fullWidth variant="ghost" size="sm" onClick={handleWithdrawInterest} loading={sending} style={{ color: 'var(--clr-danger)' }}>
+                      Withdraw Request
+                    </Button>
+                  )}
+                </div>
               )}
 
               {/* Contact reveal */}
@@ -244,13 +263,13 @@ export default function ViewProfilePage() {
           </div>
 
           {profile.bio && (
-            <div className="profile-bio-section">
+            <div className="profile-section">
               <h3>About</h3>
               <p className="profile-bio">{profile.bio}</p>
             </div>
           )}
 
-          <div className="profile-details-section">
+          <div className="profile-section">
             <h3>Profile Details</h3>
             <div className="profile-details-grid">
               {sections.map((s) => (
@@ -262,7 +281,7 @@ export default function ViewProfilePage() {
             </div>
           </div>
 
-          <div className="profile-gallery-section">
+          <div className="profile-section">
             <h3>Photos</h3>
             <PhotoGallery userId={id} isOwner={isOwn} canSeePhotos={canSeePhoto()} />
           </div>

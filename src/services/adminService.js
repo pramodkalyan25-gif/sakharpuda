@@ -17,7 +17,8 @@ export const adminService = {
       .select(`
         user_id, name, gender, dob, city, religion, education,
         mobile_verified, admin_verified, profile_visibility, photo_visibility,
-        daily_interest_count, created_at
+        daily_interest_count, created_at,
+        contact_details(contact_approved)
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -138,6 +139,36 @@ export const adminService = {
       `)
       .eq('is_reported', true)
       .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Suspend a user by hiding their profile
+   * @param {string} userId
+   */
+  async suspendUser(userId) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ profile_visibility: 'hidden' })
+      .eq('user_id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Dismiss a report without taking action
+   * @param {string} interestId
+   */
+  async dismissReport(interestId) {
+    const { data, error } = await supabase
+      .from('interests')
+      .update({ is_reported: false })
+      .eq('id', interestId)
+      .select()
+      .single();
     if (error) throw error;
     return data;
   },

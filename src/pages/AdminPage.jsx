@@ -108,6 +108,23 @@ export default function AdminPage() {
     } catch (err) { toast.error(err.message); }
   };
 
+  const handleSuspendUser = async (userId) => {
+    if (!window.confirm('Suspend this user profile?')) return;
+    try {
+      await adminService.suspendUser(userId);
+      toast.success('User suspended');
+      loadReported();
+    } catch (err) { toast.error(err.message); }
+  };
+
+  const handleDismissReport = async (interestId) => {
+    try {
+      await adminService.dismissReport(interestId);
+      toast.success('Report dismissed');
+      loadReported();
+    } catch (err) { toast.error(err.message); }
+  };
+
   return (
     <div className="admin-page">
       <div className="admin-sidebar">
@@ -187,15 +204,20 @@ export default function AdminPage() {
                           : <Badge variant="default">Unverified</Badge>
                         }
                       </td>
-                      <td>—</td>
+                      <td>
+                        {p.contact_details?.contact_approved
+                          ? <Badge variant="success">Approved</Badge>
+                          : <Badge variant="default">Hidden</Badge>
+                        }
+                      </td>
                       <td className="admin-actions">
                         <Button size="sm" variant={p.admin_verified ? 'danger' : 'primary'}
                           onClick={() => handleVerify(p.user_id, !p.admin_verified)}>
                           {p.admin_verified ? 'Unverify' : 'Verify'}
                         </Button>
-                        <Button size="sm" variant="outline"
-                          onClick={() => handleContactApprove(p.user_id, true)}>
-                          Approve Contact
+                        <Button size="sm" variant={p.contact_details?.contact_approved ? 'outline' : 'primary'}
+                          onClick={() => handleContactApprove(p.user_id, !p.contact_details?.contact_approved)}>
+                          {p.contact_details?.contact_approved ? 'Revoke Contact' : 'Approve Contact'}
                         </Button>
                       </td>
                     </tr>
@@ -264,7 +286,7 @@ export default function AdminPage() {
             {reported.length === 0 ? <p>No reports yet.</p> : (
               <div className="admin-table-wrap">
                 <table className="admin-table">
-                  <thead><tr><th>From</th><th>To</th><th>Status</th><th>Reported</th></tr></thead>
+                  <thead><tr><th>From</th><th>To</th><th>Status</th><th>Reported</th><th>Actions</th></tr></thead>
                   <tbody>
                     {reported.map((i) => (
                       <tr key={i.id}>
@@ -272,6 +294,16 @@ export default function AdminPage() {
                         <td>{i.profiles?.name || i.receiver_id}</td>
                         <td><Badge variant="info">{i.status}</Badge></td>
                         <td><Badge variant="danger">Reported</Badge></td>
+                        <td className="admin-actions">
+                          <Button size="sm" variant="danger"
+                            onClick={() => handleSuspendUser(i.sender_id)}>
+                            Suspend Sender
+                          </Button>
+                          <Button size="sm" variant="outline"
+                            onClick={() => handleDismissReport(i.id)}>
+                            Dismiss
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

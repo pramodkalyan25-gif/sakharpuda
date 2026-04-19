@@ -19,7 +19,7 @@ export const searchService = {
    * @param {number} filters.page - 0-indexed page number
    * @param {number} filters.limit - results per page (max 20)
    */
-  async searchProfiles(filters = {}) {
+  async searchProfiles(filters = {}, currentUserId = null) {
     const {
       age_min,
       age_max,
@@ -43,19 +43,32 @@ export const searchService = {
         profession, city, state, country, bio, marital_status,
         mobile_verified, photo_visibility, admin_verified, created_at
       `, { count: 'exact' })
-      .neq('profile_visibility', 'hidden')
-      .order('created_at', { ascending: false })
+      .neq('profile_visibility', 'hidden');
+
+    if (currentUserId) {
+      query = query.neq('user_id', currentUserId);
+    }
+
+    query = query.order('created_at', { ascending: false })
       .range(offset, offset + safeLimit - 1);
 
     // Age filter: convert age range to DOB range
-    if (age_min) {
+    let minAge = age_min;
+    let maxAge = age_max;
+    if (minAge && maxAge && parseInt(minAge) > parseInt(maxAge)) {
+      const temp = minAge;
+      minAge = maxAge;
+      maxAge = temp;
+    }
+
+    if (minAge) {
       const maxDob = new Date();
-      maxDob.setFullYear(maxDob.getFullYear() - age_min);
+      maxDob.setFullYear(maxDob.getFullYear() - minAge);
       query = query.lte('dob', maxDob.toISOString().split('T')[0]);
     }
-    if (age_max) {
+    if (maxAge) {
       const minDob = new Date();
-      minDob.setFullYear(minDob.getFullYear() - age_max - 1);
+      minDob.setFullYear(minDob.getFullYear() - maxAge - 1);
       query = query.gte('dob', minDob.toISOString().split('T')[0]);
     }
 

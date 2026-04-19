@@ -33,7 +33,13 @@ export default function RegisterPage() {
       setStep('otp');
       toast.success('Account created! Check your email for the verification code.');
     } catch (err) {
-      toast.error(err.message || 'Registration failed. Try again.');
+      if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
+        toast.error('Network error. Please check your internet connection.');
+      } else if (err.message?.toLowerCase().includes('rate limit') || err.status === 429) {
+        toast.error('Too many requests. Please wait 60 seconds.');
+      } else {
+        toast.error(err.message || 'Registration failed. Try again.');
+      }
     } finally {
       setLoading(false);
     }

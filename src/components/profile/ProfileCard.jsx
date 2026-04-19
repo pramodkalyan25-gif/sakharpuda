@@ -83,8 +83,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
       } else if (err.message.includes('DUPLICATE')) {
         toast.error('You already sent interest to this person.');
       } else if (err.message.includes('PHONE_UNVERIFIED')) {
-        // Soft warning — don't block the action
-        toast.error('Interest sent, but verify your phone for better visibility!');
+        toast.error('Please verify your mobile number before sending interest.');
       } else {
         toast.error(err.message);
       }
@@ -131,6 +130,14 @@ export default function ProfileCard({ profile, onInterestSent }) {
 
     // No interest exists — show Send Interest
     if (!interestStatus) {
+      const remaining = interestService.getRemainingInterests(myProfile);
+      if (remaining === 0) {
+        return (
+          <Button size="sm" variant="outline" disabled title="Daily limit of 10 interests reached.">
+            Limit Reached
+          </Button>
+        );
+      }
       return (
         <Button size="sm" loading={sending} onClick={handleSendInterest}>
           💌 Send Interest

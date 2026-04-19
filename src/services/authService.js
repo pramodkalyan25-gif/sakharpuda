@@ -80,7 +80,13 @@ export const authService = {
         shouldCreateUser: false,
       },
     });
-    if (error) throw error;
+    if (error) {
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('signups not allowed') || msg.includes('not found') || msg.includes('invalid') || error.status === 400) {
+        throw new Error('User does not have an account. Please create one first.');
+      }
+      throw error;
+    }
     return data;
   },
 
@@ -142,5 +148,25 @@ export const authService = {
 
   isAdmin(user) {
     return user?.user_metadata?.is_admin === true;
+  },
+
+  /**
+   * Update current user's password
+   * @param {string} newPassword
+   */
+  async changePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    if (error) throw error;
+  },
+
+  /**
+   * Delete current user's account (destructive)
+   * This calls an RPC function that must be defined in Supabase
+   */
+  async deleteAccount() {
+    const { error } = await supabase.rpc('delete_own_user');
+    if (error) throw error;
   },
 };

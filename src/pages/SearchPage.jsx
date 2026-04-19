@@ -18,13 +18,14 @@ export default function SearchPage() {
   const [hasMore, setHasMore]       = useState(false);
   const [searched, setSearched]     = useState(false);
 
-  const doSearch = useCallback(async (currentPage = 0, append = false) => {
+  const doSearch = useCallback(async (currentPage = 0, append = false, overrideFilters = null) => {
     const isFirstPage = currentPage === 0;
     if (isFirstPage) setLoading(true);
     else setLoadingMore(true);
 
     try {
-      const result = await searchService.searchProfiles({ ...filters, page: currentPage, limit: 12 });
+      const currentFilters = overrideFilters || filters;
+      const result = await searchService.searchProfiles({ ...currentFilters, page: currentPage, limit: 12 }, user?.id);
       if (append) {
         setProfiles((prev) => [...prev, ...result.profiles]);
       } else {
@@ -49,7 +50,7 @@ export default function SearchPage() {
     }
   }, [filters, user?.id]);
 
-  const handleSearch = () => doSearch(0, false);
+  const handleSearch = (overrideFilters) => doSearch(0, false, overrideFilters?.age_min !== undefined ? overrideFilters : null);
   const handleLoadMore = () => doSearch(page + 1, true);
 
   return (

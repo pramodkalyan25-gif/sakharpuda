@@ -76,9 +76,4 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-export function useAuthContext() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuthContext must be used inside <AuthProvider>');
-  return ctx;
-}
+export { AuthContext };

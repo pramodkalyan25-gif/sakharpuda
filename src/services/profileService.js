@@ -223,9 +223,45 @@ export const profileService = {
         )
       `)
       .eq('viewed_id', userId)
-      .order('viewed_at', { ascending: false })
-      .limit(50);
+      .order('viewed_at', { ascending: false });
+    
     if (error) throw error;
-    return data;
+
+    // Deduplicate: only keep the latest view per viewer
+    const uniqueViewers = [];
+    const seen = new Set();
+    (data || []).forEach(v => {
+      if (v.viewer_id && !seen.has(v.viewer_id)) {
+        seen.add(v.viewer_id);
+        uniqueViewers.push(v);
+      }
+    });
+    return uniqueViewers.slice(0, 50);
+  },
+
+  /**
+   * Calculate profile completion percentage based on filled fields.
+   * @param {object} profile
+   * @param {boolean} hasPhoto
+   * @returns {number} 0-100
+   */
+  calculateCompletion(profile, hasPhoto = false) {
+    if (!profile) return 0;
+    const fields = [
+      'name', 'gender', 'dob', 'height', 'religion', 'education',
+      'profession', 'city', 'bio', 'marital_status'
+    ];
+    let filled = 0;
+    fields.forEach(f => {
+      if (profile[f] && String(profile[f]).trim().length > 0) filled++;
+    });
+    
+    // Weighted points for critical sections
+    if (hasPhoto) filled += 2;
+    if (profile.family_mother_occupation || profile.family_father_occupation) filled += 1;
+    if (profile.college_name || profile.company_name) filled += 1;
+    
+    const totalPoints = fields.length + 4;
+    return Math.min(100, Math.round((filled / totalPoints) * 100));
   },
 };

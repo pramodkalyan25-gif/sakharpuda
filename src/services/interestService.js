@@ -20,11 +20,10 @@ export const interestService = {
       throw new Error('You cannot send interest to yourself.');
     }
 
-    // Client-side guard: mobile verification is currently optional
-    // (We skipped phone OTP for now based on user requirements)
-    // if (!senderProfile?.mobile_verified) {
-    //   throw new Error('PHONE_UNVERIFIED: Please verify your mobile number before sending interest.');
-    // }
+    // Client-side guard: mobile verification is required for sending interests
+    if (!senderProfile?.mobile_verified) {
+      throw new Error('PHONE_UNVERIFIED: Please verify your mobile number before sending interest.');
+    }
 
     // Client-side daily limit check (DB trigger is the hard enforcement)
     const today = new Date().toDateString();
@@ -152,7 +151,7 @@ export const interestService = {
   async getInterestStatus(userId, targetId) {
     const { data, error } = await supabase
       .from('interests')
-      .select('id, status, sender_id, receiver_id')
+      .select('id, status, sender_id, receiver_id, is_blocked')
       .or(
         `and(sender_id.eq.${userId},receiver_id.eq.${targetId}),` +
         `and(sender_id.eq.${targetId},receiver_id.eq.${userId})`
@@ -204,5 +203,16 @@ export const interestService = {
       : null;
     const used = lastReset === today ? (profile.daily_interest_count || 0) : 0;
     return Math.max(0, DAILY_INTEREST_LIMIT - used);
+  },
+  /**
+   * Withdraw a sent interest (deletes the record)
+   * @param {string} interestId
+   */
+  async withdrawInterest(interestId) {
+    const { error } = await supabase
+      .from('interests')
+      .delete()
+      .eq('id', interestId);
+    if (error) throw error;
   },
 };

@@ -20,10 +20,14 @@ export default function SearchFilters({ filters, onChange, onSearch, loading }) 
 
   const set = (key) => (e) => onChange({ ...filters, [key]: e.target.value });
 
-  const reset = () => onChange({
-    age_min: '', age_max: '', gender: '',
-    religion: '', caste: '', education: '', city: '', marital_status: '',
-  });
+  const reset = () => {
+    const emptyFilters = {
+      age_min: '', age_max: '', gender: '',
+      religion: '', caste: '', education: '', city: '', marital_status: '',
+    };
+    onChange(emptyFilters);
+    onSearch(emptyFilters);
+  };
 
   return (
     <aside className="search-filters" aria-label="Search filters">

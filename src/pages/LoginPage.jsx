@@ -28,7 +28,13 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err.message || 'Invalid email or password.');
+      if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
+        toast.error('Network error. Please check your internet connection.');
+      } else if (err.message?.toLowerCase().includes('email not confirmed')) {
+        toast.error('Please verify your email address before logging in.');
+      } else {
+        toast.error(err.message || 'Invalid email or password.');
+      }
     } finally {
       setLoading(false);
     }
@@ -46,7 +52,11 @@ export default function LoginPage() {
       setMode('otp_verify');
       toast.success('OTP sent to your email!');
     } catch (err) {
-      toast.error(err.message || 'Failed to send OTP. Make sure you have an account.');
+      if (err.message?.toLowerCase().includes('rate limit') || err.status === 429) {
+        toast.error('Too many requests. Please wait 60 seconds.');
+      } else {
+        toast.error(err.message || 'Failed to send OTP. Make sure you have an account.');
+      }
     } finally {
       setLoading(false);
     }
