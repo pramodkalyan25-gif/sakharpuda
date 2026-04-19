@@ -130,6 +130,31 @@ export default function ViewProfilePage() {
     }
   };
 
+  const handleRevealContact = async () => {
+    if (contactStatus === 'accessible') {
+      setRevealing(true);
+      try {
+        const phone = await contactService.getFullContactDetails(id);
+        setFullPhone(phone);
+      } catch (err) {
+        toast.error(err.message);
+      } finally {
+        setRevealing(false);
+      }
+    } else if (contactStatus === 'not_requested') {
+      setRevealing(true);
+      try {
+        await contactService.requestContactReveal(user.id, id);
+        setContactStatus('pending');
+        toast.success('Contact reveal request submitted. Pending admin approval.');
+      } catch (err) {
+        toast.error(err.message);
+      } finally {
+        setRevealing(false);
+      }
+    }
+  };
+
   const handleWithdrawInterest = async () => {
     if (!interestStatus?.id) return;
     if (!window.confirm('Withdraw your interest request?')) return;

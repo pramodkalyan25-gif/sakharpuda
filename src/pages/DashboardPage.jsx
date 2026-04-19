@@ -141,18 +141,18 @@ export default function DashboardPage() {
         </div>
 
         <nav className="sidebar-nav">
+          <Link to="/search">
+            <button className="sidebar-nav-btn">🔍 Search Profiles</button>
+          </Link>
           {['overview', 'interests', 'viewers', 'settings'].map((t) => (
             <button
               key={t}
               className={`sidebar-nav-btn ${tab === t ? 'active' : ''}`}
               onClick={() => setTab(t)}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === 'interests' ? 'My Interests' : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
-          <Link to="/search">
-            <button className="sidebar-nav-btn">🔍 Search</button>
-          </Link>
           {isAdmin && (
             <Link to="/admin">
               <button className="sidebar-nav-btn admin-btn">⚙️ Admin Panel</button>

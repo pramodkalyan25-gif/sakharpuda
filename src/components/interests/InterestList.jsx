@@ -41,7 +41,6 @@ export default function InterestList({ interests = [], type = 'received', onUpda
         }
         await interestService.reportUser(interest.id);
         toast.success('Report submitted. Our team will review it.');
-      }
       } else if (action === 'withdraw') {
         if (!window.confirm('Withdraw this interest request?')) {
           setLoadingId(null);

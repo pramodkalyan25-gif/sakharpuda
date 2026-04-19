@@ -150,8 +150,8 @@ export default function ProfileCard({ profile, onInterestSent }) {
     // Mutual connection — accepted
     if (status === 'accepted') {
       return (
-        <Button size="sm" variant="secondary" disabled>
-          ✓ Connected
+        <Button size="sm" variant="secondary" disabled style={{ background: 'var(--clr-gold)', color: '#000' }}>
+          ✓ Matched!
         </Button>
       );
     }
@@ -159,7 +159,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
     // I sent it, waiting for response
     if (status === 'pending' && sender_id === user?.id) {
       return (
-        <Button size="sm" variant="outline" disabled>
+        <Button size="sm" variant="ghost" disabled style={{ borderColor: 'var(--clr-gold)', color: 'var(--clr-gold)' }}>
           ⏳ Interest Sent
         </Button>
       );
@@ -168,12 +168,12 @@ export default function ProfileCard({ profile, onInterestSent }) {
     // They sent me interest — show Accept/Decline
     if (status === 'pending' && sender_id !== user?.id) {
       return (
-        <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <Button size="sm" variant="primary" loading={sending} onClick={handleAcceptInterest}>
-            ✓ Accept
+            Accept
           </Button>
           <Button size="sm" variant="ghost" loading={sending} onClick={handleRejectInterest}>
-            ✗
+            Decline
           </Button>
         </div>
       );
@@ -204,17 +204,10 @@ export default function ProfileCard({ profile, onInterestSent }) {
         {canSeePhoto() ? (
           <Avatar src={photoUrl} name={profile.name} size="xl" verified={profile.admin_verified} />
         ) : (
-          <div style={{
-            width: '100%', height: '180px', background: 'linear-gradient(135deg, #e0e0e0, #bdbdbd)',
-            borderRadius: '10px 10px 0 0', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', flexDirection: 'column', gap: '6px',
-          }}>
-            <span style={{ fontSize: '36px', filter: 'blur(0px)' }}>👤</span>
-            <span style={{ fontSize: '11px', color: '#777' }}>🔒 Photo visible after connection</span>
+          <div className="card-photo-placeholder">
+            <span className="placeholder-icon">👤</span>
+            <span className="placeholder-text">Photo visible after connection</span>
           </div>
-        )}
-        {profile.admin_verified && (
-          <Badge variant="gold" className="card-verified-badge">✓ Verified</Badge>
         )}
       </div>
 
@@ -223,18 +216,10 @@ export default function ProfileCard({ profile, onInterestSent }) {
         <p className="profile-card-meta">
           {age && `${age} yrs`}
           {profile.city && ` • ${profile.city}`}
-          {profile.religion && ` • ${profile.religion}`}
         </p>
-        {profile.education && (
-          <p className="profile-card-detail">{profile.education}</p>
-        )}
-        {profile.profession && (
-          <p className="profile-card-detail">{profile.profession}</p>
-        )}
-
         <div className="profile-card-badges">
+          {profile.religion && <Badge variant="default">{profile.religion}</Badge>}
           {profile.mobile_verified && <Badge variant="success">📱 Verified</Badge>}
-          {profile.marital_status === 'never_married' && <Badge variant="info">Never Married</Badge>}
         </div>
       </div>
 
