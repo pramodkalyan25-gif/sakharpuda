@@ -163,6 +163,12 @@
   margin-bottom: 40px;
 }
 
+@media (max-width: 600px) {
+  .profile-details-grid { grid-template-columns: 1fr; }
+  .profile-page-name { font-size: 28px; }
+  .profile-right { padding: 24px 20px; }
+}
+
 .detail-item {
   display: flex;
   flex-direction: column;
@@ -342,14 +348,39 @@
    ADMIN PAGE
    ============================================================ */
 .admin-page { display: flex; min-height: 100vh; }
-.admin-sidebar { width: 240px; background: var(--clr-surface); border-right: 1px solid var(--clr-border); padding: 32px 20px; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; }
+.admin-sidebar { 
+  width: 240px; 
+  background: var(--clr-surface); 
+  border-right: 1px solid var(--clr-border); 
+  padding: 32px 20px; 
+  display: flex; 
+  flex-direction: column; 
+  position: fixed; 
+  top: 0; bottom: 0; left: 0; 
+  z-index: 100;
+}
 .admin-brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 800; color: var(--clr-info); margin-bottom: 40px; padding: 0 12px; }
 .admin-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .admin-nav-btn { background: transparent; border: none; color: var(--clr-text-muted); padding: 12px; text-align: left; border-radius: var(--radius); cursor: pointer; transition: var(--transition); font-family: inherit; font-size: 15px; font-weight: 500; }
 .admin-nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--clr-text); }
 .admin-nav-btn.active { background: rgba(96,165,250,0.1); color: var(--clr-info); }
 
-.admin-main { flex: 1; margin-left: 240px; padding: 40px; max-width: 1200px; }
+.admin-main { flex: 1; margin-left: 240px; padding: 40px; max-width: 100%; }
+
+@media (max-width: 900px) {
+  .admin-page { flex-direction: column; }
+  .admin-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--clr-border);
+    padding: 20px;
+  }
+  .admin-main { margin-left: 0; padding: 24px 16px; }
+  .admin-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+}
+
 .admin-title { font-size: 24px; margin-bottom: 32px; color: var(--clr-info); }
 
 .admin-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }

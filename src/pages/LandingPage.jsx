@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 
@@ -16,6 +17,8 @@ const stats = [
 ];
 
 export default function LandingPage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <div className="landing">
       {/* Navbar */}
@@ -24,6 +27,7 @@ export default function LandingPage() {
           <span className="brand-icon">💍</span>
           <span className="brand-name">ManglaSutra</span>
         </div>
+        
         <div className="nav-actions">
           <Link to="/login">
             <Button variant="ghost" size="sm">Login</Button>
@@ -31,6 +35,16 @@ export default function LandingPage() {
           <Link to="/register">
             <Button variant="primary" size="sm">Get Started</Button>
           </Link>
+        </div>
+
+        <button className="nav-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? '✕' : '☰'}
+        </button>
+
+        <div className={`mobile-menu ${isMenuOpen ? 'active' : ''}`}>
+          <Link to="/login" onClick={() => setIsMenuOpen(false)}>Login</Link>
+          <Link to="/register" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+          <Link to="/search" onClick={() => setIsMenuOpen(false)}>Browse Profiles</Link>
         </div>
       </nav>
 

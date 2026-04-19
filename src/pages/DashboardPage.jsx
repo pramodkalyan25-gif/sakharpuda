@@ -69,20 +69,17 @@ export default function DashboardPage() {
 
   if (!profile) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f5f5f5', fontFamily: 'Outfit, sans-serif' }}>
+      <div className="dashboard-no-profile-wrapper">
         {/* Top banner */}
-        <div style={{
-          background: 'linear-gradient(135deg, #e53935, #d32f2f)', color: 'white',
-          padding: '18px 30px', textAlign: 'center', fontSize: '15px',
-        }}>
+        <div className="incomplete-banner">
           ⚠️ Your profile is incomplete.{' '}
-          <Link to="/create-profile" style={{ color: '#fff', fontWeight: '700', textDecoration: 'underline' }}>
+          <Link to="/create-profile" className="complete-link">
             Complete it now →
           </Link>
         </div>
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '30px 20px' }}>
-          <h2 style={{ fontSize: '22px', color: '#333', marginBottom: '20px' }}>
+        <div className="dashboard-no-profile-content">
+          <h2 className="dash-section-title">
             Browse Profiles
           </h2>
           {loadingRecent ? <Spinner /> : (
@@ -93,10 +90,12 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>
-                No profiles yet. Be the first to{' '}
-                <Link to="/create-profile" style={{ color: '#00bcd4' }}>create yours!</Link>
-              </p>
+              <div className="dash-empty-state">
+                <p>
+                  No profiles yet. Be the first to{' '}
+                  <Link to="/create-profile" style={{ color: 'var(--clr-gold)' }}>create yours!</Link>
+                </p>
+              </div>
             )
           )}
         </div>
