@@ -162,6 +162,20 @@ export const authService = {
   },
 
   /**
+   * Login with Google OAuth
+   */
+  async signInWithGoogle() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/dashboard',
+      },
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
    * Delete current user's account (destructive)
    * This calls an RPC function that must be defined in Supabase
    */

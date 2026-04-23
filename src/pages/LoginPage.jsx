@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import OTPInput from '../components/auth/OTPInput';
 import { authService } from '../services/authService';
+import OTPInput from '../components/auth/OTPInput';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
 
-  const [mode, setMode] = useState('password'); // 'password' | 'otp_enter' | 'otp_verify'
+  const [mode, setMode] = useState('password'); // 'password' | 'otp_request' | 'otp_verify'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [stayLoggedIn, setStayLoggedIn] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // --- Handlers ---
 
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
@@ -28,13 +30,7 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       navigate(from, { replace: true });
     } catch (err) {
-      if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
-        toast.error('Network error. Please check your internet connection.');
-      } else if (err.message?.toLowerCase().includes('email not confirmed')) {
-        toast.error('Please verify your email address before logging in.');
-      } else {
-        toast.error(err.message || 'Invalid email or password.');
-      }
+      toast.error(err.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
@@ -52,11 +48,7 @@ export default function LoginPage() {
       setMode('otp_verify');
       toast.success('OTP sent to your email!');
     } catch (err) {
-      if (err.message?.toLowerCase().includes('rate limit') || err.status === 429) {
-        toast.error('Too many requests. Please wait 60 seconds.');
-      } else {
-        toast.error(err.message || 'Failed to send OTP. Make sure you have an account.');
-      }
+      toast.error(err.message || 'Failed to send OTP.');
     } finally {
       setLoading(false);
     }
@@ -74,152 +66,370 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err.message || 'Invalid OTP. Please try again.');
-      setOtp('');
+      toast.error(err.message || 'Invalid OTP.');
     } finally {
       setLoading(false);
     }
   };
 
-  const inputStyle = {
-    width: '100%', padding: '12px 14px', border: '1px solid #ccc',
-    borderRadius: '6px', fontSize: '15px', boxSizing: 'border-box', fontFamily: 'inherit',
+  const handleGoogleLogin = async () => {
+    try {
+      await authService.signInWithGoogle();
+    } catch (err) {
+      toast.error(err.message || 'Google Login failed.');
+    }
   };
-  const labelStyle = {
-    display: 'block', fontSize: '14px', color: '#555', marginBottom: '6px', fontWeight: '500',
-  };
-  const btnPrimary = {
-    width: '100%', padding: '13px', background: '#00bcd4',
-    color: 'white', border: 'none', borderRadius: '6px', fontSize: '16px',
-    fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit',
-  };
-  const btnSecondary = {
-    ...btnPrimary, background: '#00a3b8',
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast.error('Please enter your email address to reset password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await authService.resetPassword(email.trim());
+      toast.success('Password reset link sent to your email!');
+    } catch (err) {
+      toast.error(err.message || 'Failed to send reset link.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', padding: '20px',
-    }}>
-      <div style={{
-        background: '#fff', borderRadius: '10px', padding: '36px 40px', width: '100%',
-        maxWidth: '430px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', position: 'relative',
-      }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{
-            background: '#e53935', color: 'white', width: '48px', height: '48px', borderRadius: '10px',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '28px', fontWeight: 'bold', fontFamily: 'serif',
-          }}>M</div>
+    <div className="login-page-wrapper onboarding-bg">
+      {/* HEADER - Matches Jeevansathi Screenshot */}
+      <header className="login-header">
+        <div className="login-header-content">
+          <Link to="/" className="login-brand">
+            <img src="/images/logo.png" alt="SakharPuda" style={{ height: '30px' }} />
+          </Link>
+          <nav className="login-nav">
+            <div className="nav-item">Browse Profiles By <span className="arrow">▼</span></div>
+            <div className="nav-item">Search <span className="arrow">▼</span></div>
+            <div className="nav-item">Help</div>
+            <div className="nav-actions">
+              <Link to="/login" className="nav-link active">Login</Link>
+              <Link to="/register" className="btn btn-primary btn-sm">Register for Free</Link>
+            </div>
+          </nav>
         </div>
+      </header>
 
-        {/* ============ PASSWORD LOGIN ============ */}
-        {mode === 'password' && (
-          <>
-            <h2 style={{ textAlign: 'center', color: '#444', fontSize: '20px', marginBottom: '24px', fontWeight: '500' }}>
-              Welcome back! Please Login
-            </h2>
-            <form onSubmit={handlePasswordLogin}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={labelStyle}>Email ID</label>
-                <input type="email" placeholder="Enter your email" value={email}
-                  onChange={e => setEmail(e.target.value)} style={inputStyle} required autoFocus />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={labelStyle}>Password</label>
-                <input type="password" placeholder="Enter password" value={password}
-                  onChange={e => setPassword(e.target.value)} style={inputStyle} required />
-              </div>
+      {/* MAIN LOGIN SECTION */}
+      <main className="login-main">
+        <div className="login-card">
+          <h1 className="login-title">
+            {mode === 'password' ? 'Login to ManglaSutra' :
+              mode === 'otp_request' ? 'Login with OTP' : 'Enter OTP'}
+          </h1>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', fontSize: '13px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', color: '#666', cursor: 'pointer', gap: '6px' }}>
-                  <input type="checkbox" checked={stayLoggedIn}
-                    onChange={e => setStayLoggedIn(e.target.checked)} />
-                  Stay Logged in
-                </label>
-                <a href="#" style={{ color: '#00bcd4', textDecoration: 'none' }}>Forgot Password?</a>
+          {/* ============ PASSWORD MODE ============ */}
+          {mode === 'password' && (
+            <form className="login-form" onSubmit={handlePasswordLogin}>
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="Email ID/Mobile No."
+                  className="input-field"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
 
-              <button type="submit" disabled={loading} style={{ ...btnPrimary, opacity: loading ? 0.7 : 1, marginBottom: '14px' }}>
-                {loading ? 'Logging in...' : 'Login'}
-              </button>
-
-              <div style={{ display: 'flex', alignItems: 'center', color: '#bbb', margin: '14px 0', fontSize: '12px' }}>
-                <div style={{ flex: 1, borderBottom: '1px solid #eee' }} />
-                <span style={{ padding: '0 12px' }}>OR</span>
-                <div style={{ flex: 1, borderBottom: '1px solid #eee' }} />
+              <div className="input-group password-group">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  className="input-field"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                </button>
               </div>
 
-              <button type="button" onClick={() => setMode('otp_enter')} style={btnSecondary}>
-                Login with OTP
-              </button>
-            </form>
-          </>
-        )}
-
-        {/* ============ OTP — ENTER EMAIL ============ */}
-        {mode === 'otp_enter' && (
-          <>
-            <h2 style={{ textAlign: 'center', color: '#444', fontSize: '20px', marginBottom: '24px', fontWeight: '500' }}>
-              Login with OTP
-            </h2>
-            <form onSubmit={handleSendOTP}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={labelStyle}>Email ID</label>
-                <input type="email" placeholder="Enter your registered email" value={email}
-                  onChange={e => setEmail(e.target.value)} style={inputStyle} required autoFocus />
+              <div className="login-links">
+                <a href="#" onClick={handleForgotPassword} className="forgot-link">Forgot/Set a new Password</a>
               </div>
-              <button type="submit" disabled={loading || !email.trim()}
-                style={{ ...btnPrimary, opacity: (loading || !email.trim()) ? 0.6 : 1, marginBottom: '14px' }}>
-                {loading ? 'Sending...' : 'Send OTP'}
-              </button>
-              <div style={{ textAlign: 'center' }}>
-                <button type="button" onClick={() => setMode('password')}
-                  style={{ background: 'none', border: 'none', color: '#00bcd4', cursor: 'pointer', fontSize: '14px' }}>
-                  ← Back to Password Login
+
+              <div className="login-actions">
+                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                  {loading ? "Logging in..." : "Login with Password"}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-outline btn-full btn-lg"
+                  onClick={() => setMode('otp_request')}
+                >
+                  Login with OTP
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-google btn-full btn-lg"
+                  onClick={handleGoogleLogin}
+                >
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="google-icon" />
+                  Continue with Google
                 </button>
               </div>
             </form>
-          </>
-        )}
+          )}
 
-        {/* ============ OTP — VERIFY CODE ============ */}
-        {mode === 'otp_verify' && (
-          <>
-            <h2 style={{ textAlign: 'center', color: '#444', fontSize: '20px', marginBottom: '8px', fontWeight: '500' }}>
-              Enter OTP
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', fontSize: '14px', marginBottom: '24px' }}>
-              We sent a 6-digit code to <strong style={{ color: '#333' }}>{email}</strong>
-            </p>
-            <form onSubmit={handleVerifyOTP}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+          {/* ============ OTP REQUEST MODE ============ */}
+          {mode === 'otp_request' && (
+            <form className="login-form" onSubmit={handleSendOTP}>
+              <p className="login-hint">Enter your email address to receive a login code.</p>
+              <div className="input-group">
+                <input
+                  type="email"
+                  placeholder="Email Address"
+                  className="input-field"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="login-actions">
+                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                  {loading ? "Sending..." : "Send Login OTP"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-full"
+                  onClick={() => setMode('password')}
+                >
+                  Back to Password Login
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ============ OTP VERIFY MODE ============ */}
+          {mode === 'otp_verify' && (
+            <form className="login-form" onSubmit={handleVerifyOTP}>
+              <p className="login-hint">We've sent a 6-digit code to <strong>{email}</strong></p>
+              <div className="otp-wrapper">
                 <OTPInput value={otp} onChange={setOtp} length={6} disabled={loading} />
               </div>
-              <button type="submit" disabled={loading || otp.length < 6}
-                style={{ ...btnPrimary, opacity: (loading || otp.length < 6) ? 0.6 : 1, marginBottom: '14px' }}>
-                {loading ? 'Verifying...' : 'Verify & Login'}
-              </button>
-              <div style={{ textAlign: 'center' }}>
-                <button type="button" onClick={() => { setMode('otp_enter'); setOtp(''); }}
-                  style={{ background: 'none', border: 'none', color: '#00bcd4', cursor: 'pointer', fontSize: '14px' }}>
-                  ← Change Email
+              <div className="login-actions">
+                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading || otp.length < 6}>
+                  {loading ? "Verifying..." : "Verify & Login"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-full"
+                  onClick={() => { setMode('otp_request'); setOtp(''); }}
+                >
+                  Change Email
                 </button>
               </div>
             </form>
-          </>
-        )}
+          )}
 
-        {/* Footer */}
-        <div style={{ textAlign: 'center', marginTop: '28px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-          <span style={{ color: '#888', fontSize: '14px' }}>New to ManglaSutra? </span>
-          <Link to="/register" style={{ color: '#333', fontWeight: '600', textDecoration: 'none', fontSize: '14px' }}>
-            Sign Up Free &gt;
-          </Link>
+          <div className="login-footer">
+            New to ManglaSutra? <Link to="/register" className="register-link">Register Now</Link>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .login-page-wrapper {
+          min-height: 100vh;
+          background-color: #fdf5f6;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .login-header {
+          background: #fff;
+          border-bottom: 1px solid #e0e0e0;
+          padding: 12px 0;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
+
+        .login-header-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 20px;
+        }
+
+        .login-brand {
+          font-size: 24px;
+          font-weight: 800;
+          text-decoration: none;
+        }
+
+        .brand-pink { color: #D63447; }
+
+        .login-nav {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+        }
+
+        .nav-item {
+          font-size: 14px;
+          font-weight: 600;
+          color: #444;
+          cursor: pointer;
+        }
+
+        .arrow { font-size: 10px; margin-left: 4px; }
+
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-left: 20px;
+        }
+
+        .nav-link {
+          font-size: 14px;
+          font-weight: 600;
+          color: #D63447;
+          text-decoration: none;
+        }
+
+        .login-main {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 40px 20px;
+          background: #fdf5f6;
+        }
+
+        .login-card {
+          background: #fff;
+          width: 100%;
+          max-width: 450px;
+          padding: 40px;
+          border-radius: 8px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        }
+
+        .login-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #333;
+          margin-bottom: 24px;
+          text-align: center;
+        }
+
+        .login-hint {
+          text-align: center;
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 24px;
+        }
+
+        .otp-wrapper {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 32px;
+        }
+
+        /* Override OTPInput styles to match theme */
+        .otp-container { display: flex; gap: 8px; }
+        .otp-input {
+          width: 40px; height: 50px;
+          text-align: center; font-size: 20px; font-weight: 700;
+          border: 1px solid #ccc; border-radius: 4px;
+        }
+        .otp-input:focus { border-color: #D63447; outline: none; }
+
+        .password-group {
+          position: relative;
+        }
+
+        .password-toggle {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 18px;
+          color: #888;
+        }
+
+        .login-links {
+          margin-bottom: 24px;
+          text-align: left;
+        }
+
+        .forgot-link {
+          font-size: 13px;
+          color: #D63447;
+          font-weight: 600;
+        }
+
+        .login-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .btn-full { width: 100%; }
+
+        .btn-google {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          border: 1px solid #D63447;
+          color: #D63447;
+          background: #fff;
+        }
+
+        .btn-ghost {
+          background: transparent;
+          color: #666;
+          font-size: 14px;
+        }
+
+        .google-icon {
+          width: 18px;
+          height: 18px;
+        }
+
+        .login-footer {
+          margin-top: 32px;
+          text-align: center;
+          font-size: 14px;
+          color: #666;
+        }
+
+        .register-link {
+          color: #D63447;
+          font-weight: 700;
+          text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+          .login-nav { display: none; }
+          .login-card { padding: 30px 20px; }
+        }
+      `}} />
     </div>
   );
 }

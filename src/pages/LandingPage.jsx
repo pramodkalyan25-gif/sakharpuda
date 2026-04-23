@@ -1,168 +1,1649 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Button from '../components/ui/Button';
-
-const features = [
-  { icon: '🔒', title: 'Privacy First', desc: 'Photos hidden by default. Phone revealed only after mutual interest + admin approval.' },
-  { icon: '✅', title: 'Verified Profiles', desc: 'Mobile-verified members only. Admin-vetted profiles earn the gold badge.' },
-  { icon: '💌', title: 'Genuine Connections', desc: 'Smart interest matching. No spam — max 10 interests per day enforced.' },
-  { icon: '🛡️', title: 'Secure & Safe', desc: 'Row-level security on every query. Signed photo URLs with 1-hour expiry.' },
-];
-
-const stats = [
-  { value: '50K+', label: 'Verified Profiles' },
-  { value: '12K+', label: 'Successful Matches' },
-  { value: '98%', label: 'Privacy Score' },
-  { value: '4.9★', label: 'User Rating' },
-];
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ChevronDown,
+  Search,
+  Globe,
+  User,
+  UserCheck,
+  Settings,
+  ArrowRight,
+  MessageCircle,
+  Eye
+} from 'lucide-react';
 
 export default function LandingPage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <div className="landing">
-      {/* Navbar */}
-      <nav className="landing-nav">
-        <div className="nav-brand">
-          <span className="brand-icon">💍</span>
-          <span className="brand-name">ManglaSutra</span>
-        </div>
-        
-        <div className="nav-actions">
-          <Link to="/login">
-            <Button variant="ghost" size="sm">Login</Button>
+    <div className="landing-wrapper">
+      {/* PROFESSIONAL HEADER */}
+      <header className="main-header">
+        <div className="container header-content">
+          <Link to="/" className="brand">
+            <img src="/images/logo.png" alt="SakharPuda" className="logo-img" />
           </Link>
-          <Link to="/register">
-            <Button variant="primary" size="sm">Get Started</Button>
-          </Link>
-        </div>
-
-        <button className="nav-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? '✕' : '☰'}
-        </button>
-
-        <div className={`mobile-menu ${isMenuOpen ? 'active' : ''}`}>
-          <Link to="/login" onClick={() => setIsMenuOpen(false)}>Login</Link>
-          <Link to="/register" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
-          <Link to="/search" onClick={() => setIsMenuOpen(false)}>Browse Profiles</Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="hero" aria-label="Hero section">
-        <div className="hero-content">
-          <div className="hero-badge">🌸 India's Privacy-First Matrimony Platform</div>
-          <h1 className="hero-title">
-            Find Your Perfect<br />
-            <span className="hero-gradient">Life Partner</span>
-          </h1>
-          <p className="hero-subtitle">
-            Secure. Verified. Private. Connect with genuine profiles where your safety and
-            dignity are protected by technology, not just promises.
-          </p>
-          <div className="hero-cta">
-            <Link to="/register">
-              <Button variant="primary" size="lg">Create Free Profile</Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="outline" size="lg">Browse Profiles</Button>
-            </Link>
-          </div>
-          <div className="hero-trust">
-            <span>🔒 100% secure</span>
-            <span>•</span>
-            <span>📱 OTP verified</span>
-            <span>•</span>
-            <span>🛡️ RLS protected</span>
-          </div>
-        </div>
-
-        {/* Decorative floating cards */}
-        <div className="hero-visual" aria-hidden="true">
-          <div className="float-card float-card-1">
-            <div className="fc-avatar">A</div>
-            <div className="fc-info">
-              <div className="fc-name">Anika S.</div>
-              <div className="fc-meta">28 • Mumbai • Verified ✓</div>
+          <div className="header-actions">
+            <span className="member-text">Already a member?</span>
+            <Link to="/login" className="login-link">Login</Link>
+            <div className="help-dropdown-container">
+              <button className="help-trigger">
+                Help <ChevronDown size={14} />
+              </button>
+              <div className="help-dropdown-menu">
+                <div className="help-item header">Customer Support</div>
+                <a href="mailto:sakharpuda@zohomail.com" className="help-item">
+                  sakharpuda@zohomail.com
+                </a>
+                <Link to="/contact" className="help-item">Contact Us</Link>
+                <Link to="/faq" className="help-item">Safety Tips</Link>
+              </div>
             </div>
           </div>
-          <div className="float-card float-card-2">
-            <div className="fc-avatar fc-male">R</div>
-            <div className="fc-info">
-              <div className="fc-name">Rahul M.</div>
-              <div className="fc-meta">32 • Bangalore • Verified ✓</div>
+        </div>
+      </header>
+
+      {/* HERO SECTION */}
+      <section className="hero-section">
+        <div className="container hero-content-rel">
+          <div className="registration-bar-right-wrapper">
+            <div className="search-bar-card registration-card vertical-reg-card">
+              <div className="registration-form vertical-reg-form">
+                <div className="reg-group">
+                  <label className="reg-label">Religion *</label>
+                  <select className="reg-input" required>
+                    <option value="">Select Religion</option>
+                    <option value="hindu">Hindu</option>
+                    <option value="muslim">Muslim</option>
+                    <option value="christian">Christian</option>
+                    <option value="sikh">Sikh</option>
+                    <option value="jain">Jain</option>
+                    <option value="buddhist">Buddhist</option>
+                  </select>
+                </div>
+
+                <div className="reg-group">
+                  <label className="reg-label">Caste *</label>
+                  <select className="reg-input" required>
+                    <option value="">Select Caste</option>
+                    <option value="maratha">Maratha</option>
+                    <option value="brahmin">Brahmin</option>
+                    <option value="kunbi">Kunbi</option>
+                    <option value="teli">Teli</option>
+                    <option value="mali">Mali</option>
+                  </select>
+                </div>
+
+                <button className="register-free-btn-hero full-width-btn">Register for Free</button>
+
+                <p className="reg-terms-tiny">
+                  By clicking on 'Register Free', you confirm that you accept the
+                  <span className="pink-text"> Terms of Use</span> and <span className="pink-text"> Privacy Policy</span>
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="float-card float-card-3">
-            <span className="fc-match">💍 New Match!</span>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="stats-section" aria-label="Platform statistics">
-        <div className="stats-grid">
-          {stats.map((s) => (
-            <div key={s.label} className="stat-item">
-              <div className="stat-value">{s.value}</div>
-              <div className="stat-label">{s.label}</div>
+      {/* TRUST SECTION - Overlapping with Hero */}
+      <section className="trust-section-overlap">
+        <div className="container">
+          <div className="trust-tagline-container">
+            <h2 className="tagline-main">Your People. Your Matches. Always.</h2>
+            <p className="tagline-sub">Log in once — and see only profiles from your own community, automatically</p>
+          </div>
+          <div className="trust-card-main">
+            {/* TRUST SECTION */}
+            <div className="trust-header-section">
+              <span className="banner-label">MORE THAN 25 YEARS OF</span>
+              <h2 className="banner-title">Bringing People <span className="pink">Together</span></h2>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Features */}
-      <section className="features-section" aria-label="Features">
-        <div className="section-header">
-          <h2 className="section-title">Why Choose ManglaSutra?</h2>
-          <p className="section-subtitle">Built with privacy and safety as first-class features</p>
-        </div>
-        <div className="features-grid">
-          {features.map((f) => (
-            <div key={f.title} className="feature-card">
-              <div className="feature-icon">{f.icon}</div>
-              <h3 className="feature-title">{f.title}</h3>
-              <p className="feature-desc">{f.desc}</p>
+            <div className="trust-features-section">
+              <div className="trust-features-grid">
+                <div className="feature-item">
+                  <div className="feature-icon">
+                    <svg viewBox="0 0 64 64" width="60" height="60">
+                      <path d="M20 40c-5.5 0-10 4.5-10 10v4h20v-4c0-5.5-4.5-10-10-10z" fill="none" stroke="#666" strokeWidth="2" />
+                      <circle cx="20" cy="30" r="6" fill="none" stroke="#666" strokeWidth="2" />
+                      <path d="M44 40c-5.5 0-10 4.5-10 10v4h20v-4c0-5.5-4.5-10-10-10z" fill="none" stroke="#666" strokeWidth="2" />
+                      <circle cx="44" cy="30" r="6" fill="none" stroke="#666" strokeWidth="2" />
+                      <circle cx="32" cy="20" r="8" fill="none" stroke="#666" strokeWidth="2" />
+                      <path d="M32 32c-6.6 0-12 5.4-12 12v4h24v-4c0-6.6-5.4-12-12-12z" fill="none" stroke="#666" strokeWidth="2" />
+                      <circle cx="52" cy="48" r="8" fill="#E52D56" />
+                      <path d="M48 48l3 3 5-5" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <h3>100% Screened Profiles</h3>
+                  <div className="pink-accent"></div>
+                  <p>Search by location, community, profession & more from lakhs of active profiles</p>
+                </div>
+
+                <div className="feature-item">
+                  <div className="feature-icon">
+                    <svg viewBox="0 0 64 64" width="60" height="60">
+                      <path d="M32 4l20 8v16c0 12-8 23-20 28-12-5-20-16-20-28V12l20-8z" fill="none" stroke="#666" strokeWidth="2" />
+                      <circle cx="32" cy="28" r="7" fill="none" stroke="#666" strokeWidth="2" />
+                      <path d="M32 38c-5 0-9 4-9 8v2h18v-2c0-4-4-8-9-8z" fill="none" stroke="#666" strokeWidth="2" />
+                    </svg>
+                  </div>
+                  <h3>Verifications by Personal Visit</h3>
+                  <div className="pink-accent"></div>
+                  <p>Special listing for profiles verified by our agents through personal visits</p>
+                </div>
+
+                <div className="feature-item">
+                  <div className="feature-icon">
+                    <svg viewBox="0 0 64 64" width="60" height="60">
+                      <circle cx="32" cy="24" r="8" fill="none" stroke="#666" strokeWidth="2" />
+                      <path d="M32 36c-8 0-14 6-14 14v2h28v-2c0-8-6-14-14-14z" fill="none" stroke="#666" strokeWidth="2" />
+                      <circle cx="50" cy="20" r="8" fill="#E52D56" />
+                      <path d="M47 22v-2c0-1.7 1.3-3 3-3s3 1.3 3 3v2h1v4h-8v-4h1zm1 0h4v-2c0-1.1-.9-2-2-2s-2 .9-2 2v2z" fill="#fff" />
+                    </svg>
+                  </div>
+                  <h3>Control over Privacy</h3>
+                  <div className="pink-accent"></div>
+                  <p>Restrict unwanted access to contact details & photos/videos</p>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* How it works */}
-      <section className="how-section" aria-label="How it works">
-        <div className="section-header">
-          <h2 className="section-title">How It Works</h2>
-        </div>
-        <div className="steps-grid">
-          {[
-            { n: '01', title: 'Create Profile', desc: 'Sign up with email OTP. Build your detailed profile.' },
-            { n: '02', title: 'Verify Mobile', desc: 'Verify your phone number to unlock interest sending.' },
-            { n: '03', title: 'Browse & Connect', desc: 'Search profiles with smart filters. Send up to 10 interests/day.' },
-            { n: '04', title: 'Mutual Match', desc: 'When both accept, contact details become available after admin approval.' },
-          ].map((step) => (
-            <div key={step.n} className="step-card">
-              <div className="step-number">{step.n}</div>
-              <h3 className="step-title">{step.title}</h3>
-              <p className="step-desc">{step.desc}</p>
+            <div className="card-divider"></div>
+
+            {/* COMMUNITY USP SECTION */}
+            <div className="community-usp-section">
+              <div className="usp-content-wrapper">
+                <div className="usp-text-side">
+                  <div className="usp-point-block active">
+                    <h2 className="section-title">Your <span className="pink">Community</span>, Your App</h2>
+                    <p className="section-desc">
+                      Experience a revolutionary way to find your life partner. SakharPuda adapts to your identity, creating a dedicated space for your specific religion and caste.
+                    </p>
+                    <div className="active-bar"></div>
+                  </div>
+
+                  <div className="usp-points-list">
+                    <div className="usp-point-item">
+                      <div className="usp-point-number">01</div>
+                      <div className="usp-point-text">
+                        <h4>Identity-Driven Transformation</h4>
+                        <p>Once you login, the entire app transforms. Your dashboard and search results are filtered to match your community automatically.</p>
+                      </div>
+                    </div>
+
+                    <div className="usp-point-item">
+                      <div className="usp-point-number">02</div>
+                      <div className="usp-point-text">
+                        <h4>100% Relevant Matches</h4>
+                        <p>Eliminate the clutter of irrelevant profiles. See only those who share your heritage, traditions, and core values.</p>
+                      </div>
+                    </div>
+
+                    <div className="usp-point-item">
+                      <div className="usp-point-number">03</div>
+                      <div className="usp-point-text">
+                        <h4>Privacy within a Walled Garden</h4>
+                        <p>Enjoy the security of a niche community app with the power of a global platform. Total privacy for your community members.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="usp-image-side">
+                  <div className="mobile-mockup-frame">
+                    <div className="mockup-screen scrollable-side">
+                      <div className="usp-mockup-slide" id="usp-slide-1">
+                        <img src="/images/exclusive/Gemini_Generated_Image_e9s2bwe9s2bwe9s2.png" alt="Identity-Driven Transformation" />
+                        <div className="floating-badge top-right animate-pop">
+                          <span className="badge-icon red"><User size={14} /></span>
+                          <span>Same Community Member</span>
+                        </div>
+                      </div>
+
+                      <div className="usp-mockup-slide" id="usp-slide-2">
+                        <img src="/images/exclusive/Gemini_Generated_Image_vs0bnvs0bnvs0bnv.png" alt="Relevant Matches" />
+                        <div className="floating-badge top-left animate-pop">
+                          <span className="badge-icon pink"><Settings size={14} /></span>
+                          <span>Hyper-Relevant</span>
+                        </div>
+                      </div>
+
+                      <div className="usp-mockup-slide" id="usp-slide-3">
+                        <img src="/images/exclusive/Gemini_Generated_Image_yyl2ylyyl2ylyyl2.png" alt="Total Privacy" />
+                        <div className="floating-badge top-right animate-pop">
+                          <span className="badge-icon red"><ArrowRight size={14} /></span>
+                          <span>Complete Privacy</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
+
+            <div className="card-divider"></div>
+
+            {/* STEPS SECTION */}
+            <div className="steps-inner-section">
+              <h2 className="section-title">Find the <span className="pink">One for You</span></h2>
+              <div className="steps-grid">
+                <div className="step-item">
+                  <div className="step-illustration">
+                    <svg viewBox="0 0 200 120" width="180" height="100">
+                      <rect x="20" y="20" width="160" height="80" rx="10" fill="#f0f0f0" />
+                      <rect x="40" y="40" width="120" height="8" rx="4" fill="#e0e0e0" />
+                      <rect x="40" y="60" width="120" height="8" rx="4" fill="#e0e0e0" />
+                      <circle cx="100" cy="50" r="15" fill="#E52D56" fillOpacity="0.2" />
+                      <path d="M90 50l7 7 15-15" stroke="#E52D56" strokeWidth="3" fill="none" />
+                    </svg>
+                  </div>
+                  <p><span>01.</span> Define Your Partner Preferences</p>
+                </div>
+                <div className="step-item">
+                  <div className="step-illustration">
+                    <svg viewBox="0 0 200 120" width="180" height="100">
+                      <circle cx="100" cy="50" r="30" fill="#f0f0f0" />
+                      <circle cx="100" cy="50" r="20" fill="none" stroke="#E52D56" strokeWidth="2" />
+                      <line x1="115" y1="65" x2="135" y2="85" stroke="#E52D56" strokeWidth="4" strokeLinecap="round" />
+                      <rect x="40" y="90" width="120" height="6" rx="3" fill="#e0e0e0" />
+                    </svg>
+                  </div>
+                  <p><span>02.</span> Browse Profiles</p>
+                </div>
+                <div className="step-item">
+                  <div className="step-illustration">
+                    <svg viewBox="0 0 200 120" width="180" height="100">
+                      <rect x="40" y="30" width="120" height="60" rx="8" fill="#f0f0f0" />
+                      <circle cx="70" cy="60" r="10" fill="#E52D56" />
+                      <circle cx="130" cy="60" r="10" fill="#E52D56" fillOpacity="0.3" />
+                      <path d="M100 60h20" stroke="#E52D56" strokeWidth="2" strokeDasharray="4 2" />
+                      <path d="M100 50l10 10-10 10" stroke="#E52D56" strokeWidth="2" fill="none" />
+                    </svg>
+                  </div>
+                  <p><span>03.</span> Send Interests & Connect</p>
+                </div>
+              </div>
+              <div className="btn-center">
+                <button className="get-started-btn">Get Started</button>
+              </div>
+            </div>
+
+            <div className="card-divider"></div>
+
+            {/* MEMBERSHIP SECTION */}
+            <div className="membership-inner-section">
+              <h2 className="section-title"><span className="pink">Membership</span> Plans</h2>
+              <p className="section-desc">
+                Upgrade your plan as per your customized requirements. With a paid membership, you can seamlessly connect with your prospects and get more responses. Here are some key benefits:
+              </p>
+
+              <div className="pricing-wrapper">
+                <div className="price-card free-card">
+                  <h3>Free</h3>
+                  <ul className="benefits-list">
+                    <li className="included">Browse Profiles</li>
+                    <li className="included">Shortlist & Send Interest</li>
+                    <li className="included">Message & chat with unlimited users</li>
+                    <li className="excluded">Get up to 3x more matches daily</li>
+                    <li className="excluded">Unlock access to advanced search</li>
+                    <li className="excluded">View contact details</li>
+                    <li className="excluded">Make unlimited voice and video calls</li>
+                    <li className="excluded">Get 3 free Spotlights</li>
+                  </ul>
+                  <button className="register-free-btn">Register Free</button>
+                </div>
+
+                <div className="price-card paid-card">
+                  <h3>Paid</h3>
+                  <ul className="benefits-list">
+                    <li className="included">Browse Profiles</li>
+                    <li className="included">Shortlist & Send Interest</li>
+                    <li className="included">Message & chat with unlimited users</li>
+                    <li className="included">Get up to 3x more matches daily</li>
+                    <li className="included">Unlock access to advanced search</li>
+                    <li className="included">View contact details</li>
+                    <li className="included">Make unlimited voice and video calls</li>
+                    <li className="included">Get 3 free Spotlights</li>
+                  </ul>
+                  <button className="browse-plans-btn">Browse Membership Plans</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="card-divider"></div>
+
+            {/* EXCLUSIVE SECTION */}
+            <div className="exclusive-inner-section">
+              <div className="exclusive-header">
+                <span className="exclusive-label">PERSONALISED MATCH-MAKING SERVICE</span>
+                <h2 className="section-title">Introducing <span className="pink">Exclusive</span></h2>
+                <div className="exclusive-badge">EXCLUSIVE</div>
+              </div>
+
+              <div className="exclusive-image-container">
+                <img src="/images/exclusive-banner.jpg" alt="Exclusive Service" className="exclusive-img" />
+              </div>
+
+              <div className="exclusive-features-grid">
+                <div className="ex-feature">
+                  <div className="ex-feature-top">
+                    <div className="ex-icon-circle">
+                      <User size={16} />
+                    </div>
+                    <h4>Meet Your Relationship Manager</h4>
+                  </div>
+                  <p>Connect with our highly experienced advisor who manages your profile.</p>
+                </div>
+                <div className="ex-feature">
+                  <div className="ex-feature-top">
+                    <div className="ex-icon-circle">
+                      <Settings size={16} />
+                    </div>
+                    <h4>Communicate your preferences</h4>
+                  </div>
+                  <p>Consultation to understand your expectations in a prospective partner.</p>
+                </div>
+                <div className="ex-feature">
+                  <div className="ex-feature-top">
+                    <div className="ex-icon-circle">
+                      <UserCheck size={16} />
+                    </div>
+                    <h4>Choose from handpicked profiles</h4>
+                  </div>
+                  <p>We shortlist profiles matching your criteria for offline interactions.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="cta-section" aria-label="Call to action">
-        <h2>Start Your Journey Today</h2>
-        <p>Join thousands of verified profiles finding their life partners</p>
-        <Link to="/register">
-          <Button variant="primary" size="lg">Create Free Profile →</Button>
-        </Link>
-      </section>
+      {/* FOOTER SECTION */}
+      <footer className="main-footer">
+        <div className="container">
+          <div className="footer-intro">
+            <img src="/images/logo.png" alt="SakharPuda" className="footer-logo" />
+            <p>
+              SakharPuda.com is one of the leading and most trusted community-driven matrimony platforms in India.
+              We understand that finding the right partner involves deep cultural and community alignment.
+              SakharPuda adapts to your identity, creating a dedicated space for your specific religion and caste.
+              We ensure a secure and convenient matchmaking experience with 100% screening, exclusive privacy options,
+              and identity-driven search filters. Whether you are looking for a deeper connection within your community
+              or a professional match-making service, SakharPuda is here to make your journey easier.
+            </p>
+            <p className="footer-note">
+              Please note: SakharPuda is only meant for users with a bonafide intent to enter into a matrimonial alliance
+              and is not meant for users interested in dating only. SakharPuda platform should not be used to post any obscene material.
+            </p>
+          </div>
 
-      {/* Footer */}
-      <footer className="landing-footer">
-        <div className="footer-brand">💍 ManglaSutra</div>
-        <p className="footer-copy">© 2024 ManglaSutra. Privacy-first matrimony platform.</p>
+          <div className="footer-links-grid">
+            <div className="footer-col">
+              <h4>Explore</h4>
+              <Link to="/">Home</Link>
+              <Link to="/search">Advanced search</Link>
+              <Link to="/stories">Success stories</Link>
+              <Link to="/sitemap">Sitemap</Link>
+            </div>
+            <div className="footer-col">
+              <h4>Services</h4>
+              <Link to="/plans">Membership Options</Link>
+              <Link to="/careers">Careers</Link>
+              <Link to="/exclusive">SakharPuda Exclusive</Link>
+              <Link to="/premier">SakharPuda Premier</Link>
+            </div>
+            <div className="footer-col">
+              <h4>Help</h4>
+              <Link to="/contact">Contact us</Link>
+              <Link to="/safety">Safety Tips</Link>
+              <Link to="/help">Help Center</Link>
+            </div>
+            <div className="footer-col">
+              <h4>Legal</h4>
+              <Link to="/about">About Us</Link>
+              <Link to="/fraud-alert">Fraud Alert</Link>
+              <Link to="/terms">Terms of use</Link>
+              <Link to="/privacy">Privacy policy</Link>
+              <Link to="/cookies">Cookie policy</Link>
+              <Link to="/grievances">Grievances</Link>
+            </div>
+            <div className="footer-col">
+              <div className="footer-widget">
+                <p className="widget-title">Browse profiles on the go, using the app</p>
+                <div className="app-download-btns">
+                  <div className="app-badge">
+                    <span className="badge-icon">▶</span>
+                    <div className="badge-text">
+                      <span className="tiny">GET IT ON</span>
+                      <span className="bold">Google Play</span>
+                    </div>
+                  </div>
+                  <div className="app-badge">
+                    <span className="badge-icon"></span>
+                    <div className="badge-text">
+                      <span className="tiny">Download on the</span>
+                      <span className="bold">App Store</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="footer-widget">
+                <p className="widget-title">Connect with us</p>
+                <div className="social-links">
+                  <a href="#" className="social-link instagram"><MessageCircle size={18} /></a>
+                  <a href="#" className="social-link youtube"><MessageCircle size={18} /></a>
+                  <a href="#" className="social-link twitter"><MessageCircle size={18} /></a>
+                  <a href="#" className="social-link linkedin"><MessageCircle size={18} /></a>
+                  <a href="#" className="social-link facebook"><MessageCircle size={18} /></a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </footer>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap');
+
+        .landing-wrapper {
+          font-family: 'Figtree', sans-serif;
+          background: #f8f9fa;
+          color: #4A5568; /* Slate-600 for general body text */
+          line-height: 1.4;
+        }
+
+        .main-header .container, .hero-section .container {
+          max-width: 1400px;
+        }
+
+        .container {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .pink { color: #E52D56; } /* Precise Jeevansathi Red */
+
+        .main-header {
+          background: #f0f2f5;
+          padding: 8px 0;
+          border-bottom: 1px solid #ddd;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .header-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          max-width: 1400px; /* Wider for full spread */
+          margin: 0 auto;
+          padding: 0 60px; /* Space from left/right */
+        }
+
+        .logo-img {
+          height: 32px;
+          display: block;
+        }
+
+        .header-actions {
+          display: flex;
+          align-items: center;
+        }
+
+        .member-text {
+          font-size: 14px;
+          color: #718096;
+          margin-right: 15px;
+          font-weight: 500;
+        }
+
+        .login-link {
+          background: #E52D56;
+          color: #fff;
+          padding: 10px 30px;
+          border: none;
+          border-radius: 50px;
+          font-size: 14px;
+          font-weight: 700;
+          text-decoration: none;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+        }
+
+        .login-link:hover {
+          background: #D4284D;
+          color: #fff;
+          transform: translateY(-1px);
+        }
+
+        .help-dropdown-container {
+          position: relative;
+          margin-left: 20px;
+          display: inline-block;
+        }
+
+        .help-trigger {
+          background: none;
+          border: none;
+          color: #4A5568;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 5px 0;
+          transition: color 0.2s;
+        }
+
+        .help-trigger:hover {
+          color: #E52D56;
+        }
+
+        .help-dropdown-menu {
+          display: none;
+          position: absolute;
+          top: 100%;
+          right: 0;
+          background: #fff;
+          min-width: 220px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+          border-radius: 8px;
+          padding: 8px 0;
+          z-index: 1001;
+          border: 1px solid #eee;
+          margin-top: 10px;
+        }
+
+        .help-dropdown-container:hover .help-dropdown-menu {
+          display: block;
+        }
+
+        .help-item {
+          display: block;
+          padding: 10px 20px;
+          color: #4A5568;
+          text-decoration: none;
+          font-size: 13px;
+          transition: background 0.2s;
+          cursor: pointer;
+        }
+
+        .help-item:hover {
+          background: #f7f8f9;
+          color: #E52D56;
+        }
+
+        .help-item.header {
+          font-weight: 700;
+          color: #1A202C;
+          border-bottom: 1px solid #eee;
+          margin-bottom: 5px;
+          cursor: default;
+        }
+
+        .help-item.header:hover {
+          background: none;
+          color: #1A202C;
+        }
+
+        .hero-section {
+          height: 600px;
+          background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/images/hero-bg.jpg') center/cover no-repeat;
+          position: relative;
+          display: flex;
+          align-items: flex-start;
+          padding-top: 80px;
+          color: #fff;
+        }
+
+        .hero-content-rel {
+          position: relative;
+          width: 100%;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+        }
+
+        .hero-left-msg {
+          flex: 1;
+          text-align: left;
+        }
+
+        .hero-left-msg h1 {
+          font-size: 52px;
+          font-weight: 800;
+          margin-bottom: 15px;
+          color: #fff;
+          text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .registration-bar-right-wrapper {
+          flex: 0 1 auto;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+        }
+
+        .vertical-reg-card {
+          background: rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(5px);
+          padding: 25px 30px;
+          border-radius: 12px;
+          width: 285px !important; /* Force reduction to 3/4th */
+          color: #fff;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .vertical-reg-form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .reg-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .reg-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.9);
+        }
+
+        .reg-terms-tiny {
+          font-size: 11px;
+          opacity: 0.8;
+          margin-top: 10px;
+          line-height: 1.4;
+        }
+
+        .reg-input {
+          height: 44px;
+          padding: 0 12px;
+          border-radius: 4px;
+          border: 1px solid #ddd;
+          background: #fff;
+          color: #333;
+          width: 100%;
+          font-size: 14px;
+          outline: none;
+          box-sizing: border-box;
+        }
+
+        .reg-input option {
+          background: #fff;
+          color: #333;
+        }
+
+        .hero-tagline {
+          font-size: 22px;
+          color: rgba(255,255,255,0.9);
+          margin: 0;
+          max-width: 500px;
+        }
+
+        .registration-card {
+          background: rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(5px);
+          padding: 25px;
+          border-radius: 8px;
+          width: 100%;
+          color: #fff;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .registration-form {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+
+
+        .mobile-input-wrapper {
+          display: flex;
+          background: #fff;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .country-code {
+          padding: 8px 10px;
+          background: #f8f9fa;
+          color: #333;
+          font-size: 14px;
+          border-right: 1px solid #ddd;
+          display: flex;
+          align-items: center;
+        }
+
+        .tel-input {
+          border: none;
+        }
+
+        .password-input-wrapper {
+          position: relative;
+        }
+
+        .eye-btn {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          color: #718096;
+          cursor: pointer;
+        }
+
+        .register-free-btn-hero {
+          background: #E52D56;
+          color: #fff;
+          padding: 12px;
+          border: none;
+          border-radius: 4px;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          width: 100%;
+          box-sizing: border-box;
+          display: block;
+        }
+
+        .reg-terms {
+          font-size: 10px;
+          color: #fff;
+          opacity: 0.8;
+          text-align: left;
+          line-height: 1.4;
+        }
+
+        .pink-text {
+          color: #E52D56;
+          cursor: pointer;
+        }
+
+        .trust-tagline-container {
+          text-align: left;
+          margin-bottom: 40px;
+          color: #fff;
+          padding-left: 31px;
+        }
+
+        .tagline-main {
+          font-family: "Playfair Display", serif;
+          font-size: 42px;
+          font-weight: 800;
+          margin-bottom: 12px;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          letter-spacing: -1px;
+          color: #fff;
+        }
+
+        .tagline-sub {
+          font-family: "Playfair Display", serif;
+          font-size: 20px;
+          font-weight: 600;
+          opacity: 0.95;
+          max-width: 800px;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          color: #fff;
+         
+        }
+
+        /* TRUST SECTION OVERLAP */
+        .trust-section-overlap {
+          position: relative;
+          margin-top: -250px;
+          z-index: 10;
+          padding-bottom: 60px;
+        }
+
+        .trust-card-main {
+          background: #fff;
+          border-radius: 12px;
+          width: 100%;
+          max-width: 1000px;
+          margin: 0 auto;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+          box-sizing: border-box;
+          overflow: hidden; /* To ensure backgrounds don't bleed out of corners */
+        }
+
+        .card-inner-section, .steps-inner-section, .membership-inner-section, .exclusive-inner-section {
+          padding: 60px 40px;
+          background: #fff; /* Default to white */
+        }
+
+        .trust-header-section {
+          padding: 60px 40px 20px;
+          background: #fff;
+        }
+
+        .trust-features-section {
+          padding: 0 40px 60px;
+          background: #fff;
+        }
+
+        .community-usp-section {
+          padding: 0;
+          background: #f9fafb;
+        }
+
+        .steps-inner-section {
+          padding: 80px 40px;
+          background: #fff;
+        }
+
+        .membership-inner-section {
+          background: linear-gradient(to bottom, #f9fafb 75%, #2c3e50 75%);
+          padding: 80px 40px;
+        }
+
+        .exclusive-inner-section {
+          background: #fff;
+          padding: 80px 40px;
+          text-align: left;
+        }
+
+        .usp-content-wrapper {
+          display: flex;
+          align-items: stretch;
+          width: 100%;
+          margin: 0;
+          background: transparent;
+          overflow: hidden;
+          height: 600px;
+        }
+
+        .usp-text-side {
+          flex: 1.2;
+          text-align: left;
+          padding: 60px;
+          overflow: hidden;
+        }
+
+        .usp-image-side {
+          flex: 1;
+          position: relative;
+          height: 100%;
+          background: #f9fafb;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .mobile-mockup-frame {
+          width: 300px;
+          height: 580px;
+          background: #fff;
+          border-radius: 40px;
+          border: 8px solid #fff;
+          box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+          position: relative;
+          overflow: hidden;
+          z-index: 5;
+        }
+
+        .mockup-screen.scrollable-side {
+          width: 100%;
+          height: 100%;
+          overflow-y: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          scroll-behavior: smooth;
+        }
+
+        .mockup-screen.scrollable-side::-webkit-scrollbar {
+          display: none;
+        }
+
+        .usp-mockup-slide {
+          position: relative;
+          width: 100%;
+          height: 580px; /* Match mockup height */
+          flex-shrink: 0;
+        }
+
+        .usp-mockup-slide img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          padding: 30px;
+        }
+
+        .usp-point-block {
+          position: relative;
+          padding-bottom: 20px;
+        }
+
+        .usp-point-block.active .section-title {
+          color: #333;
+        }
+
+        .active-bar {
+          width: 60px;
+          height: 4px;
+          background: #E52D56;
+          margin-top: 10px;
+        }
+
+        .usp-points-list {
+          margin-top: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 25px;
+        }
+
+        .usp-point-item {
+          display: flex;
+          gap: 20px;
+          align-items: flex-start;
+          min-height: auto;
+          padding: 0;
+        }
+
+        .usp-point-number {
+          font-size: 24px;
+          font-weight: 800;
+          color: rgba(214, 52, 71, 0.15);
+          line-height: 1;
+          margin-top: 4px;
+        }
+
+        .usp-point-text h4 {
+          font-size: 18px;
+          color: #333;
+          margin: 0 0 8px 0;
+          font-weight: 700;
+        }
+
+        .usp-point-text p {
+          font-size: 14px;
+          color: #666;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        /* FLOATING ELEMENTS WITH ANIMATIONS */
+
+        /* FLOATING ELEMENTS WITH ANIMATIONS */
+        .floating-badge, .floating-message {
+          position: absolute;
+          background: #fff;
+          padding: 10px 15px;
+          border-radius: 50px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+          z-index: 10;
+          font-size: 11px;
+          font-weight: 600;
+          color: #333;
+          white-space: nowrap;
+          pointer-events: none;
+        }
+
+        .animate-pop {
+          animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        .animate-slide {
+          animation: slideIn 0.8s ease-out both;
+        }
+
+        @keyframes popIn {
+          0% { transform: scale(0.5); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes slideIn {
+          0% { transform: translateX(-30px); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+
+        .badge-icon, .message-icon {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+        }
+
+        .badge-icon.red { background: #E52D56; }
+        .badge-icon.pink { background: #E52D56; }
+        .message-icon { background: rgba(214, 52, 71, 0.1); color: #E52D56; }
+
+        .floating-badge.top-right { top: 20px; right: 15px; }
+        .floating-badge.top-left { top: 20px; left: 15px; }
+        .floating-badge.bottom-right { bottom: 40px; right: 15px; }
+        .floating-message.left-center { top: 40%; left: -80px; width: 220px; padding: 12px 18px; border-radius: 30px; font-size: 12px; }
+
+        @media (max-width: 968px) {
+          .usp-content-wrapper { flex-direction: column; }
+          .usp-image-side { order: -1; }
+          .floating-message.left-center { left: 0; width: 180px; }
+        }
+
+        .exclusive-inner-section {
+          background: #fff;
+          padding: 80px 40px;
+          text-align: left;
+        }
+
+        .exclusive-inner-section .section-title {
+          color: #333;
+        }
+
+        .card-divider {
+          height: 1px;
+          background: #eee;
+          margin: 0;
+        }
+
+        /* EXCLUSIVE SECTION STYLES */
+        .exclusive-header {
+          margin-bottom: 30px;
+        }
+
+        .exclusive-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #7a8a99;
+          letter-spacing: 1px;
+          display: block;
+          margin-bottom: 15px;
+          text-transform: uppercase;
+        }
+
+        .exclusive-badge {
+          display: inline-block;
+          background: #E52D56;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 700;
+          padding: 4px 15px;
+          border-radius: 4px;
+          margin-top: 10px;
+          text-transform: uppercase;
+        }
+
+        .exclusive-image-container {
+          max-width: 900px;
+          height: 350px;
+          margin: 0 auto 40px;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .exclusive-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center center;
+          display: block;
+        }
+
+        .exclusive-features-grid {
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          max-width: 1000px;
+          margin: 0 auto;
+          gap: 0;
+        }
+
+        .ex-feature {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 0 30px;
+          text-align: left;
+          position: relative;
+        }
+
+        .ex-feature:not(:last-child)::after {
+          content: '';
+          position: absolute;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: 1px;
+          background: #eee;
+        }
+
+        .ex-feature-top {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 10px;
+        }
+
+        .ex-icon-circle {
+          width: 28px;
+          height: 28px;
+          background: #E52D56;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          margin-top: 3px; /* Align with top of text */
+        }
+
+        .ex-icon-circle svg {
+          width: 16px;
+          height: 16px;
+          color: #fff;
+        }
+
+        .ex-feature h4 {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1A202C;
+          margin: 0;
+        }
+
+        .ex-feature p {
+          font-size: 14px;
+          color: #4A5568;
+          line-height: 1.5;
+          margin: 0;
+          font-weight: 400;
+        }
+
+        .banner-label {
+          font-size: 12px;
+          font-weight: 700;
+          color: #718096;
+          letter-spacing: 1.2px;
+          display: block;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+        }
+
+        .banner-title {
+          font-size: 30px;
+          font-weight: 700;
+          color: #2D3748;
+          line-height: 1.2;
+        }
+
+        .banner-title .pink {
+          font-weight: 700;
+          color: #E52D56;
+        }
+
+        .trust-features-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 30px;
+        }
+
+        .feature-item {
+          text-align: center;
+        }
+
+        .feature-icon {
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .feature-item h3 {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1A202C;
+          margin-bottom: 8px;
+        }
+
+        .pink-accent {
+          width: 40px;
+          height: 3px;
+          background: #E52D56;
+          margin: 0 auto 10px;
+        }
+
+        .feature-item p {
+          font-size: 14px;
+          color: #4A5568;
+          line-height: 1.4;
+          font-weight: 400;
+        }
+
+        /* SECTION TITLES */
+        .section-title {
+          font-size: 30px;
+          font-weight: 700;
+          color: #2D3748;
+          text-align: left;
+          margin-bottom: 30px;
+        }
+
+        .section-desc {
+          text-align: left;
+          max-width: 800px;
+          margin: 0 0 40px;
+          color: #4A5568;
+          font-size: 16px;
+          line-height: 1.6;
+          font-weight: 400;
+        }
+
+        .membership-inner-section .section-title,
+        .membership-inner-section .section-desc {
+          text-align: center;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        /* CARD INNER SECTIONS */
+        .card-inner-section {
+          padding: 60px 0;
+        }
+
+        .card-divider {
+          height: 1px;
+          background: #eee;
+          margin: 20px 0;
+        }
+
+        .btn-center {
+          display: flex;
+          justify-content: center;
+          margin-top: 40px;
+        }
+
+        /* STEPS GRID (INSIDE CARD) */
+        .steps-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 40px;
+          text-align: center;
+        }
+
+        .step-item p {
+          font-size: 15px;
+          font-weight: 600;
+          color: #333;
+          margin-top: 15px;
+        }
+
+        .step-item p span {
+          color: #E52D56;
+          margin-right: 5px;
+        }
+
+        .step-illustration {
+          display: flex;
+          justify-content: center;
+          height: 100px;
+          align-items: center;
+        }
+        
+        .get-started-btn {
+          background: #E52D56;
+          color: #fff;
+          padding: 12px 40px;
+          border: none;
+          border-radius: 4px;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .get-started-btn:hover {
+          background: #b52a3a;
+        }
+
+        /* MEMBERSHIP (INSIDE CARD) */
+        .pricing-wrapper {
+          display: flex;
+          justify-content: center;
+          align-items: stretch;
+          gap: 0;
+          margin-top: 20px;
+        }
+        
+        .price-card {
+          background: #fff;
+          padding: 30px;
+          width: 100%;
+          max-width: 380px;
+          border-radius: 12px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+          position: relative;
+          z-index: 1;
+          border: 1px solid #f0f0f0;
+        }
+
+        .free-card {
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+          margin-right: -10px;
+          padding-right: 40px;
+        }
+
+        .paid-card {
+          background: #E52D56;
+          color: #fff;
+          z-index: 2;
+          box-shadow: 0 20px 50px rgba(214,52,71,0.2);
+          transform: translateY(-10px);
+          border: none;
+        }
+
+        .price-card h3 {
+          font-size: 24px;
+          margin-bottom: 25px;
+          position: relative;
+        }
+
+        .price-card h3::before {
+          content: '';
+          display: block;
+          width: 30px;
+          height: 3px;
+          background: currentColor;
+          margin-bottom: 10px;
+          opacity: 0.5;
+        }
+
+        .benefits-list {
+          list-style: none;
+          padding: 0;
+          margin-bottom: 30px;
+        }
+
+        .benefits-list li {
+          font-size: 13px;
+          margin-bottom: 12px;
+          padding-left: 25px;
+          position: relative;
+          text-align: left;
+        }
+
+        .benefits-list li::before {
+          content: '✓';
+          position: absolute;
+          left: 0;
+          top: -2px;
+          font-size: 16px;
+          color: #E52D56;
+        }
+
+        .paid-card .benefits-list li::before {
+          color: #fff;
+        }
+
+        .benefits-list li.excluded {
+          color: #ccc;
+        }
+
+        .benefits-list li.excluded::before {
+          content: '×';
+          color: #ccc;
+          font-size: 20px;
+          top: -4px;
+        }
+
+        .register-free-btn {
+          width: 100%;
+          background: #E52D56;
+          color: #fff;
+          padding: 10px;
+          border: none;
+          border-radius: 4px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .browse-plans-btn {
+          width: 100%;
+          background: #fff;
+          color: #E52D56;
+          padding: 10px;
+          border: none;
+          border-radius: 4px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        /* RESPONSIVE DESIGN - ALL SCREEN SIZES */
+        @media (max-width: 1400px) {
+          .container { max-width: 1100px; }
+          .header-content { padding: 0 40px; }
+        }
+
+        @media (max-width: 1200px) {
+          .container { max-width: 960px; }
+          .trust-card-main { padding: 40px; }
+          .usp-content-wrapper { gap: 40px; }
+          .usp-text-side { flex: 1; }
+          .usp-image-side { flex: 1; }
+        }
+
+        @media (max-width: 992px) {
+          .container { max-width: 720px; }
+          .header-content { padding: 0 20px; }
+          .member-text { display: none; } /* Hide text on small screens */
+          
+          .hero-section { height: auto; padding: 100px 0 160px; }
+          .hero-split-container { flex-direction: column; text-align: center; gap: 40px; }
+          .hero-left-content { text-align: center; }
+          .hero-left-content h1 { font-size: 32px; }
+          .hero-right-content { flex: 1; width: 100%; max-width: 400px; }
+          
+          .trust-section-overlap { margin-top: -100px; }
+          .trust-card-main { margin: 0 20px; padding: 30px; }
+          .trust-features-grid { grid-template-columns: 1fr; gap: 40px; }
+          
+          .usp-content-wrapper { flex-direction: column; text-align: center; }
+          .usp-text-side { text-align: center; padding: 40px 20px; }
+          .usp-points-list { align-items: center; }
+          .usp-point-item { flex-direction: column; align-items: center; text-align: center; }
+          .usp-image-side { width: 100%; height: 500px; position: static; }
+          .mobile-mockup-frame { width: 240px; height: 460px; border-radius: 30px; border-width: 6px; }
+          .usp-mockup-slide { height: 460px; }
+          .free-card, .paid-card { border-radius: 12px; margin: 0; width: 100%; max-width: 450px; transform: none; }
+          
+          .footer-links-grid { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+          .footer-col:last-child { grid-column: span 2; }
+        }
+
+        @media (max-width: 768px) {
+          .container { max-width: 540px; }
+          .section-title { font-size: 26px; }
+          .banner-title { font-size: 26px; }
+          
+          .ex-features-grid { grid-template-columns: 1fr; gap: 30px; }
+          .ex-feature::after { display: none; }
+          
+          .footer-links-grid { grid-template-columns: 1fr; }
+          .footer-col:last-child { grid-column: span 1; }
+        }
+
+        @media (max-width: 576px) {
+          .container { max-width: 100%; padding: 0 15px; }
+          .logo-img { height: 24px; }
+          .login-link { padding: 8px 20px; font-size: 13px; }
+          
+          .hero-text-center h1 { font-size: 28px; }
+          .search-bar-card { padding: 20px; }
+          
+          .trust-card-main { padding: 30px 20px; }
+          
+          .app-badge { width: 100%; justify-content: center; }
+        }
+
+        @media (max-width: 400px) {
+          .hero-text-center h1 { font-size: 24px; }
+          .section-title { font-size: 22px; }
+        }
+
+        /* FOOTER */
+        .main-footer {
+          background: #f1f3f6;
+          padding: 60px 0;
+          color: #4A5568;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .footer-intro {
+          margin-bottom: 50px;
+          border-bottom: 1px solid #e2e8f0;
+          padding-bottom: 30px;
+        }
+
+        .footer-logo {
+          height: 30px;
+          margin-bottom: 20px;
+          opacity: 0.8;
+        }
+
+        .footer-intro p {
+          font-size: 14px;
+          line-height: 1.6;
+          max-width: 100%;
+          margin-bottom: 15px;
+          color: #718096;
+        }
+
+        .footer-intro .footer-note {
+          font-size: 12px;
+          color: #a0aec0;
+        }
+
+        .footer-links-grid {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 20px;
+        }
+
+        .footer-col h4 {
+          font-size: 14px;
+          font-weight: 700;
+          color: #2D3748;
+          margin-bottom: 20px;
+          text-transform: uppercase;
+        }
+
+        .footer-col a {
+          display: block;
+          font-size: 13px;
+          color: #718096;
+          text-decoration: none;
+          margin-bottom: 12px;
+          transition: color 0.2s;
+        }
+
+        .footer-col a:hover {
+          color: #E52D56;
+          text-decoration: underline;
+        }
+
+        .footer-widget {
+          margin-bottom: 30px;
+        }
+
+        .widget-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: #718096;
+          margin-bottom: 15px;
+        }
+
+        .app-download-btns {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .app-badge {
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 8px 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
+          width: fit-content;
+        }
+
+        .app-badge:hover {
+          background: #f7fafc;
+          border-color: #cbd5e0;
+          transform: translateY(-2px);
+        }
+
+        .badge-icon {
+          font-size: 20px;
+        }
+
+        .badge-text {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .badge-text .tiny {
+          font-size: 9px;
+          color: #a0aec0;
+        }
+
+        .badge-text .bold {
+          font-size: 13px;
+          font-weight: 700;
+          color: #2D3748;
+        }
+
+        .social-links {
+          display: flex;
+          gap: 15px;
+        }
+
+        .social-link {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          transition: transform 0.2s;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .social-link:hover {
+          transform: scale(1.1);
+        }
+
+        .social-link.instagram { background: #e1306c; }
+        .social-link.youtube { background: #ff0000; }
+        .social-link.twitter { background: #1da1f2; }
+        .social-link.linkedin { background: #0077b5; }
+        .social-link.facebook { background: #4267b2; }
+      `}} />
     </div>
   );
 }
