@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ChevronDown,
@@ -14,6 +14,45 @@ import {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const observerRef = useRef(null);
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const handleIntersect = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    };
+
+    observerRef.current = new IntersectionObserver(handleIntersect, observerOptions);
+
+    const revealElements = document.querySelectorAll('.reveal');
+    revealElements.forEach(el => observerRef.current.observe(el));
+
+    // Handle anchor scroll on load
+    if (window.location.hash) {
+      setTimeout(() => {
+        const id = window.location.hash.replace('#', '');
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
 
   return (
     <div className="landing-wrapper">
@@ -35,8 +74,11 @@ export default function LandingPage() {
                 <a href="mailto:sakharpuda@zohomail.com" className="help-item">
                   sakharpuda@zohomail.com
                 </a>
+                <Link to="/about" className="help-item">About Us</Link>
                 <Link to="/contact" className="help-item">Contact Us</Link>
-                <Link to="/faq" className="help-item">Safety Tips</Link>
+                <Link to="/fraud-alert" className="help-item">Safety Tips</Link>
+                <Link to="/help" className="help-item">Help Center / FAQ</Link>
+                <Link to="/grievances" className="help-item">Grievances</Link>
               </div>
             </div>
           </div>
@@ -90,13 +132,13 @@ export default function LandingPage() {
       <section className="trust-section-overlap">
         <div className="container">
           <div className="trust-tagline-container">
-            <h2 className="tagline-main">Your People. Your Matches. Always.</h2>
-            <p className="tagline-sub">Log in once — and see only profiles from your own community, automatically</p>
+            <h2 className="tagline-main">Built by a Maharashtrian, For Maharashtrians</h2>
+            <p className="tagline-sub">Because we truly understand our community, culture & values</p>
           </div>
           <div className="trust-card-main">
             {/* TRUST SECTION */}
             <div className="trust-header-section">
-              <span className="banner-label">MORE THAN 25 YEARS OF</span>
+              <span className="banner-label">Smarter Matchmaking for</span>
               <h2 className="banner-title">Bringing People <span className="pink">Together</span></h2>
             </div>
 
@@ -111,7 +153,7 @@ export default function LandingPage() {
                       <circle cx="44" cy="30" r="6" fill="none" stroke="#666" strokeWidth="2" />
                       <circle cx="32" cy="20" r="8" fill="none" stroke="#666" strokeWidth="2" />
                       <path d="M32 32c-6.6 0-12 5.4-12 12v4h24v-4c0-6.6-5.4-12-12-12z" fill="none" stroke="#666" strokeWidth="2" />
-                      <circle cx="52" cy="48" r="8" fill="#E52D56" />
+                      <circle cx="52" cy="48" r="8" fill="#D9475C" />
                       <path d="M48 48l3 3 5-5" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
@@ -138,7 +180,7 @@ export default function LandingPage() {
                     <svg viewBox="0 0 64 64" width="60" height="60">
                       <circle cx="32" cy="24" r="8" fill="none" stroke="#666" strokeWidth="2" />
                       <path d="M32 36c-8 0-14 6-14 14v2h28v-2c0-8-6-14-14-14z" fill="none" stroke="#666" strokeWidth="2" />
-                      <circle cx="50" cy="20" r="8" fill="#E52D56" />
+                      <circle cx="50" cy="20" r="8" fill="#D9475C" />
                       <path d="M47 22v-2c0-1.7 1.3-3 3-3s3 1.3 3 3v2h1v4h-8v-4h1zm1 0h4v-2c0-1.1-.9-2-2-2s-2 .9-2 2v2z" fill="#fff" />
                     </svg>
                   </div>
@@ -149,7 +191,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="card-divider"></div>
+
 
             {/* COMMUNITY USP SECTION */}
             <div className="community-usp-section">
@@ -222,7 +264,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="card-divider"></div>
+
 
             {/* STEPS SECTION */}
             <div className="steps-inner-section">
@@ -234,8 +276,8 @@ export default function LandingPage() {
                       <rect x="20" y="20" width="160" height="80" rx="10" fill="#f0f0f0" />
                       <rect x="40" y="40" width="120" height="8" rx="4" fill="#e0e0e0" />
                       <rect x="40" y="60" width="120" height="8" rx="4" fill="#e0e0e0" />
-                      <circle cx="100" cy="50" r="15" fill="#E52D56" fillOpacity="0.2" />
-                      <path d="M90 50l7 7 15-15" stroke="#E52D56" strokeWidth="3" fill="none" />
+                      <circle cx="100" cy="50" r="15" fill="#D9475C" fillOpacity="0.2" />
+                      <path d="M90 50l7 7 15-15" stroke="#D9475C" strokeWidth="3" fill="none" />
                     </svg>
                   </div>
                   <p><span>01.</span> Define Your Partner Preferences</p>
@@ -244,8 +286,8 @@ export default function LandingPage() {
                   <div className="step-illustration">
                     <svg viewBox="0 0 200 120" width="180" height="100">
                       <circle cx="100" cy="50" r="30" fill="#f0f0f0" />
-                      <circle cx="100" cy="50" r="20" fill="none" stroke="#E52D56" strokeWidth="2" />
-                      <line x1="115" y1="65" x2="135" y2="85" stroke="#E52D56" strokeWidth="4" strokeLinecap="round" />
+                      <circle cx="100" cy="50" r="20" fill="none" stroke="#D9475C" strokeWidth="2" />
+                      <line x1="115" y1="65" x2="135" y2="85" stroke="#D9475C" strokeWidth="4" strokeLinecap="round" />
                       <rect x="40" y="90" width="120" height="6" rx="3" fill="#e0e0e0" />
                     </svg>
                   </div>
@@ -255,10 +297,10 @@ export default function LandingPage() {
                   <div className="step-illustration">
                     <svg viewBox="0 0 200 120" width="180" height="100">
                       <rect x="40" y="30" width="120" height="60" rx="8" fill="#f0f0f0" />
-                      <circle cx="70" cy="60" r="10" fill="#E52D56" />
-                      <circle cx="130" cy="60" r="10" fill="#E52D56" fillOpacity="0.3" />
-                      <path d="M100 60h20" stroke="#E52D56" strokeWidth="2" strokeDasharray="4 2" />
-                      <path d="M100 50l10 10-10 10" stroke="#E52D56" strokeWidth="2" fill="none" />
+                      <circle cx="70" cy="60" r="10" fill="#D9475C" />
+                      <circle cx="130" cy="60" r="10" fill="#D9475C" fillOpacity="0.3" />
+                      <path d="M100 60h20" stroke="#D9475C" strokeWidth="2" strokeDasharray="4 2" />
+                      <path d="M100 50l10 10-10 10" stroke="#D9475C" strokeWidth="2" fill="none" />
                     </svg>
                   </div>
                   <p><span>03.</span> Send Interests & Connect</p>
@@ -269,10 +311,10 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="card-divider"></div>
+
 
             {/* MEMBERSHIP SECTION */}
-            <div className="membership-inner-section">
+            <div className="membership-inner-section" id="membership-section">
               <h2 className="section-title"><span className="pink">Membership</span> Plans</h2>
               <p className="section-desc">
                 Upgrade your plan as per your customized requirements. With a paid membership, you can seamlessly connect with your prospects and get more responses. Here are some key benefits:
@@ -311,10 +353,10 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="card-divider"></div>
+
 
             {/* EXCLUSIVE SECTION */}
-            <div className="exclusive-inner-section">
+            <div className="exclusive-inner-section" id="exclusive-section">
               <div className="exclusive-header">
                 <span className="exclusive-label">PERSONALISED MATCH-MAKING SERVICE</span>
                 <h2 className="section-title">Introducing <span className="pink">Exclusive</span></h2>
@@ -322,7 +364,7 @@ export default function LandingPage() {
               </div>
 
               <div className="exclusive-image-container">
-                <img src="/images/exclusive-banner.jpg" alt="Exclusive Service" className="exclusive-img" />
+                <img src="/images/exclusive-banner-new.png" alt="Exclusive Service" className="exclusive-img" />
               </div>
 
               <div className="exclusive-features-grid">
@@ -380,23 +422,14 @@ export default function LandingPage() {
 
           <div className="footer-links-grid">
             <div className="footer-col">
-              <h4>Explore</h4>
-              <Link to="/">Home</Link>
-              <Link to="/search">Advanced search</Link>
-              <Link to="/stories">Success stories</Link>
-              <Link to="/sitemap">Sitemap</Link>
-            </div>
-            <div className="footer-col">
               <h4>Services</h4>
-              <Link to="/plans">Membership Options</Link>
-              <Link to="/careers">Careers</Link>
-              <Link to="/exclusive">SakharPuda Exclusive</Link>
-              <Link to="/premier">SakharPuda Premier</Link>
+              <a href="#membership-section">Membership Options</a>
+              <a href="#exclusive-section">SakharPuda Exclusive</a>
             </div>
             <div className="footer-col">
               <h4>Help</h4>
               <Link to="/contact">Contact us</Link>
-              <Link to="/safety">Safety Tips</Link>
+              <Link to="/fraud-alert">Safety Tips</Link>
               <Link to="/help">Help Center</Link>
             </div>
             <div className="footer-col">
@@ -405,7 +438,7 @@ export default function LandingPage() {
               <Link to="/fraud-alert">Fraud Alert</Link>
               <Link to="/terms">Terms of use</Link>
               <Link to="/privacy">Privacy policy</Link>
-              <Link to="/cookies">Cookie policy</Link>
+              <Link to="/privacy">Cookie policy</Link>
               <Link to="/grievances">Grievances</Link>
             </div>
             <div className="footer-col">
@@ -445,13 +478,20 @@ export default function LandingPage() {
 
       <style dangerouslySetInnerHTML={{
         __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&display=swap');
 
         .landing-wrapper {
-          font-family: 'Figtree', sans-serif;
+          font-family: 'Cabin', sans-serif;
           background: #f8f9fa;
           color: #4A5568; /* Slate-600 for general body text */
           line-height: 1.4;
+        }
+
+        .landing-wrapper input, 
+        .landing-wrapper select, 
+        .landing-wrapper button, 
+        .landing-wrapper textarea {
+          font-family: 'Cabin', sans-serif;
         }
 
         .main-header .container, .hero-section .container {
@@ -464,7 +504,7 @@ export default function LandingPage() {
           padding: 0 20px;
         }
 
-        .pink { color: #E52D56; } /* Precise Jeevansathi Red */
+        .pink { color: #D9475C; } /* Precise Jeevansathi Red */
 
         .main-header {
           background: #f0f2f5;
@@ -503,17 +543,18 @@ export default function LandingPage() {
         }
 
         .login-link {
-          background: #E52D56;
+          background: #D9475C;
           color: #fff;
-          padding: 10px 30px;
+          padding: 6px 16px; /* Reduced from 10px 30px */
           border: none;
-          border-radius: 50px;
+          border-radius: 4px; /* Standardized with other buttons */
           font-size: 14px;
           font-weight: 700;
           text-decoration: none;
           cursor: pointer;
           white-space: nowrap;
           transition: all 0.2s;
+          display: inline-block;
         }
 
         .login-link:hover {
@@ -543,7 +584,7 @@ export default function LandingPage() {
         }
 
         .help-trigger:hover {
-          color: #E52D56;
+          color: #D9475C;
         }
 
         .help-dropdown-menu {
@@ -558,7 +599,18 @@ export default function LandingPage() {
           padding: 8px 0;
           z-index: 1001;
           border: 1px solid #eee;
-          margin-top: 10px;
+          margin-top: 5px; /* Reduced gap */
+        }
+
+        /* Bridge the hover gap */
+        .help-dropdown-menu::before {
+          content: '';
+          position: absolute;
+          top: -15px;
+          left: 0;
+          width: 100%;
+          height: 15px;
+          background: transparent;
         }
 
         .help-dropdown-container:hover .help-dropdown-menu {
@@ -577,7 +629,7 @@ export default function LandingPage() {
 
         .help-item:hover {
           background: #f7f8f9;
-          color: #E52D56;
+          color: #D9475C;
         }
 
         .help-item.header {
@@ -594,13 +646,15 @@ export default function LandingPage() {
         }
 
         .hero-section {
-          height: 600px;
-          background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/images/hero-bg.jpg') center/cover no-repeat;
+          height: 580px; /* Increased by 2cm (80px) from 500px */
+          background: 
+            linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+            url('/images/hero-bg-final.png') center / cover no-repeat;
           position: relative;
           display: flex;
-          align-items: flex-start;
-          padding-top: 80px;
+          align-items: center;
           color: #fff;
+          overflow: hidden;
         }
 
         .hero-content-rel {
@@ -609,6 +663,7 @@ export default function LandingPage() {
           display: flex;
           justify-content: flex-end;
           align-items: center;
+          z-index: 2;
         }
 
         .hero-left-msg {
@@ -629,6 +684,7 @@ export default function LandingPage() {
           display: flex;
           justify-content: flex-end;
           align-items: center;
+          margin-top: -130px; /* Shifted up */
         }
 
         .vertical-reg-card {
@@ -686,10 +742,12 @@ export default function LandingPage() {
         }
 
         .hero-tagline {
-          font-size: 22px;
-          color: rgba(255,255,255,0.9);
+          font-size: 30px;
+          font-weight: 700;
+          color: #000000ff; /* Brand pink color */
+          line-height: 1.2;
           margin: 0;
-          max-width: 500px;
+          max-width: 600px;
         }
 
         .registration-card {
@@ -748,7 +806,7 @@ export default function LandingPage() {
         }
 
         .register-free-btn-hero {
-          background: #E52D56;
+          background: #D9475C;
           color: #fff;
           padding: 12px;
           border: none;
@@ -770,42 +828,39 @@ export default function LandingPage() {
         }
 
         .pink-text {
-          color: #E52D56;
+          color: #D9475C;
           cursor: pointer;
         }
 
         .trust-tagline-container {
           text-align: left;
-          margin-bottom: 40px;
+          margin-bottom: 20px; /* Reduced from 40px */
           color: #fff;
           padding-left: 31px;
         }
 
         .tagline-main {
-          font-family: "Playfair Display", serif;
           font-size: 42px;
-          font-weight: 800;
+          font-weight: 500; /* Reduced from 800 */
           margin-bottom: 12px;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
           letter-spacing: -1px;
           color: #fff;
+          text-shadow: 0 4px 15px rgba(0,0,0,0.7);
         }
 
         .tagline-sub {
-          font-family: "Playfair Display", serif;
           font-size: 20px;
-          font-weight: 600;
+          font-weight: 400; /* Reduced from 600 */
           opacity: 0.95;
           max-width: 800px;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.2);
           color: #fff;
-         
+          text-shadow: 0 2px 10px rgba(0,0,0,0.6);
         }
 
         /* TRUST SECTION OVERLAP */
         .trust-section-overlap {
           position: relative;
-          margin-top: -250px;
+          margin-top: -280px; /* Adjusted for increased hero height */
           z-index: 10;
           padding-bottom: 60px;
         }
@@ -814,7 +869,7 @@ export default function LandingPage() {
           background: #fff;
           border-radius: 12px;
           width: 100%;
-          max-width: 1000px;
+          max-width: 1100px;
           margin: 0 auto;
           box-shadow: 0 20px 60px rgba(0,0,0,0.1);
           box-sizing: border-box;
@@ -827,33 +882,33 @@ export default function LandingPage() {
         }
 
         .trust-header-section {
-          padding: 60px 40px 20px;
+          padding: 40px 80px 20px; /* Reduced top padding for visibility */
           background: #fff;
         }
 
         .trust-features-section {
-          padding: 0 40px 60px;
+          padding: 0 80px 60px; /* Aligned to 80px standard */
           background: #fff;
         }
 
         .community-usp-section {
           padding: 0;
-          background: #f9fafb;
+          background: #f5f7f9; /* Distinguishable dark background */
         }
 
         .steps-inner-section {
-          padding: 80px 40px;
+          padding: 80px 80px; /* Aligned to 80px standard */
           background: #fff;
         }
 
         .membership-inner-section {
-          background: linear-gradient(to bottom, #f9fafb 75%, #2c3e50 75%);
+          background: linear-gradient(to bottom, #f5f7f9 75%, #2c3e50 75%);
           padding: 80px 40px;
         }
 
         .exclusive-inner-section {
           background: #fff;
-          padding: 80px 40px;
+          padding: 40px 40px 80px;
           text-align: left;
         }
 
@@ -870,7 +925,7 @@ export default function LandingPage() {
         .usp-text-side {
           flex: 1.2;
           text-align: left;
-          padding: 60px;
+          padding: 60px 80px; /* Aligned to 80px standard */
           overflow: hidden;
         }
 
@@ -878,7 +933,7 @@ export default function LandingPage() {
           flex: 1;
           position: relative;
           height: 100%;
-          background: #f9fafb;
+          background: #f5f7f9;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -935,7 +990,7 @@ export default function LandingPage() {
         .active-bar {
           width: 60px;
           height: 4px;
-          background: #E52D56;
+          background: #D9475C;
           margin-top: 10px;
         }
 
@@ -963,14 +1018,14 @@ export default function LandingPage() {
         }
 
         .usp-point-text h4 {
-          font-size: 18px;
+          font-size: 16px; /* Reduced from 18px */
           color: #333;
           margin: 0 0 8px 0;
-          font-weight: 700;
+          font-weight: 500; 
         }
 
         .usp-point-text p {
-          font-size: 14px;
+          font-size: 13px; /* Reduced from 14px */
           color: #666;
           line-height: 1.6;
           margin: 0;
@@ -990,7 +1045,7 @@ export default function LandingPage() {
           box-shadow: 0 10px 20px rgba(0,0,0,0.1);
           z-index: 10;
           font-size: 11px;
-          font-weight: 600;
+          font-weight: 500; /* Reduced from 600 */
           color: #333;
           white-space: nowrap;
           pointer-events: none;
@@ -1024,9 +1079,9 @@ export default function LandingPage() {
           color: #fff;
         }
 
-        .badge-icon.red { background: #E52D56; }
-        .badge-icon.pink { background: #E52D56; }
-        .message-icon { background: rgba(214, 52, 71, 0.1); color: #E52D56; }
+        .badge-icon.red { background: #D9475C; }
+        .badge-icon.pink { background: #D9475C; }
+        .message-icon { background: rgba(214, 52, 71, 0.1); color: #D9475C; }
 
         .floating-badge.top-right { top: 20px; right: 15px; }
         .floating-badge.top-left { top: 20px; left: 15px; }
@@ -1049,42 +1104,39 @@ export default function LandingPage() {
           color: #333;
         }
 
-        .card-divider {
-          height: 1px;
-          background: #eee;
-          margin: 0;
-        }
+
 
         /* EXCLUSIVE SECTION STYLES */
         .exclusive-header {
-          margin-bottom: 30px;
+          margin-bottom: 15px; /* Reduced from 30px */
+          text-align: center;
         }
 
         .exclusive-label {
-          font-size: 14px;
+          font-size: 14px; /* Reverted to professional label size */
           font-weight: 600;
           color: #7a8a99;
           letter-spacing: 1px;
           display: block;
-          margin-bottom: 15px;
+          margin: 0 auto 5px;
           text-transform: uppercase;
         }
 
         .exclusive-badge {
           display: inline-block;
-          background: #E52D56;
+          background: #D9475C;
           color: #fff;
-          font-size: 12px;
+          font-size: 11px; /* Reduced from 12px */
           font-weight: 700;
           padding: 4px 15px;
           border-radius: 4px;
-          margin-top: 10px;
+          margin: 0 auto;
           text-transform: uppercase;
         }
 
         .exclusive-image-container {
           max-width: 900px;
-          height: 350px;
+          height: 530px; /* Reduced to crop from below */
           margin: 0 auto 40px;
           border-radius: 12px;
           overflow: hidden;
@@ -1095,7 +1147,7 @@ export default function LandingPage() {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: center center;
+          object-position: center; /* Anchored to top to crop bottom */
           display: block;
         }
 
@@ -1103,8 +1155,9 @@ export default function LandingPage() {
           display: flex;
           justify-content: center;
           align-items: flex-start;
-          max-width: 1000px;
+          max-width: 1100px;
           margin: 0 auto;
+          padding: 0 40px; /* Reduced from 80px */
           gap: 0;
         }
 
@@ -1113,7 +1166,7 @@ export default function LandingPage() {
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          padding: 0 30px;
+          padding: 0 20px 0 0; /* Reduced from 40px */
           text-align: left;
           position: relative;
         }
@@ -1130,42 +1183,42 @@ export default function LandingPage() {
 
         .ex-feature-top {
           display: flex;
-          align-items: flex-start;
+          align-items: center; /* Changed from flex-start for single-line alignment */
           gap: 12px;
           margin-bottom: 10px;
         }
 
         .ex-icon-circle {
-          width: 28px;
-          height: 28px;
-          background: #E52D56;
+          width: 24px; /* Reduced from 28px */
+          height: 24px; /* Reduced from 28px */
+          background: #D9475C;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          margin-top: 3px; /* Align with top of text */
         }
 
         .ex-icon-circle svg {
-          width: 16px;
-          height: 16px;
+          width: 13px; /* Reduced from 16px */
+          height: 13px; /* Reduced from 16px */
           color: #fff;
         }
 
         .ex-feature h4 {
-          font-size: 18px;
-          font-weight: 700;
+          font-size: 15px; /* Reduced to fit in one line */
+          font-weight: 500;
           color: #1A202C;
           margin: 0;
         }
 
         .ex-feature p {
-          font-size: 14px;
+          font-size: 13px;
           color: #4A5568;
           line-height: 1.5;
           margin: 0;
           font-weight: 400;
+          padding-left: 36px; /* 24px icon + 12px gap to align under heading */
         }
 
         .banner-label {
@@ -1179,15 +1232,17 @@ export default function LandingPage() {
         }
 
         .banner-title {
-          font-size: 30px;
-          font-weight: 700;
-          color: #2D3748;
+          font-family: 'Cabin', sans-serif;
+          font-size: 28px; /* Reduced from 36px */
+          font-weight: 400; /* Lightest weight supported by Cabin */
+          color: #1a202c;
           line-height: 1.2;
+          margin: 0;
         }
 
         .banner-title .pink {
-          font-weight: 700;
-          color: #E52D56;
+          font-weight: 400; /* Matching title weight */
+          color: #D9475C;
         }
 
         .trust-features-grid {
@@ -1197,19 +1252,23 @@ export default function LandingPage() {
         }
 
         .feature-item {
-          text-align: center;
+          text-align: left; /* Restored to left alignment */
+          padding: 20px 0;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start; /* Restored to left alignment */
         }
 
         .feature-icon {
           margin-bottom: 10px;
           display: flex;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start; /* Restored to left alignment */
         }
 
         .feature-item h3 {
-          font-size: 18px;
-          font-weight: 700;
+          font-size: 16px; /* Reduced from 18px */
+          font-weight: 500;
           color: #1A202C;
           margin-bottom: 8px;
         }
@@ -1217,12 +1276,12 @@ export default function LandingPage() {
         .pink-accent {
           width: 40px;
           height: 3px;
-          background: #E52D56;
-          margin: 0 auto 10px;
+          background: #D9475C;
+          margin: 0 0 10px 0; /* Restored to left alignment */
         }
 
         .feature-item p {
-          font-size: 14px;
+          font-size: 13px; /* Reduced from 14px */
           color: #4A5568;
           line-height: 1.4;
           font-weight: 400;
@@ -1230,11 +1289,17 @@ export default function LandingPage() {
 
         /* SECTION TITLES */
         .section-title {
-          font-size: 30px;
-          font-weight: 700;
+          font-size: 28px; /* Matched to Banner Title refined size */
+          font-weight: 400; /* Matched to Banner Title refined weight */
           color: #2D3748;
           text-align: left;
           margin-bottom: 30px;
+          line-height: 1.2; /* Matched to banner-title */
+        }
+
+        .section-title .pink {
+          font-weight: 400;
+          color: #D9475C;
         }
 
         .section-desc {
@@ -1242,16 +1307,25 @@ export default function LandingPage() {
           max-width: 800px;
           margin: 0 0 40px;
           color: #4A5568;
-          font-size: 16px;
+          font-size: 13px; /* Matched to Card body text */
           line-height: 1.6;
           font-weight: 400;
         }
 
-        .membership-inner-section .section-title,
+        .membership-inner-section .section-title {
+          text-align: center;
+          margin-bottom: 10px; /* Reduced from 30px */
+        }
+
         .membership-inner-section .section-desc {
           text-align: center;
           margin-left: auto;
           margin-right: auto;
+        }
+
+        .exclusive-inner-section .section-title {
+          text-align: center;
+          margin: 0 auto 10px;
         }
 
         /* CARD INNER SECTIONS */
@@ -1259,11 +1333,7 @@ export default function LandingPage() {
           padding: 60px 0;
         }
 
-        .card-divider {
-          height: 1px;
-          background: #eee;
-          margin: 20px 0;
-        }
+
 
         .btn-center {
           display: flex;
@@ -1276,30 +1346,30 @@ export default function LandingPage() {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 40px;
-          text-align: center;
+          text-align: left;
         }
 
         .step-item p {
-          font-size: 15px;
-          font-weight: 600;
+          font-size: 13px; /* Matched to Trust Card description size */
+          font-weight: 400; /* Matched to Trust Card weight */
           color: #333;
           margin-top: 15px;
         }
 
         .step-item p span {
-          color: #E52D56;
+          color: #D9475C;
           margin-right: 5px;
         }
 
         .step-illustration {
           display: flex;
-          justify-content: center;
+          justify-content: flex-start;
           height: 100px;
           align-items: center;
         }
         
         .get-started-btn {
-          background: #E52D56;
+          background: #D9475C;
           color: #fff;
           padding: 12px 40px;
           border: none;
@@ -1325,14 +1395,15 @@ export default function LandingPage() {
         
         .price-card {
           background: #fff;
-          padding: 30px;
+          padding: 40px 80px;
           width: 100%;
-          max-width: 380px;
+          max-width: 500px;
           border-radius: 12px;
           box-shadow: 0 10px 30px rgba(0,0,0,0.05);
           position: relative;
           z-index: 1;
           border: 1px solid #f0f0f0;
+          text-align: left;
         }
 
         .free-card {
@@ -1343,7 +1414,7 @@ export default function LandingPage() {
         }
 
         .paid-card {
-          background: #E52D56;
+          background: #D9475C;
           color: #fff;
           z-index: 2;
           box-shadow: 0 20px 50px rgba(214,52,71,0.2);
@@ -1352,9 +1423,10 @@ export default function LandingPage() {
         }
 
         .price-card h3 {
-          font-size: 24px;
+          font-size: 20px; /* Reduced from 24px */
           margin-bottom: 25px;
           position: relative;
+          font-weight: 500;
         }
 
         .price-card h3::before {
@@ -1387,7 +1459,7 @@ export default function LandingPage() {
           left: 0;
           top: -2px;
           font-size: 16px;
-          color: #E52D56;
+          color: #D9475C;
         }
 
         .paid-card .benefits-list li::before {
@@ -1407,7 +1479,7 @@ export default function LandingPage() {
 
         .register-free-btn {
           width: 100%;
-          background: #E52D56;
+          background: #D9475C;
           color: #fff;
           padding: 10px;
           border: none;
@@ -1419,7 +1491,7 @@ export default function LandingPage() {
         .browse-plans-btn {
           width: 100%;
           background: #fff;
-          color: #E52D56;
+          color: #D9475C;
           padding: 10px;
           border: none;
           border-radius: 4px;
@@ -1520,7 +1592,7 @@ export default function LandingPage() {
         }
 
         .footer-intro p {
-          font-size: 14px;
+          font-size: 13px;
           line-height: 1.6;
           max-width: 100%;
           margin-bottom: 15px;
@@ -1534,13 +1606,13 @@ export default function LandingPage() {
 
         .footer-links-grid {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 20px;
         }
 
         .footer-col h4 {
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 500; /* Reduced from 700 */
           color: #2D3748;
           margin-bottom: 20px;
           text-transform: uppercase;
@@ -1556,7 +1628,7 @@ export default function LandingPage() {
         }
 
         .footer-col a:hover {
-          color: #E52D56;
+          color: #D9475C;
           text-decoration: underline;
         }
 
@@ -1565,7 +1637,7 @@ export default function LandingPage() {
         }
 
         .widget-title {
-          font-size: 12px;
+          font-size: 11px; /* Reduced from 12px */
           font-weight: 600;
           color: #718096;
           margin-bottom: 15px;

@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './router/ProtectedRoute';
 import AdminRoute from './router/AdminRoute';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import ScrollToTop  from './components/ui/ScrollToTop';
 
 import LandingPage       from './pages/LandingPage';
 import LoginPage         from './pages/LoginPage';
@@ -14,6 +15,15 @@ import DashboardPage     from './pages/DashboardPage';
 import SearchPage        from './pages/SearchPage';
 import ViewProfilePage   from './pages/ViewProfilePage';
 import AdminPage         from './pages/AdminPage';
+
+// Legal & Info Pages
+import TermsPage         from './pages/TermsPage';
+import PrivacyPage       from './pages/PrivacyPage';
+import FraudAlertPage    from './pages/FraudAlertPage';
+import GrievancePage     from './pages/GrievancePage';
+import AboutPage         from './pages/AboutPage';
+import ContactPage       from './pages/ContactPage';
+import HelpPage          from './pages/HelpPage';
 
 export default function App() {
   const [isOffline, setIsOffline] = useState(!window.navigator.onLine);
@@ -32,6 +42,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           {isOffline && (
             <div style={{
@@ -47,6 +58,16 @@ export default function App() {
             <Route path="/"         element={<LandingPage />} />
             <Route path="/login"    element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+
+            {/* Legal & Info Routes */}
+            <Route path="/terms"       element={<TermsPage />} />
+            <Route path="/privacy"     element={<PrivacyPage />} />
+            <Route path="/fraud-alert" element={<FraudAlertPage />} />
+            <Route path="/grievances"  element={<GrievancePage />} />
+            <Route path="/about"       element={<AboutPage />} />
+            <Route path="/contact"     element={<ContactPage />} />
+            <Route path="/help"        element={<HelpPage />} />
+            <Route path="/faq"         element={<HelpPage />} />
 
             {/* Protected routes */}
             <Route path="/create-profile" element={
