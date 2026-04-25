@@ -1982,7 +1982,7 @@ export default function LandingPage() {
           /* --- USP mockup --- */
           .mobile-mockup-frame { width: 260px; height: 460px; }
           .usp-mockup-slide { height: 460px; }
-          .usp-image-side { min-height: 420px; }
+          .usp-image-side { min-height: 520px; padding-top: 30px; padding-bottom: 30px; }
 
           /* --- Exclusive image & grid --- */
           .exclusive-image-container { max-height: 280px; }
@@ -2051,7 +2051,7 @@ export default function LandingPage() {
           .usp-point-number { font-size: 20px; }
           .mobile-mockup-frame { width: 230px; height: 385px; }
           .usp-mockup-slide { height: 385px; }
-          .usp-image-side { min-height: 350px; }
+          .usp-image-side { min-height: 450px; padding-top: 30px; padding-bottom: 30px; }
 
           /* --- Steps --- */
           .steps-inner-section { padding: 30px 15px; }
