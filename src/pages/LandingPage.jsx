@@ -1859,14 +1859,14 @@ export default function LandingPage() {
           }
           .ex-feature {
             padding: 0 0 25px;
-            align-items: center;
-            text-align: center;
+            align-items: flex-start;
+            text-align: left;
             border-bottom: 1px solid #eee;
           }
           .ex-feature:last-child { border-bottom: none; padding-bottom: 0; }
           .ex-feature::after { display: none !important; }
-          .ex-feature p { padding-left: 0; }
-          .ex-feature-top { justify-content: center; }
+          .ex-feature p { padding-left: 36px; }
+          .ex-feature-top { justify-content: flex-start; }
 
           /* --- Footer --- */
           .main-footer { padding: 40px 0; }
@@ -1984,8 +1984,20 @@ export default function LandingPage() {
           .usp-mockup-slide { height: 460px; }
           .usp-image-side { min-height: 420px; }
 
-          /* --- Exclusive image --- */
+          /* --- Exclusive image & grid --- */
           .exclusive-image-container { max-height: 280px; }
+          .exclusive-features-grid {
+            flex-direction: column;
+            gap: 30px;
+            padding: 0;
+          }
+          .ex-feature {
+            padding: 0;
+            width: 100%;
+          }
+          .ex-feature:not(:last-child)::after {
+            display: none;
+          }
 
           /* --- Footer --- */
           .footer-intro p { font-size: 12px; }
