@@ -646,10 +646,10 @@ export default function LandingPage() {
         }
 
         .hero-section {
-          height: 580px; /* Increased by 2cm (80px) from 500px */
+          min-height: 580px;
           background: 
             linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-            url('/images/hero-bg-final.png') center / cover no-repeat;
+            url('/images/hero-bg-final.png') top center / cover no-repeat;
           position: relative;
           display: flex;
           align-items: center;
@@ -919,7 +919,7 @@ export default function LandingPage() {
           margin: 0;
           background: transparent;
           overflow: hidden;
-          height: 600px;
+          min-height: 600px;
         }
 
         .usp-text-side {
@@ -1088,7 +1088,7 @@ export default function LandingPage() {
         .floating-badge.bottom-right { bottom: 40px; right: 15px; }
         .floating-message.left-center { top: 40%; left: -80px; width: 220px; padding: 12px 18px; border-radius: 30px; font-size: 12px; }
 
-        @media (max-width: 968px) {
+        @media (max-width: 992px) {
           .usp-content-wrapper { flex-direction: column; }
           .usp-image-side { order: -1; }
           .floating-message.left-center { left: 0; width: 180px; }
@@ -1136,7 +1136,8 @@ export default function LandingPage() {
 
         .exclusive-image-container {
           max-width: 900px;
-          height: 530px; /* Reduced to crop from below */
+          height: auto;
+          max-height: 530px;
           margin: 0 auto 40px;
           border-radius: 12px;
           overflow: hidden;
@@ -1498,69 +1499,6 @@ export default function LandingPage() {
           font-weight: 700;
           cursor: pointer;
         }
-
-        /* RESPONSIVE DESIGN - ALL SCREEN SIZES */
-        @media (max-width: 1400px) {
-          .header-content { padding: 0 40px; }
-        }
-
-        @media (max-width: 1200px) {
-          .container { max-width: 960px; }
-          .trust-card-main { padding: 40px; }
-          .usp-content-wrapper { gap: 40px; }
-        }
-
-        @media (max-width: 992px) {
-          .container { max-width: 720px; }
-          .header-content { padding: 0 20px; }
-          .member-text { display: none; }
-          
-          .hero-section { height: auto; min-height: 500px; padding: 60px 0; }
-          .hero-content-rel { flex-direction: column; text-align: center; justify-content: center; }
-          .registration-bar-right-wrapper { margin-top: 40px; justify-content: center; width: 100%; }
-          .vertical-reg-card { width: 100% !important; max-width: 350px; margin: 0 auto; }
-          
-          .trust-section-overlap { margin-top: -60px; }
-          .trust-card-main { margin: 0 10px; padding: 30px 20px; }
-          .trust-features-grid { grid-template-columns: 1fr; gap: 30px; }
-          .feature-item { align-items: center; text-align: center; }
-          .feature-icon { justify-content: center; }
-          .pink-accent { margin: 0 auto 10px auto; }
-          
-          .usp-content-wrapper { flex-direction: column; }
-          .usp-text-side { text-align: center; padding: 0; }
-          .usp-points-list { align-items: center; }
-          .usp-point-item { flex-direction: column; align-items: center; text-align: center; }
-          .usp-image-side { width: 100%; height: 400px; position: static; margin-top: 40px; }
-          
-          .pricing-wrapper { flex-direction: column; align-items: center; gap: 20px; }
-          .free-card, .paid-card { border-radius: 12px !important; margin: 0 !important; width: 100%; max-width: 400px; transform: none !important; }
-          
-          .exclusive-features-grid { flex-direction: column; gap: 30px; padding: 0 20px; }
-          .ex-feature { padding: 0; align-items: center; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 30px; }
-          .ex-feature:last-child { border-bottom: none; }
-          .ex-feature::after { display: none; }
-          .ex-feature p { padding-left: 0; }
-        }
-
-        @media (max-width: 768px) {
-          .section-title, .banner-title { font-size: 24px; }
-          .footer-links-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 480px) {
-          .header-content { padding: 0 15px; }
-          .logo-img { height: 28px; }
-          .login-link { padding: 5px 12px; font-size: 13px; }
-          .help-trigger { font-size: 13px; }
-          
-          .section-title, .banner-title { font-size: 22px; }
-          .section-desc { font-size: 12px; }
-          
-          .footer-links-grid { grid-template-columns: 1fr; }
-          .footer-logo { height: 24px; }
-        }
-
         /* FOOTER */
         .main-footer {
           background: #f1f3f6;
@@ -1602,7 +1540,7 @@ export default function LandingPage() {
 
         .footer-col h4 {
           font-size: 14px;
-          font-weight: 500; /* Reduced from 700 */
+          font-weight: 500;
           color: #2D3748;
           margin-bottom: 20px;
           text-transform: uppercase;
@@ -1627,7 +1565,7 @@ export default function LandingPage() {
         }
 
         .widget-title {
-          font-size: 11px; /* Reduced from 12px */
+          font-size: 11px;
           font-weight: 600;
           color: #718096;
           margin-bottom: 15px;
@@ -1656,10 +1594,6 @@ export default function LandingPage() {
           background: #f7fafc;
           border-color: #cbd5e0;
           transform: translateY(-2px);
-        }
-
-        .badge-icon {
-          font-size: 20px;
         }
 
         .badge-text {
@@ -1705,6 +1639,256 @@ export default function LandingPage() {
         .social-link.twitter { background: #1da1f2; }
         .social-link.linkedin { background: #0077b5; }
         .social-link.facebook { background: #4267b2; }
+
+        /* =============================================================
+           RESPONSIVE DESIGN — COMPLETE COVERAGE
+           Breakpoints: 1400 → 1200 → 992 → 768 → 480
+           ============================================================= */
+
+        /* ---------- LARGE DESKTOP (≤ 1400px) ---------- */
+        @media (max-width: 1400px) {
+          .header-content { padding: 0 40px; }
+        }
+
+        /* ---------- SMALL DESKTOP / LARGE TABLET (≤ 1200px) ---------- */
+        @media (max-width: 1200px) {
+          .header-content { padding: 0 30px; }
+          .trust-header-section { padding: 40px 40px 20px; }
+          .trust-features-section { padding: 0 40px 40px; }
+          .usp-text-side { padding: 40px; }
+          .steps-inner-section { padding: 60px 40px; }
+          .price-card { padding: 30px 40px; }
+        }
+
+        /* ---------- TABLET (≤ 992px) ---------- */
+        @media (max-width: 992px) {
+          /* --- Header --- */
+          .header-content { padding: 0 20px; }
+          .member-text { display: none; }
+
+          /* --- Hero --- */
+          .hero-section {
+            height: auto;
+            min-height: 480px;
+            padding: 50px 0;
+          }
+          .hero-content-rel {
+            flex-direction: column;
+            text-align: center;
+            justify-content: center;
+          }
+          .registration-bar-right-wrapper {
+            margin-top: 0;
+            justify-content: center;
+            width: 100%;
+          }
+          .vertical-reg-card {
+            width: 100% !important;
+            max-width: 340px;
+            margin: 0 auto;
+          }
+
+          /* --- Tagline & Trust overlap --- */
+          .trust-section-overlap { margin-top: -80px; }
+          .trust-tagline-container {
+            text-align: center;
+            padding-left: 0;
+            padding: 0 20px;
+          }
+          .tagline-main { font-size: 30px; }
+          .tagline-sub { font-size: 16px; }
+
+          /* --- Trust card sections --- */
+          .trust-card-main { margin: 0 15px; }
+          .trust-header-section { padding: 30px 25px 15px; text-align: center; }
+          .trust-features-section { padding: 0 25px 40px; }
+          .trust-features-grid { grid-template-columns: 1fr; gap: 20px; }
+          .feature-item { align-items: center; text-align: center; }
+          .feature-icon { justify-content: center; }
+          .pink-accent { margin: 0 auto 10px; }
+
+          /* --- USP / Community section --- */
+          .usp-content-wrapper {
+            flex-direction: column;
+            height: auto;
+          }
+          .usp-text-side {
+            text-align: center;
+            padding: 40px 25px;
+          }
+          .section-title { text-align: center; }
+          .section-desc { text-align: center; margin-left: auto; margin-right: auto; }
+          .active-bar { margin: 10px auto 0; }
+          .usp-points-list { align-items: center; }
+          .usp-point-item {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+          }
+          .usp-image-side {
+            width: 100%;
+            height: auto;
+            min-height: 500px;
+          }
+
+          /* --- Steps --- */
+          .steps-inner-section { padding: 50px 25px; }
+          .steps-grid { grid-template-columns: 1fr; gap: 30px; }
+          .step-item { text-align: center; }
+          .step-illustration { justify-content: center; }
+
+          /* --- Membership --- */
+          .membership-inner-section { padding: 50px 25px; }
+          .pricing-wrapper {
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+          }
+          .free-card, .paid-card {
+            border-radius: 12px !important;
+            margin: 0 !important;
+            width: 100%;
+            max-width: 420px;
+            transform: none !important;
+            padding: 30px;
+          }
+          .free-card { padding-right: 30px; }
+
+          /* --- Exclusive --- */
+          .exclusive-inner-section { padding: 50px 25px; }
+          .exclusive-image-container {
+            height: auto;
+            max-height: 350px;
+          }
+          .exclusive-features-grid {
+            flex-direction: column;
+            gap: 25px;
+            padding: 0;
+          }
+          .ex-feature {
+            padding: 0 0 25px;
+            align-items: center;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+          }
+          .ex-feature:last-child { border-bottom: none; padding-bottom: 0; }
+          .ex-feature::after { display: none !important; }
+          .ex-feature p { padding-left: 0; }
+          .ex-feature-top { justify-content: center; }
+
+          /* --- Footer --- */
+          .main-footer { padding: 40px 0; }
+          .footer-links-grid { grid-template-columns: repeat(2, 1fr); gap: 30px; }
+        }
+
+        /* ---------- SMALL TABLET / LARGE PHONE (≤ 768px) ---------- */
+        @media (max-width: 768px) {
+          /* --- Typography scale-down --- */
+          .section-title, .banner-title { font-size: 22px; }
+          .tagline-main { font-size: 26px; }
+          .tagline-sub { font-size: 15px; }
+          .section-desc { font-size: 13px; }
+
+          /* --- Hero: Remove overlap completely on small screens --- */
+          .hero-section { min-height: auto; padding: 40px 0; }
+          .trust-section-overlap {
+            margin-top: 0;
+            padding-bottom: 30px;
+          }
+          .trust-tagline-container {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.3));
+            padding: 30px 20px;
+            margin-bottom: 0;
+          }
+
+          /* --- USP mockup --- */
+          .mobile-mockup-frame { width: 240px; height: 460px; }
+          .usp-mockup-slide { height: 460px; }
+          .usp-image-side { min-height: 420px; }
+
+          /* --- Exclusive image --- */
+          .exclusive-image-container { max-height: 280px; }
+
+          /* --- Footer --- */
+          .footer-intro p { font-size: 12px; }
+          .footer-links-grid { grid-template-columns: 1fr; gap: 25px; text-align: center; }
+        }
+
+        /* ---------- MOBILE (≤ 480px) ---------- */
+        @media (max-width: 480px) {
+          /* --- Header --- */
+          .header-content { padding: 0 12px; }
+          .logo-img { height: 26px; }
+          .login-link { padding: 5px 10px; font-size: 12px; }
+          .help-trigger { font-size: 12px; }
+          .help-dropdown-container { margin-left: 12px; }
+
+          /* --- Hero --- */
+          .hero-section { min-height: 380px; padding: 30px 0; }
+          .vertical-reg-card {
+            max-width: 280px;
+            padding: 18px 20px;
+          }
+          .reg-input { height: 40px; font-size: 13px; }
+          .register-free-btn-hero { padding: 10px; font-size: 14px; }
+          .reg-terms-tiny { font-size: 10px; }
+
+          /* --- Tagline --- */
+          .tagline-main { font-size: 22px; letter-spacing: -0.5px; }
+          .tagline-sub { font-size: 14px; }
+          .trust-tagline-container { padding: 25px 15px; }
+
+          /* --- Typography --- */
+          .section-title, .banner-title { font-size: 20px; }
+          .section-desc { font-size: 12px; }
+          .banner-label { font-size: 10px; }
+
+          /* --- Trust / features --- */
+          .trust-header-section { padding: 25px 15px 10px; }
+          .trust-features-section { padding: 0 15px 30px; }
+          .feature-icon svg { width: 48px; height: 48px; }
+          .feature-item h3 { font-size: 15px; }
+          .feature-item p { font-size: 12px; }
+
+          /* --- USP --- */
+          .usp-text-side { padding: 30px 15px; }
+          .usp-point-text h4 { font-size: 14px; }
+          .usp-point-text p { font-size: 12px; }
+          .usp-point-number { font-size: 20px; }
+          .mobile-mockup-frame { width: 200px; height: 385px; }
+          .usp-mockup-slide { height: 385px; }
+          .usp-image-side { min-height: 350px; }
+
+          /* --- Steps --- */
+          .steps-inner-section { padding: 30px 15px; }
+          .step-illustration svg { width: 140px; height: 80px; }
+
+          /* --- Membership --- */
+          .membership-inner-section { padding: 30px 15px; }
+          .price-card { padding: 25px 20px; }
+          .price-card h3 { font-size: 18px; }
+          .benefits-list li { font-size: 12px; margin-bottom: 10px; }
+
+          /* --- Exclusive --- */
+          .exclusive-inner-section { padding: 30px 15px; }
+          .exclusive-label { font-size: 11px; }
+          .exclusive-image-container { max-height: 200px; margin-bottom: 25px; }
+          .ex-feature h4 { font-size: 14px; }
+          .ex-feature p { font-size: 12px; }
+
+          /* --- Footer --- */
+          .main-footer { padding: 30px 0; }
+          .footer-intro { margin-bottom: 30px; padding-bottom: 20px; }
+          .footer-logo { height: 22px; }
+          .footer-links-grid {
+            grid-template-columns: 1fr;
+            gap: 25px;
+            text-align: center;
+          }
+          .footer-col a { margin-bottom: 10px; }
+          .app-download-btns { align-items: center; }
+          .social-links { justify-content: center; }
+        }
       `}} />
     </div>
   );

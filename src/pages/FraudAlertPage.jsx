@@ -63,7 +63,8 @@ export default function FraudAlertPage() {
         </div>
       </main>
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .legal-page-container {
           background: #f8f9fa;
           min-height: 100vh;
