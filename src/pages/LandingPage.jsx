@@ -15,8 +15,35 @@ import {
 export default function LandingPage() {
   const navigate = useNavigate();
   const observerRef = useRef(null);
+  const stepsContainerRef = useRef(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const [isStepsScrollable, setIsStepsScrollable] = useState(false);
+
+  const handleStepsScroll = (e) => {
+    const { scrollLeft, scrollWidth, clientWidth } = e.target;
+    if (scrollWidth <= clientWidth) return;
+    
+    const scrollPercentage = scrollLeft / (scrollWidth - clientWidth);
+    
+    let newIndex = 0;
+    if (scrollPercentage < 0.33) newIndex = 0;
+    else if (scrollPercentage < 0.66) newIndex = 1;
+    else newIndex = 2;
+    
+    if (newIndex !== activeStep) {
+      setActiveStep(newIndex);
+    }
+  };
 
   useEffect(() => {
+    const checkScrollable = () => {
+      if (stepsContainerRef.current) {
+        setIsStepsScrollable(stepsContainerRef.current.scrollWidth > stepsContainerRef.current.clientWidth + 10);
+      }
+    };
+    checkScrollable();
+    window.addEventListener('resize', checkScrollable);
+
     const observerOptions = {
       root: null,
       rootMargin: '0px',
@@ -48,6 +75,7 @@ export default function LandingPage() {
     }
 
     return () => {
+      window.removeEventListener('resize', checkScrollable);
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
@@ -278,7 +306,7 @@ export default function LandingPage() {
             <div className="steps-inner-section">
               <span className="banner-label">THREE SIMPLE STEPS TO</span>
               <h2 className="section-title">Find the <span className="pink">One for You</span></h2>
-              <div className="steps-grid">
+              <div className="steps-grid" ref={stepsContainerRef} onScroll={handleStepsScroll}>
                 <div className="step-item">
                   <div className="step-illustration">
                     <svg viewBox="0 0 200 120" width="180" height="100">
@@ -317,11 +345,22 @@ export default function LandingPage() {
               </div>
               <div className="btn-center" style={{ flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
                 <button className="get-started-btn">Get Started by Registering Free</button>
-                <div className="carousel-dots mobile-only" style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D9475C' }}></span>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f0b4bd' }}></span>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f0b4bd' }}></span>
-                </div>
+                {isStepsScrollable && (
+                  <div className="carousel-dots mobile-only" style={{ display: 'flex', gap: '8px' }}>
+                    {[0, 1, 2].map((idx) => (
+                      <span 
+                        key={idx}
+                        style={{ 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: activeStep === idx ? '#D9475C' : '#f0b4bd',
+                          transition: 'background 0.3s ease'
+                        }}
+                      ></span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1862,6 +1901,18 @@ export default function LandingPage() {
             margin-top: 0;
             padding-bottom: 30px;
           }
+          .trust-section-overlap .container {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+          }
+          .trust-card-main {
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            border: none !important;
+          }
 
           /* --- Trust / features (Left aligned flex row) --- */
           .trust-features-grid { display: flex; flex-direction: column; gap: 20px; }
@@ -1885,13 +1936,24 @@ export default function LandingPage() {
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             scrollbar-width: none;
-            gap: 20px;
+            gap: 15px;
             padding-bottom: 20px;
+            justify-content: flex-start;
           }
           .steps-grid::-webkit-scrollbar { display: none; }
           .step-item {
-            min-width: 85%;
-            scroll-snap-align: center;
+            min-width: 80%;
+            scroll-snap-align: start;
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            text-align: center;
+          }
+          .step-illustration {
+            justify-content: center;
+            margin-bottom: 15px;
           }
           
           /* --- Membership Pricing Wrapper (Horizontal scroll) --- */
@@ -1904,12 +1966,13 @@ export default function LandingPage() {
             padding-bottom: 20px;
             gap: 15px;
             align-items: flex-start;
+            justify-content: flex-start;
           }
           .pricing-wrapper::-webkit-scrollbar { display: none; }
           .price-card {
             min-width: 85%;
             max-width: 85%;
-            scroll-snap-align: center;
+            scroll-snap-align: start;
             border-radius: 12px;
             transform: none !important;
             margin: 0 !important;
@@ -1917,7 +1980,7 @@ export default function LandingPage() {
           }
 
           /* --- USP mockup --- */
-          .mobile-mockup-frame { width: 240px; height: 460px; }
+          .mobile-mockup-frame { width: 260px; height: 460px; }
           .usp-mockup-slide { height: 460px; }
           .usp-image-side { min-height: 420px; }
 
@@ -1962,7 +2025,7 @@ export default function LandingPage() {
           .usp-point-text h4 { font-size: 14px; }
           .usp-point-text p { font-size: 12px; }
           .usp-point-number { font-size: 20px; }
-          .mobile-mockup-frame { width: 200px; height: 385px; }
+          .mobile-mockup-frame { width: 230px; height: 385px; }
           .usp-mockup-slide { height: 385px; }
           .usp-image-side { min-height: 350px; }
 
