@@ -88,7 +88,8 @@ export default function LandingPage() {
       {/* HERO SECTION */}
       <section className="hero-section">
         <div className="container hero-content-rel">
-          <div className="registration-bar-right-wrapper">
+          {/* Desktop: Full registration card */}
+          <div className="registration-bar-right-wrapper desktop-only">
             <div className="search-bar-card registration-card vertical-reg-card">
               <div className="registration-form vertical-reg-form">
                 <div className="reg-group">
@@ -124,6 +125,13 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Mobile: Simple CTA with tagline + button (Jeevansathi style) */}
+          <div className="hero-mobile-cta mobile-only">
+            <h2 className="hero-mobile-tagline">Built by a Maharashtrian, For Maharashtrians</h2>
+            <p className="hero-mobile-subtitle">Because we truly understand our community, culture & values</p>
+            <button className="hero-mobile-register-btn" onClick={() => navigate('/register')}>Register Free</button>
           </div>
         </div>
       </section>
@@ -268,6 +276,7 @@ export default function LandingPage() {
 
             {/* STEPS SECTION */}
             <div className="steps-inner-section">
+              <span className="banner-label">THREE SIMPLE STEPS TO</span>
               <h2 className="section-title">Find the <span className="pink">One for You</span></h2>
               <div className="steps-grid">
                 <div className="step-item">
@@ -280,7 +289,7 @@ export default function LandingPage() {
                       <path d="M90 50l7 7 15-15" stroke="#D9475C" strokeWidth="3" fill="none" />
                     </svg>
                   </div>
-                  <p><span>01.</span> Define Your Partner Preferences</p>
+                  <p><span className="pink">01</span> Define Your Partner Preferences</p>
                 </div>
                 <div className="step-item">
                   <div className="step-illustration">
@@ -291,7 +300,7 @@ export default function LandingPage() {
                       <rect x="40" y="90" width="120" height="6" rx="3" fill="#e0e0e0" />
                     </svg>
                   </div>
-                  <p><span>02.</span> Browse Profiles</p>
+                  <p><span className="pink">02</span> Browse Profiles</p>
                 </div>
                 <div className="step-item">
                   <div className="step-illustration">
@@ -303,11 +312,16 @@ export default function LandingPage() {
                       <path d="M100 50l10 10-10 10" stroke="#D9475C" strokeWidth="2" fill="none" />
                     </svg>
                   </div>
-                  <p><span>03.</span> Send Interests & Connect</p>
+                  <p><span className="pink">03</span> Send Interests & Connect</p>
                 </div>
               </div>
-              <div className="btn-center">
-                <button className="get-started-btn">Get Started</button>
+              <div className="btn-center" style={{ flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <button className="get-started-btn">Get Started by Registering Free</button>
+                <div className="carousel-dots mobile-only" style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D9475C' }}></span>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f0b4bd' }}></span>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f0b4bd' }}></span>
+                </div>
               </div>
             </div>
 
@@ -315,10 +329,8 @@ export default function LandingPage() {
 
             {/* MEMBERSHIP SECTION */}
             <div className="membership-inner-section" id="membership-section">
+              <span className="banner-label" style={{ textAlign: 'center', display: 'block', marginBottom: '8px' }}>UPGRADE YOUR ACCOUNT</span>
               <h2 className="section-title"><span className="pink">Membership</span> Plans</h2>
-              <p className="section-desc">
-                Upgrade your plan as per your customized requirements. With a paid membership, you can seamlessly connect with your prospects and get more responses. Here are some key benefits:
-              </p>
 
               <div className="pricing-wrapper">
                 <div className="price-card free-card">
@@ -648,8 +660,8 @@ export default function LandingPage() {
         .hero-section {
           min-height: 580px;
           background: 
-            linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-            url('/images/hero-bg-final.png') top center / cover no-repeat;
+            linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+            url('/images/hero-bg-final.png') left center / cover no-repeat;
           position: relative;
           display: flex;
           align-items: center;
@@ -666,17 +678,55 @@ export default function LandingPage() {
           z-index: 2;
         }
 
-        .hero-left-msg {
-          flex: 1;
-          text-align: left;
+        /* Visibility helpers */
+        .desktop-only { display: flex; }
+        .mobile-only { display: none; }
+
+        /* Mobile Hero CTA (Jeevansathi style) */
+        .hero-mobile-cta {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          text-align: center;
+          padding: 0 20px 40px;
+          background: linear-gradient(transparent, rgba(0,0,0,0.7));
+          flex-direction: column;
+          align-items: center;
         }
 
-        .hero-left-msg h1 {
-          font-size: 52px;
-          font-weight: 800;
-          margin-bottom: 15px;
+        .hero-mobile-tagline {
+          font-size: 28px;
+          font-weight: 700;
           color: #fff;
-          text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+          margin: 0 0 8px;
+          text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+          line-height: 1.2;
+        }
+
+        .hero-mobile-subtitle {
+          font-size: 15px;
+          color: rgba(255,255,255,0.9);
+          margin: 0 0 20px;
+          text-shadow: 0 1px 5px rgba(0,0,0,0.4);
+        }
+
+        .hero-mobile-register-btn {
+          background: #D9475C;
+          color: #fff;
+          border: none;
+          padding: 14px 50px;
+          font-size: 16px;
+          font-weight: 700;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.2s;
+          box-shadow: 0 4px 15px rgba(217,71,92,0.4);
+        }
+
+        .hero-mobile-register-btn:hover {
+          background: #c53a4d;
+          transform: translateY(-2px);
         }
 
         .registration-bar-right-wrapper {
@@ -684,7 +734,7 @@ export default function LandingPage() {
           display: flex;
           justify-content: flex-end;
           align-items: center;
-          margin-top: -130px; /* Shifted up */
+          margin-top: -130px;
         }
 
         .vertical-reg-card {
@@ -1455,27 +1505,30 @@ export default function LandingPage() {
         }
 
         .benefits-list li::before {
-          content: '✓';
+          content: '';
           position: absolute;
           left: 0;
-          top: -2px;
-          font-size: 16px;
-          color: #D9475C;
+          top: 2px;
+          width: 16px;
+          height: 16px;
+          background-size: contain;
+          background-repeat: no-repeat;
         }
 
-        .paid-card .benefits-list li::before {
-          color: #fff;
+        .free-card .included::before {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D9475C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23D9475C'/%3E%3Cpolyline points='8 12 11 15 16 9' stroke='white'/%3E%3C/svg%3E");
         }
 
-        .benefits-list li.excluded {
-          color: #ccc;
+        .free-card .excluded::before {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A0AEC0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'/%3E%3Cline x1='9' y1='9' x2='15' y2='15'/%3E%3C/svg%3E");
+        }
+        
+        .free-card .excluded {
+          color: #718096;
         }
 
-        .benefits-list li.excluded::before {
-          content: '×';
-          color: #ccc;
-          font-size: 20px;
-          top: -4px;
+        .paid-card .included::before {
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='8 12 11 15 16 9'/%3E%3C/svg%3E");
         }
 
         .register-free-btn {
@@ -1783,22 +1836,84 @@ export default function LandingPage() {
 
         /* ---------- SMALL TABLET / LARGE PHONE (≤ 768px) ---------- */
         @media (max-width: 768px) {
+          /* --- Swap desktop form for mobile CTA --- */
+          .desktop-only { display: none !important; }
+          .mobile-only { display: flex !important; }
+
           /* --- Typography scale-down --- */
           .section-title, .banner-title { font-size: 22px; }
-          .tagline-main { font-size: 26px; }
-          .tagline-sub { font-size: 15px; }
           .section-desc { font-size: 13px; }
 
-          /* --- Hero: Remove overlap completely on small screens --- */
-          .hero-section { min-height: auto; padding: 40px 0; }
+          /* --- Hero: Full image with CTA at bottom --- */
+          .hero-section {
+            min-height: 450px;
+            padding: 0;
+            background-position: 35% center;
+            align-items: flex-end;
+          }
+          .hero-content-rel {
+            position: static;
+            justify-content: center;
+          }
+
+          /* --- Hide the trust tagline (it's now inside the hero) --- */
+          .trust-tagline-container { display: none; }
           .trust-section-overlap {
             margin-top: 0;
             padding-bottom: 30px;
           }
-          .trust-tagline-container {
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.3));
-            padding: 30px 20px;
-            margin-bottom: 0;
+
+          /* --- Trust / features (Left aligned flex row) --- */
+          .trust-features-grid { display: flex; flex-direction: column; gap: 20px; }
+          .feature-item { 
+            display: flex; 
+            flex-direction: row; 
+            align-items: flex-start; 
+            text-align: left; 
+            gap: 20px; 
+            padding: 10px 0; 
+          }
+          .feature-icon { margin-bottom: 0; flex-shrink: 0; }
+          .feature-item h3 { margin-bottom: 5px; font-size: 16px; }
+          .feature-item p { font-size: 13px; margin-bottom: 0; }
+          .pink-accent { display: none; }
+
+          /* --- Steps Grid (Horizontal scroll) --- */
+          .steps-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            gap: 20px;
+            padding-bottom: 20px;
+          }
+          .steps-grid::-webkit-scrollbar { display: none; }
+          .step-item {
+            min-width: 85%;
+            scroll-snap-align: center;
+          }
+          
+          /* --- Membership Pricing Wrapper (Horizontal scroll) --- */
+          .pricing-wrapper {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            padding-bottom: 20px;
+            gap: 15px;
+            align-items: flex-start;
+          }
+          .pricing-wrapper::-webkit-scrollbar { display: none; }
+          .price-card {
+            min-width: 85%;
+            max-width: 85%;
+            scroll-snap-align: center;
+            border-radius: 12px;
+            transform: none !important;
+            margin: 0 !important;
+            padding: 30px;
           }
 
           /* --- USP mockup --- */
@@ -1824,19 +1939,11 @@ export default function LandingPage() {
           .help-dropdown-container { margin-left: 12px; }
 
           /* --- Hero --- */
-          .hero-section { min-height: 380px; padding: 30px 0; }
-          .vertical-reg-card {
-            max-width: 280px;
-            padding: 18px 20px;
-          }
-          .reg-input { height: 40px; font-size: 13px; }
-          .register-free-btn-hero { padding: 10px; font-size: 14px; }
-          .reg-terms-tiny { font-size: 10px; }
-
-          /* --- Tagline --- */
-          .tagline-main { font-size: 22px; letter-spacing: -0.5px; }
-          .tagline-sub { font-size: 14px; }
-          .trust-tagline-container { padding: 25px 15px; }
+          .hero-section { min-height: 350px; padding: 0; background-position: 30% center; }
+          .hero-mobile-tagline { font-size: 22px; }
+          .hero-mobile-subtitle { font-size: 13px; }
+          .hero-mobile-register-btn { padding: 12px 40px; font-size: 15px; }
+          .hero-mobile-cta { padding: 0 15px 30px; }
 
           /* --- Typography --- */
           .section-title, .banner-title { font-size: 20px; }
