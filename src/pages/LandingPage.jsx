@@ -304,7 +304,7 @@ export default function LandingPage() {
 
             {/* STEPS SECTION */}
             <div className="steps-inner-section">
-              <span className="banner-label">THREE SIMPLE STEPS TO</span>
+              <span className="banner-label" style={{ textAlign: 'center', display: 'block' }}>THREE SIMPLE STEPS TO</span>
               <h2 className="section-title">Find the <span className="pink">One for You</span></h2>
               <div className="steps-grid" ref={stepsContainerRef} onScroll={handleStepsScroll}>
                 <div className="step-item">
@@ -2001,7 +2001,19 @@ export default function LandingPage() {
 
           /* --- Footer --- */
           .footer-intro p { font-size: 12px; }
-          .footer-links-grid { grid-template-columns: 1fr; gap: 25px; text-align: center; }
+          .footer-links-grid {
+            grid-template-columns: auto auto auto;
+            justify-content: space-between;
+            gap: 15px;
+            text-align: left;
+          }
+          .footer-col h4 { font-size: 14px; margin-bottom: 12px; }
+          .footer-col a { font-size: 12px; margin-bottom: 8px; }
+          .footer-col:nth-child(4) {
+            grid-column: span 3;
+            margin-top: 15px;
+            text-align: center;
+          }
         }
 
         /* ---------- MOBILE (≤ 480px) ---------- */
@@ -2063,12 +2075,19 @@ export default function LandingPage() {
           .footer-intro { margin-bottom: 30px; padding-bottom: 20px; }
           .footer-logo { height: 22px; }
           .footer-links-grid {
-            grid-template-columns: 1fr;
-            gap: 25px;
+            grid-template-columns: auto auto auto;
+            justify-content: space-between;
+            gap: 10px;
+            text-align: left;
+          }
+          .footer-col h4 { font-size: 13px; margin-bottom: 10px; }
+          .footer-col a { font-size: 11px; margin-bottom: 6px; }
+          .footer-col:nth-child(4) {
+            grid-column: span 3;
+            margin-top: 15px;
             text-align: center;
           }
-          .footer-col a { margin-bottom: 10px; }
-          .app-download-btns { align-items: center; }
+          .app-download-btns { align-items: center; justify-content: center; }
           .social-links { justify-content: center; }
         }
       `}} />
