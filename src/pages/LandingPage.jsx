@@ -145,7 +145,7 @@ export default function LandingPage() {
                   </select>
                 </div>
 
-                <button className="register-free-btn-hero full-width-btn">Register for Free</button>
+                <button className="register-free-btn-hero full-width-btn" onClick={() => navigate('/register')}>Register for Free</button>
 
                 <p className="reg-terms-tiny">
                   By clicking on 'Register Free', you confirm that you accept the
