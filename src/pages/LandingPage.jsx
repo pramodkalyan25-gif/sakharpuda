@@ -91,8 +91,15 @@ export default function LandingPage() {
             <img src="/images/logo.png" alt="SakharPuda" className="logo-img" />
           </Link>
           <div className="header-actions">
-            <span className="member-text">Already a member?</span>
-            <Link to="/login" className="login-link">Login</Link>
+            <div className="header-action-group desktop-only">
+              <span className="action-label">New to SakharPuda?</span>
+              <Link to="/register" className="register-header-btn">Register Here</Link>
+            </div>
+            <div className="header-action-divider desktop-only"></div>
+            <div className="header-action-group">
+              <span className="action-label desktop-only">Already a member?</span>
+              <Link to="/login" className="login-link">Login</Link>
+            </div>
             <div className="help-dropdown-container">
               <button className="help-trigger">
                 Help <ChevronDown size={14} />
@@ -118,39 +125,18 @@ export default function LandingPage() {
         <div className="container hero-content-rel">
           {/* Desktop: Full registration card */}
           <div className="registration-bar-right-wrapper desktop-only">
-            <div className="search-bar-card registration-card vertical-reg-card">
+            <div className="search-bar-card registration-card vertical-reg-card simplified-hero-card">
               <div className="registration-form vertical-reg-form">
-                <div className="reg-group">
-                  <label className="reg-label">Religion *</label>
-                  <select className="reg-input" required>
-                    <option value="">Select Religion</option>
-                    <option value="hindu">Hindu</option>
-                    <option value="muslim">Muslim</option>
-                    <option value="christian">Christian</option>
-                    <option value="sikh">Sikh</option>
-                    <option value="jain">Jain</option>
-                    <option value="buddhist">Buddhist</option>
-                  </select>
+                <div className="hero-cta-content">
+                  <button className="register-free-btn-hero full-width-btn" onClick={() => navigate('/register')}>
+                    Register Here
+                  </button>
+                  
+                  <p className="reg-terms-tiny">
+                    By clicking on 'Register Here', you confirm that you accept the
+                    <span className="pink-text"> Terms of Use</span> and <span className="pink-text"> Privacy Policy</span>
+                  </p>
                 </div>
-
-                <div className="reg-group">
-                  <label className="reg-label">Caste *</label>
-                  <select className="reg-input" required>
-                    <option value="">Select Caste</option>
-                    <option value="maratha">Maratha</option>
-                    <option value="brahmin">Brahmin</option>
-                    <option value="kunbi">Kunbi</option>
-                    <option value="teli">Teli</option>
-                    <option value="mali">Mali</option>
-                  </select>
-                </div>
-
-                <button className="register-free-btn-hero full-width-btn" onClick={() => navigate('/register')}>Register for Free</button>
-
-                <p className="reg-terms-tiny">
-                  By clicking on 'Register Free', you confirm that you accept the
-                  <span className="pink-text"> Terms of Use</span> and <span className="pink-text"> Privacy Policy</span>
-                </p>
               </div>
             </div>
           </div>
@@ -159,7 +145,11 @@ export default function LandingPage() {
           <div className="hero-mobile-cta mobile-only">
             <h2 className="hero-mobile-tagline">Built by a Maharashtrian, For Maharashtrians</h2>
             <p className="hero-mobile-subtitle">Because we truly understand our community, culture & values</p>
-            <button className="hero-mobile-register-btn" onClick={() => navigate('/register')}>Register Free</button>
+            <button className="hero-mobile-register-btn" onClick={() => navigate('/register')}>Register Here</button>
+            <p className="reg-terms-tiny" style={{ marginTop: '10px', color: 'rgba(255,255,255,0.8)' }}>
+              By clicking on 'Register Here', you confirm that you accept the
+              <span className="pink-text"> Terms of Use</span> and <span className="pink-text"> Privacy Policy</span>
+            </p>
           </div>
         </div>
       </section>
@@ -344,7 +334,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="btn-center" style={{ flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                <button className="get-started-btn">Get Started by Registering Free</button>
+                <button className="get-started-btn" onClick={() => navigate('/register')}>Get started by registering here</button>
                 {isStepsScrollable && (
                   <div className="carousel-dots mobile-only" style={{ display: 'flex', gap: '8px' }}>
                     {[0, 1, 2].map((idx) => (
@@ -384,7 +374,7 @@ export default function LandingPage() {
                     <li className="excluded">Make unlimited voice and video calls</li>
                     <li className="excluded">Get 3 free Spotlights</li>
                   </ul>
-                  <button className="register-free-btn">Register Free</button>
+                  <button className="register-free-btn" onClick={() => navigate('/register')}>Register Here</button>
                 </div>
 
                 <div className="price-card paid-card">
@@ -593,23 +583,65 @@ export default function LandingPage() {
           font-weight: 500;
         }
 
-        .login-link {
+        .header-actions {
+          display: flex;
+          align-items: center;
+        }
+
+        .header-action-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .action-label {
+          font-size: 13px;
+          color: #718096;
+          font-weight: 500;
+        }
+
+        .register-header-btn {
           background: #D9475C;
           color: #fff;
-          padding: 6px 16px; /* Reduced from 10px 30px */
-          border: none;
-          border-radius: 4px; /* Standardized with other buttons */
           font-size: 14px;
           font-weight: 700;
           text-decoration: none;
-          cursor: pointer;
-          white-space: nowrap;
+          padding: 7px 18px;
+          border: none;
+          border-radius: 4px;
           transition: all 0.2s;
+          white-space: nowrap;
           display: inline-block;
+          cursor: pointer;
+        }
+
+        .register-header-btn:hover {
+          background: #D4284D;
+          color: #fff;
+          transform: translateY(-1px);
+        }
+
+        .header-action-divider {
+          width: 1px;
+          height: 24px;
+          background: #cbd5e0;
+          margin: 0 20px;
+        }
+
+        .login-link {
+          color: #D9475C;
+          font-size: 14px;
+          font-weight: 700;
+          text-decoration: none;
+          padding: 6px 14px;
+          border: 1.5px solid #D9475C;
+          border-radius: 4px;
+          transition: all 0.2s;
+          white-space: nowrap;
         }
 
         .login-link:hover {
-          background: #D4284D;
+          background: #D9475C;
           color: #fff;
           transform: translateY(-1px);
         }
@@ -785,6 +817,17 @@ export default function LandingPage() {
           color: #fff;
           box-shadow: 0 10px 30px rgba(0,0,0,0.4);
           border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .simplified-hero-card {
+          text-align: center;
+        }
+
+        .hero-cta-content {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+          align-items: center;
         }
 
         .vertical-reg-form {
