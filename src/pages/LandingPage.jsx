@@ -22,14 +22,14 @@ export default function LandingPage() {
   const handleStepsScroll = (e) => {
     const { scrollLeft, scrollWidth, clientWidth } = e.target;
     if (scrollWidth <= clientWidth) return;
-    
+
     const scrollPercentage = scrollLeft / (scrollWidth - clientWidth);
-    
+
     let newIndex = 0;
     if (scrollPercentage < 0.33) newIndex = 0;
     else if (scrollPercentage < 0.66) newIndex = 1;
     else newIndex = 2;
-    
+
     if (newIndex !== activeStep) {
       setActiveStep(newIndex);
     }
@@ -123,24 +123,6 @@ export default function LandingPage() {
       {/* HERO SECTION */}
       <section className="hero-section">
         <div className="container hero-content-rel">
-          {/* Desktop: Full registration card */}
-          <div className="registration-bar-right-wrapper desktop-only">
-            <div className="search-bar-card registration-card vertical-reg-card simplified-hero-card">
-              <div className="registration-form vertical-reg-form">
-                <div className="hero-cta-content">
-                  <button className="register-free-btn-hero full-width-btn" onClick={() => navigate('/register')}>
-                    Register Here
-                  </button>
-                  
-                  <p className="reg-terms-tiny">
-                    By clicking on 'Register Here', you confirm that you accept the
-                    <span className="pink-text"> Terms of Use</span> and <span className="pink-text"> Privacy Policy</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Mobile: Simple CTA with tagline + button (Jeevansathi style) */}
           <div className="hero-mobile-cta mobile-only">
             <h2 className="hero-mobile-tagline">Built by a Maharashtrian, For Maharashtrians</h2>
@@ -338,12 +320,12 @@ export default function LandingPage() {
                 {isStepsScrollable && (
                   <div className="carousel-dots mobile-only" style={{ display: 'flex', gap: '8px' }}>
                     {[0, 1, 2].map((idx) => (
-                      <span 
+                      <span
                         key={idx}
-                        style={{ 
-                          width: '8px', 
-                          height: '8px', 
-                          borderRadius: '50%', 
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
                           background: activeStep === idx ? '#D9475C' : '#f0b4bd',
                           transition: 'background 0.3s ease'
                         }}
@@ -482,37 +464,7 @@ export default function LandingPage() {
               <Link to="/privacy">Cookie policy</Link>
               <Link to="/grievances">Grievances</Link>
             </div>
-            <div className="footer-col">
-              <div className="footer-widget">
-                <p className="widget-title">Browse profiles on the go, using the app</p>
-                <div className="app-download-btns">
-                  <div className="app-badge">
-                    <span className="badge-icon">▶</span>
-                    <div className="badge-text">
-                      <span className="tiny">GET IT ON</span>
-                      <span className="bold">Google Play</span>
-                    </div>
-                  </div>
-                  <div className="app-badge">
-                    <span className="badge-icon"></span>
-                    <div className="badge-text">
-                      <span className="tiny">Download on the</span>
-                      <span className="bold">App Store</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="footer-widget">
-                <p className="widget-title">Connect with us</p>
-                <div className="social-links">
-                  <a href="#" className="social-link instagram"><MessageCircle size={18} /></a>
-                  <a href="#" className="social-link youtube"><MessageCircle size={18} /></a>
-                  <a href="#" className="social-link twitter"><MessageCircle size={18} /></a>
-                  <a href="#" className="social-link linkedin"><MessageCircle size={18} /></a>
-                  <a href="#" className="social-link facebook"><MessageCircle size={18} /></a>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       </footer>
@@ -731,7 +683,7 @@ export default function LandingPage() {
         .hero-section {
           min-height: 580px;
           background: 
-            linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+            linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), 
             url('/images/hero-bg-final.png') left center / cover no-repeat;
           position: relative;
           display: flex;
@@ -1000,12 +952,12 @@ export default function LandingPage() {
         .trust-card-main {
           background: #fff;
           border-radius: 12px;
-          width: 100%;
+          width: calc(100% - 2cm);
           max-width: 1100px;
-          margin: 0 auto;
+          margin: 1cm auto;
           box-shadow: 0 20px 60px rgba(0,0,0,0.1);
           box-sizing: border-box;
-          overflow: hidden; /* To ensure backgrounds don't bleed out of corners */
+          overflow: hidden;
         }
 
         .card-inner-section, .steps-inner-section, .membership-inner-section, .exclusive-inner-section {
@@ -1529,8 +1481,9 @@ export default function LandingPage() {
         .price-card {
           background: #fff;
           padding: 40px 80px;
-          width: 100%;
+          width: calc(100% - 2cm);
           max-width: 500px;
+          margin: 1cm;
           border-radius: 12px;
           box-shadow: 0 10px 30px rgba(0,0,0,0.05);
           position: relative;
@@ -1669,7 +1622,7 @@ export default function LandingPage() {
 
         .footer-links-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(3, 1fr);
           gap: 20px;
         }
 
@@ -1704,52 +1657,6 @@ export default function LandingPage() {
           font-weight: 600;
           color: #718096;
           margin-bottom: 15px;
-        }
-
-        .app-download-btns {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .app-badge {
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 8px 12px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          cursor: pointer;
-          transition: all 0.2s;
-          width: fit-content;
-        }
-
-        .app-badge:hover {
-          background: #f7fafc;
-          border-color: #cbd5e0;
-          transform: translateY(-2px);
-        }
-
-        .badge-text {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .badge-text .tiny {
-          font-size: 9px;
-          color: #a0aec0;
-        }
-
-        .badge-text .bold {
-          font-size: 13px;
-          font-weight: 700;
-          color: #2D3748;
-        }
-
-        .social-links {
-          display: flex;
-          gap: 15px;
         }
 
         .social-link {
@@ -2052,11 +1959,7 @@ export default function LandingPage() {
           }
           .footer-col h4 { font-size: 14px; margin-bottom: 12px; }
           .footer-col a { font-size: 12px; margin-bottom: 8px; }
-          .footer-col:nth-child(4) {
-            grid-column: span 3;
-            margin-top: 15px;
-            text-align: center;
-          }
+
         }
 
         /* ---------- MOBILE (≤ 480px) ---------- */
@@ -2125,11 +2028,7 @@ export default function LandingPage() {
           }
           .footer-col h4 { font-size: 13px; margin-bottom: 10px; }
           .footer-col a { font-size: 11px; margin-bottom: 6px; }
-          .footer-col:nth-child(4) {
-            grid-column: span 3;
-            margin-top: 15px;
-            text-align: center;
-          }
+
           .app-download-btns { align-items: center; justify-content: center; }
           .social-links { justify-content: center; }
         }

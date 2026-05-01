@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { ArrowLeft } from 'lucide-react';
 import OTPInput from '../components/auth/OTPInput';
+import LandingPage from './LandingPage';
 import { authService } from '../services/authService';
 
 export default function RegisterPage() {
@@ -59,22 +61,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="register-page-wrapper onboarding-bg">
-      {/* HEADER - Consistent with Login Page */}
-      <header className="register-header">
-        <div className="register-header-content">
-          <Link to="/" className="brand">
-            <img src="/images/logo.png" alt="SakharPuda" style={{ height: '30px' }} />
-          </Link>
-          <div className="header-links">
-            <span className="help-link">Help</span>
-            <Link to="/login" className="login-link">Login</Link>
-          </div>
+    <div className="register-page-wrapper">
+      <div className="landing-bg-overlay-wrapper desktop-only">
+        <div className="landing-blur-container">
+          <LandingPage />
         </div>
-      </header>
+        <div className="dark-tint-overlay"></div>
+      </div>
 
       <main className="register-main">
         <div className="register-card">
+          <button className="card-back-btn" onClick={() => navigate(-1)} title="Go Back">
+            <ArrowLeft size={20} />
+          </button>
           <h1 className="register-title">
             {step === 'signup' ? 'Create Your Account' : 'Verify Your Email'}
           </h1>
@@ -154,41 +153,77 @@ export default function RegisterPage() {
         __html: `
         .register-page-wrapper {
           min-height: 100vh;
-          background-color: #fdf5f6;
+          position: relative;
           display: flex;
           flex-direction: column;
+          background: transparent;
+        }
+
+        .landing-bg-overlay-wrapper {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          z-index: -1;
+          overflow: hidden;
+        }
+        .landing-blur-container {
+          width: 100%;
+          height: 100%;
+          filter: none;
+          transform: scale(1);
+          pointer-events: none;
+        }
+        .dark-tint-overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.2);
+          z-index: 1;
         }
 
         .register-header {
-          background: #fff;
-          border-bottom: 1px solid #eee;
-          padding: 15px 0;
+          display: none;
         }
 
-        .register-header-content {
-          max-width: 1200px;
-          margin: 0 auto;
+        .card-back-btn {
+          position: absolute;
+          top: 20px;
+          left: 20px;
+          background: #f7fafc;
+          border: none;
+          color: #4a5568;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          padding: 0 20px;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          z-index: 20;
         }
-
-        .brand {
-          font-size: 26px;
-          font-weight: 800;
+        .card-back-btn:hover {
+          background: #edf2f7;
           color: #D63447;
-          text-decoration: none;
         }
 
-        .header-links {
-          display: flex;
-          gap: 24px;
-          align-items: center;
+        @media (max-width: 768px) {
+          .desktop-only { display: none; }
+          .register-page-wrapper { background: #fff !important; }
+          .register-main { justify-content: flex-start; padding: 0; }
+          .register-card { 
+            box-shadow: none; 
+            padding: 20px; 
+            background: #fff; 
+            min-height: 100vh;
+            border-radius: 0;
+            max-width: none;
+          }
+          .card-back-btn {
+            top: 20px;
+            left: 20px;
+            background: none;
+            color: #333;
+          }
         }
-
-        .help-link { font-size: 14px; color: #666; cursor: pointer; }
-        .login-link { color: #D63447; font-weight: 700; text-decoration: none; }
 
         .register-main {
           flex: 1;
@@ -196,6 +231,7 @@ export default function RegisterPage() {
           align-items: center;
           justify-content: center;
           padding: 40px 20px;
+          z-index: 10;
         }
 
         .register-card {
@@ -204,66 +240,10 @@ export default function RegisterPage() {
           max-width: 450px;
           padding: 40px;
           border-radius: 12px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+          position: relative; /* For card-back-btn */
         }
-
-        .register-title {
-          font-size: 24px;
-          font-weight: 700;
-          color: #333;
-          margin-bottom: 32px;
-          text-align: center;
-        }
-
-        .hint-text {
-          text-align: center;
-          font-size: 14px;
-          color: #666;
-          margin-bottom: 32px;
-        }
-
-        .otp-wrapper {
-          display: flex;
-          justify-content: center;
-          margin-bottom: 32px;
-        }
-
-        /* Override OTPInput styles */
-        .otp-container { display: flex; gap: 8px; }
-        .otp-input {
-          width: 40px; height: 50px;
-          text-align: center; font-size: 20px; font-weight: 700;
-          border: 1px solid #ccc; border-radius: 4px;
-        }
-        .otp-input:focus { border-color: #D63447; outline: none; }
-
-        .register-footer {
-          margin-top: 32px;
-          text-align: center;
-          font-size: 14px;
-          color: #666;
-        }
-
-        .login-redirect {
-          color: #D63447;
-          font-weight: 700;
-          text-decoration: none;
-        }
-
-        .btn-back {
-          background: none;
-          border: none;
-          color: #666;
-          font-size: 14px;
-          width: 100%;
-          margin-top: 16px;
-          cursor: pointer;
-        }
-
-        @media (max-width: 768px) {
-          .register-card { padding: 30px 20px; }
-        }
-      `}} />
+      `}}></style>
     </div>
   );
 }

@@ -1,18 +1,28 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, ShieldCheck, Camera, Search, User, Trash2, Star, Check, X } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Camera, Search, User, Trash2, Star, Check, X, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  MAHARASHTRA_DISTRICTS, 
-  MAHARASHTRA_CASTES, 
-  CATEGORIZED_PROFESSIONS, 
+import {
+  MAHARASHTRA_DISTRICTS,
+  MAHARASHTRA_CASTES,
+  CATEGORIZED_PROFESSIONS,
   COMPREHENSIVE_EDUCATION,
-  HEIGHTS_CM 
+  HEIGHTS_CM
 } from '../data/maharashtraData';
+import {
+  Briefcase,
+  MapPin,
+  GraduationCap,
+  Calendar,
+  Heart,
+  Mail,
+  Phone
+} from 'lucide-react';
+import LandingPage from './LandingPage';
 
 export default function RegistrationPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 10;
 
@@ -34,7 +44,7 @@ export default function RegistrationPage() {
     highestQualification: '',
     college: '',
     workWith: '',
-    workAs: '', 
+    workAs: '',
     income: '',
     email: '',
     mobile: '',
@@ -70,12 +80,12 @@ export default function RegistrationPage() {
 
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep(prev => prev - 1);
-    else navigate('/');
+    else navigate(-1);
   };
 
   const handleSubmit = () => {
     if (!validateEmail(formData.email) || !validateMobile(formData.mobile)) return;
-    
+
     const finalData = {
       ...formData,
       ...Object.keys(customValues).reduce((acc, key) => {
@@ -122,7 +132,7 @@ export default function RegistrationPage() {
       const combined = [...prev.photos, ...newPhotos].slice(0, 3);
       return { ...prev, photos: combined };
     });
-    
+
     e.target.value = '';
   };
 
@@ -141,15 +151,33 @@ export default function RegistrationPage() {
       const newPhotos = [...prev.photos];
       const [selectedPhoto] = newPhotos.splice(index, 1);
       newPhotos.unshift(selectedPhoto);
-      return { 
-        ...prev, 
-        photos: newPhotos, 
-        profilePhotoIndex: 0 
+      return {
+        ...prev,
+        photos: newPhotos,
+        profilePhotoIndex: 0
       };
     });
   };
 
   // --- Reusable Components ---
+
+  const getStepIconConfig = () => {
+    switch (currentStep) {
+      case 1: return { icon: <User size={40} />, bg: '#ffb3b3', color: '#D63447' };
+      case 2: return { icon: <User size={40} />, bg: '#acc9f2', color: '#3182ce' };
+      case 3: return { icon: <Globe size={40} />, bg: '#adedc0', color: '#38a169' };
+      case 4: return { icon: <Calendar size={40} />, bg: '#fcd09f', color: '#dd6b20' };
+      case 5: return { icon: <MapPin size={40} />, bg: '#dabaff', color: '#805ad5' };
+      case 6: return { icon: <Heart size={40} />, bg: '#ffb3cc', color: '#d53f8c' };
+      case 7: return { icon: <GraduationCap size={40} />, bg: '#99f2e4', color: '#319795' };
+      case 8: return { icon: <Briefcase size={40} />, bg: '#c2cedd', color: '#4a5568' };
+      case 9: return { icon: <Camera size={40} />, bg: '#9fd9ff', color: '#3182ce' };
+      case 10: return { icon: <Mail size={40} />, bg: '#ffb3b3', color: '#D63447' };
+      default: return { icon: <User size={40} />, bg: '#ffb3b3', color: '#D63447' };
+    }
+  };
+
+  const iconConfig = getStepIconConfig();
 
   const renderSelectField = (label, field, options, isCategorized = false) => {
     const isOtherSelected = formData[field] === 'Other';
@@ -157,7 +185,7 @@ export default function RegistrationPage() {
     return (
       <div className="form-group animate-fade-in">
         <label className="input-label">{label}</label>
-        <select 
+        <select
           className="select-input"
           value={formData[field]}
           onChange={(e) => updateForm(field, e.target.value)}
@@ -177,9 +205,9 @@ export default function RegistrationPage() {
 
         {isOtherSelected && (
           <div className="mt-2 animate-fade-in">
-            <input 
-              type="text" 
-              className="text-input" 
+            <input
+              type="text"
+              className="text-input"
               placeholder={`Type your ${label.toLowerCase()}`}
               value={customValues[field]}
               onChange={(e) => updateCustomValue(field, e.target.value)}
@@ -197,7 +225,7 @@ export default function RegistrationPage() {
   const renderStep1 = () => {
     const profileOptions = ["Myself", "My Son", "My Daughter", "My Brother", "My Sister", "My Friend", "My Relative"];
     const genderOptions = ["Male", "Female"];
-    
+
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Who are you creating this profile for?</h2>
@@ -223,7 +251,6 @@ export default function RegistrationPage() {
                   className={`chip-btn gender-btn ${formData.gender === opt ? 'selected' : ''}`}
                   onClick={() => {
                     updateForm('gender', opt);
-                    setTimeout(handleNext, 300);
                   }}
                 >
                   {opt}
@@ -232,6 +259,23 @@ export default function RegistrationPage() {
             </div>
           </div>
         )}
+
+        <button
+          className="primary-btn full-width mt-10"
+          onClick={handleNext}
+          disabled={!formData.profileFor || !formData.gender}
+        >
+          Continue
+        </button>
+
+        <div className="trust-info-box mt-6">
+          <div className="info-icon-box">
+            <ShieldCheck size={20} className="info-icon" />
+          </div>
+          <div className="info-text">
+            SakharPuda is built for genuine match-seekers. Falsification, commercial use, and marriage bureaus are strictly prohibited and may be reported to law enforcement.
+          </div>
+        </div>
       </div>
     );
   };
@@ -242,9 +286,9 @@ export default function RegistrationPage() {
       <h2 className="step-title">What is your name?</h2>
       <div className="form-group">
         <label className="input-label">Your Name</label>
-        <input 
-          type="text" 
-          className="text-input" 
+        <input
+          type="text"
+          className="text-input"
           placeholder="Enter Your Name"
           value={formData.firstName}
           onChange={(e) => updateForm('firstName', e.target.value)}
@@ -252,9 +296,9 @@ export default function RegistrationPage() {
       </div>
       <div className="form-group">
         <label className="input-label">Father's Name</label>
-        <input 
-          type="text" 
-          className="text-input" 
+        <input
+          type="text"
+          className="text-input"
           placeholder="Enter Father's Name"
           value={formData.middleName}
           onChange={(e) => updateForm('middleName', e.target.value)}
@@ -262,16 +306,16 @@ export default function RegistrationPage() {
       </div>
       <div className="form-group">
         <label className="input-label">Last Name</label>
-        <input 
-          type="text" 
-          className="text-input" 
+        <input
+          type="text"
+          className="text-input"
           placeholder="Enter Last Name"
           value={formData.lastName}
           onChange={(e) => updateForm('lastName', e.target.value)}
         />
       </div>
-      <button 
-        className="primary-btn full-width mt-4" 
+      <button
+        className="primary-btn full-width mt-4"
         onClick={handleNext}
         disabled={!formData.firstName || !formData.middleName || !formData.lastName}
       >
@@ -287,12 +331,12 @@ export default function RegistrationPage() {
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Let's start with your background</h2>
         <p className="step-subtitle">This helps us find the best matches in your community.</p>
-        
+
         {renderSelectField("Religion", "religion", religionOptions)}
         {renderSelectField("Caste", "caste", MAHARASHTRA_CASTES)}
-        
-        <button 
-          className="primary-btn full-width mt-4" 
+
+        <button
+          className="primary-btn full-width mt-4"
           onClick={handleNext}
           disabled={!formData.religion || !formData.caste}
         >
@@ -309,41 +353,41 @@ export default function RegistrationPage() {
       <div className="dob-grid">
         <div className="form-group">
           <label className="input-label text-center">Day</label>
-          <input 
+          <input
             id="dobDay"
-            type="number" 
-            className="text-input text-center" 
-            placeholder="DD" 
+            type="number"
+            className="text-input text-center"
+            placeholder="DD"
             value={formData.dobDay}
             onChange={(e) => handleDOBChange('dobDay', e.target.value, 'dobMonth')}
           />
         </div>
         <div className="form-group">
           <label className="input-label text-center">Month</label>
-          <input 
+          <input
             id="dobMonth"
-            type="number" 
-            className="text-input text-center" 
-            placeholder="MM" 
+            type="number"
+            className="text-input text-center"
+            placeholder="MM"
             value={formData.dobMonth}
             onChange={(e) => handleDOBChange('dobMonth', e.target.value, 'dobYear')}
           />
         </div>
         <div className="form-group">
           <label className="input-label text-center">Year</label>
-          <input 
+          <input
             id="dobYear"
-            type="number" 
-            className="text-input text-center" 
-            placeholder="YYYY" 
+            type="number"
+            className="text-input text-center"
+            placeholder="YYYY"
             min="1950" max="2005"
             value={formData.dobYear}
             onChange={(e) => updateForm('dobYear', e.target.value)}
           />
         </div>
       </div>
-      <button 
-        className="primary-btn full-width mt-4" 
+      <button
+        className="primary-btn full-width mt-4"
         onClick={handleNext}
         disabled={!formData.dobDay || !formData.dobMonth || !formData.dobYear}
       >
@@ -361,12 +405,12 @@ export default function RegistrationPage() {
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Where do you live?</h2>
-        
+
         {renderSelectField("District", "district", districtNames)}
         {renderSelectField("Taluka", "taluka", talukas)}
 
-        <button 
-          className="primary-btn full-width mt-4" 
+        <button
+          className="primary-btn full-width mt-4"
           onClick={handleNext}
           disabled={!formData.district || !formData.taluka}
         >
@@ -382,12 +426,12 @@ export default function RegistrationPage() {
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Personal Traits</h2>
-        
+
         {renderSelectField("Marital Status", "maritalStatus", maritalOptions)}
 
         <div className="form-group">
           <label className="input-label">Height</label>
-          <select 
+          <select
             className="select-input"
             value={formData.height}
             onChange={(e) => updateForm('height', e.target.value)}
@@ -397,8 +441,8 @@ export default function RegistrationPage() {
           </select>
         </div>
 
-        <button 
-          className="primary-btn full-width mt-4" 
+        <button
+          className="primary-btn full-width mt-4"
           onClick={handleNext}
           disabled={!formData.maritalStatus || !formData.height}
         >
@@ -412,22 +456,22 @@ export default function RegistrationPage() {
   const renderStep7 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">Education</h2>
-      
+
       {renderSelectField("Highest Qualification", "highestQualification", COMPREHENSIVE_EDUCATION, true)}
 
       <div className="form-group">
         <label className="input-label">College Name (Optional)</label>
-        <input 
-          type="text" 
-          className="text-input" 
+        <input
+          type="text"
+          className="text-input"
           placeholder="e.g. Pune University"
           value={formData.college}
           onChange={(e) => updateForm('college', e.target.value)}
         />
       </div>
 
-      <button 
-        className="primary-btn full-width mt-4" 
+      <button
+        className="primary-btn full-width mt-4"
         onClick={handleNext}
         disabled={!formData.highestQualification}
       >
@@ -444,13 +488,13 @@ export default function RegistrationPage() {
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Work & Income</h2>
-        
+
         {renderSelectField("Sector", "workWith", workWithOptions)}
         {renderSelectField("Profession", "workAs", CATEGORIZED_PROFESSIONS, true)}
         {renderSelectField("Annual Income", "income", incomeOptions)}
 
-        <button 
-          className="primary-btn full-width mt-4" 
+        <button
+          className="primary-btn full-width mt-4"
           onClick={handleNext}
           disabled={!formData.workWith || !formData.workAs || !formData.income}
         >
@@ -465,15 +509,15 @@ export default function RegistrationPage() {
     <div className="step-content animate-slide-in">
       <h2 className="step-title">Add your Profile Photos</h2>
       <p className="step-subtitle">Upload 1-3 photos. Minimum 1 photo required.</p>
-      
+
       <div className="photo-container-centered">
         <div className="multi-photo-grid">
           {formData.photos.map((photo, index) => (
             <div key={index} className="photo-item-card">
               <img src={photo.preview} alt={`Upload ${index}`} className="photo-item-img" />
-              
+
               <div className="photo-actions-overlay">
-                <button 
+                <button
                   className="photo-action-text-btn"
                   onClick={() => setAsProfilePhoto(index)}
                 >
@@ -485,7 +529,7 @@ export default function RegistrationPage() {
                 </button>
               </div>
 
-              <button 
+              <button
                 className="photo-corner-btn"
                 onClick={() => removePhoto(index)}
                 title="Remove photo"
@@ -510,19 +554,19 @@ export default function RegistrationPage() {
         </div>
       </div>
 
-      <input 
+      <input
         ref={fileInputRef}
-        type="file" 
-        accept="image/*" 
-        hidden 
+        type="file"
+        accept="image/*"
+        hidden
         multiple
         onChange={handlePhotoSelect}
       />
-      
+
       <p className="photo-tip text-center mt-4">🔒 Photos are kept private and secure</p>
 
-      <button 
-        className="primary-btn full-width mt-4" 
+      <button
+        className="primary-btn full-width mt-4"
         onClick={handleNext}
         disabled={formData.photos.length === 0}
       >
@@ -541,11 +585,11 @@ export default function RegistrationPage() {
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Last step! Contact details</h2>
         <p className="step-subtitle">Verify your account to start matching.</p>
-        
+
         <div className="form-group">
           <label className="input-label">Email ID</label>
-          <input 
-            type="email" 
+          <input
+            type="email"
             className={`text-input ${!isEmailValid ? 'input-error' : ''}`}
             placeholder="Enter Email Address"
             value={formData.email}
@@ -557,8 +601,8 @@ export default function RegistrationPage() {
           <label className="input-label">Mobile Number</label>
           <div className="phone-input-group">
             <span className="country-code">+91</span>
-            <input 
-              type="tel" 
+            <input
+              type="tel"
               className={`text-input ${!isMobileValid ? 'input-error' : ''}`}
               placeholder="Enter Mobile Number"
               value={formData.mobile}
@@ -568,14 +612,14 @@ export default function RegistrationPage() {
           </div>
           {!isMobileValid && <span className="error-text">Please enter a valid 10-digit mobile number</span>}
         </div>
-        
+
         <div className="security-badge">
           <ShieldCheck size={16} className="text-green" />
           <span>100% Privacy Guaranteed</span>
         </div>
 
-        <button 
-          className="primary-btn full-width mt-4" 
+        <button
+          className="primary-btn full-width mt-4"
           onClick={handleSubmit}
           disabled={!canSubmit}
         >
@@ -586,24 +630,29 @@ export default function RegistrationPage() {
   };
 
   return (
-    <div className="registration-container">
-      <div className="reg-bg-image" style={{ backgroundImage: "url('/images/hero-bg-final.png')" }}></div>
-      <div className="reg-bg-overlay"></div>
+    <div className="register-page-wrapper">
+      <div className="landing-bg-overlay-wrapper desktop-only">
+        <div className="landing-blur-container">
+          <LandingPage />
+        </div>
+        <div className="dark-tint-overlay"></div>
+      </div>
 
-      <header className="reg-header">
-        <button className="back-btn" onClick={handleBack}>
-          <ArrowLeft size={24} />
-        </button>
-        <img src="/images/logo.png" alt="SakharPuda" className="reg-logo" />
-        <div style={{ width: 24 }}></div>
-      </header>
+      <main className="register-main">
+        <div className="register-card">
+          <button className="card-back-btn" onClick={handleBack} title="Go Back">
+            <ArrowLeft size={20} />
+          </button>
 
-      <main className="reg-main">
-        <div className="reg-card">
+          <div className="step-icon-container">
+            <div className="step-icon-circle" style={{ backgroundColor: iconConfig.bg, color: iconConfig.color }}>
+              {iconConfig.icon}
+            </div>
+          </div>
           <div className="progress-container">
             <div className="progress-bar-bg">
-              <div 
-                className="progress-bar-fill" 
+              <div
+                className="progress-bar-fill"
                 style={{ width: `${(currentStep / totalSteps) * 100}%` }}
               ></div>
             </div>
@@ -624,48 +673,85 @@ export default function RegistrationPage() {
       </main>
 
       <style>{`
-        .registration-container {
+        .register-page-wrapper {
           min-height: 100vh;
           width: 100%;
           position: relative;
           display: flex;
           flex-direction: column;
           font-family: 'Cabin', sans-serif;
+          background-color: transparent;
           overflow-x: hidden;
         }
-        .reg-bg-image {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background-size: cover;
-          background-position: center;
-          z-index: -2;
+        .register-header {
+          display: none;
         }
-        .reg-bg-overlay {
-          position: absolute;
+        .landing-bg-overlay-wrapper {
+          position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(4px);
           z-index: -1;
+          overflow: hidden;
         }
-        .reg-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 15px 20px;
-          z-index: 10;
+        .landing-blur-container {
+          width: 100%;
+          height: 100%;
+          filter: none;
+          transform: scale(1);
+          pointer-events: none;
         }
-        .back-btn { background: none; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; }
-        .reg-logo { height: 28px; filter: brightness(0) invert(1); }
-        .reg-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
-        .reg-card {
+        .dark-tint-overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.2);
+          z-index: 1;
+        }
+        .register-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+        .register-card {
           background: #fff;
           width: 100%;
           max-width: 480px;
-          border-radius: 16px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-          overflow: hidden;
+          border-radius: 20px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          overflow: visible;
           display: flex;
           flex-direction: column;
+          position: relative;
+        }
+        .card-back-btn {
+          position: absolute;
+          top: 20px;
+          left: 20px;
+          background: #f7fafc;
+          border: none;
+          color: #4a5568;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          z-index: 20;
+        }
+        .card-back-btn:hover {
+          background: #edf2f7;
+          color: #D9475C;
+        }
+        .step-icon-container {
+          display: flex;
+          justify-content: center;
+          margin-top: -20px;
+          margin-bottom: 20px;
+        }
+        .step-icon-circle {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 10px 25px rgba(217, 71, 92, 0.1);
         }
         .progress-container { padding: 20px 25px 0; display: flex; flex-direction: column; gap: 8px; }
         .progress-bar-bg { width: 100%; height: 6px; background: #edf2f7; border-radius: 3px; overflow: hidden; }
@@ -838,12 +924,57 @@ export default function RegistrationPage() {
         .primary-btn:disabled { background: #e2e8f0; color: #a0aec0; cursor: not-allowed; }
         .full-width { width: 100%; }
         .mt-4 { margin-top: 25px; }
+        .mt-6 { margin-top: 30px; }
+        .mt-10 { margin-top: 50px; }
         .text-center { text-align: center; }
+
+        .trust-info-box {
+          background: #fff9f0;
+          border: 1px solid #fee2e2;
+          border-radius: 12px;
+          padding: 16px;
+          display: flex;
+          gap: 12px;
+          margin-top: 30px;
+        }
+        .info-icon-box {
+          flex-shrink: 0;
+        }
+        .info-icon {
+          color: #f6ad55;
+        }
+        .info-text {
+          font-size: 13px;
+          line-height: 1.5;
+          color: #4a5568;
+        }
+
+        .reg-logo { height: 24px; filter: none; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .animate-slide-in { animation: slideIn 0.3s ease forwards; }
+
+        @media (max-width: 768px) {
+          .desktop-only { display: none; }
+          .register-page-wrapper { background: #fff !important; }
+          .register-main { justify-content: flex-start; padding: 0; }
+          .register-card { 
+            box-shadow: none; 
+            border-radius: 0; 
+            background: #fff; 
+            min-height: 100vh;
+            padding: 20px;
+          }
+          .card-back-btn {
+            top: 20px;
+            left: 20px;
+            background: none;
+            color: #333;
+          }
+          .step-icon-container { margin-top: 40px; }
+        }
       `}</style>
     </div>
   );
