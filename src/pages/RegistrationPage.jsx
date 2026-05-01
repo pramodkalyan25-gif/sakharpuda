@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, ShieldCheck, Camera, Search, User, Trash2, Star, Check, X, Globe } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Search, User, Trash2, Star, Check, X, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import {
   MAHARASHTRA_DISTRICTS,
   MAHARASHTRA_CASTES,
@@ -9,14 +10,19 @@ import {
   HEIGHTS_CM
 } from '../data/maharashtraData';
 import {
-  Briefcase,
-  MapPin,
-  GraduationCap,
-  Calendar,
-  Heart,
-  Mail,
-  Phone
-} from 'lucide-react';
+  HiUser,
+  HiUserGroup,
+  HiIdentification,
+  HiGlobeAlt,
+  HiCalendarDays,
+  HiMapPin,
+  HiHeart,
+  HiAcademicCap,
+  HiBriefcase,
+  HiCamera,
+  HiLockClosed,
+  HiSparkles
+} from 'react-icons/hi2';
 import LandingPage from './LandingPage';
 
 export default function RegistrationPage() {
@@ -25,6 +31,7 @@ export default function RegistrationPage() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 10;
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     profileFor: '',
@@ -67,6 +74,14 @@ export default function RegistrationPage() {
 
   const updateForm = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const updateCustomValue = (field, value) => {
@@ -74,6 +89,7 @@ export default function RegistrationPage() {
   };
 
   const handleNext = () => {
+    if (currentStep === 4 && !validateDOB()) return;
     if (currentStep < totalSteps) setCurrentStep(prev => prev + 1);
     else handleSubmit();
   };
@@ -96,8 +112,8 @@ export default function RegistrationPage() {
       }, {})
     };
     console.log("Submitting Profile:", finalData);
-    alert("Profile Created Successfully!");
-    navigate('/');
+    toast.success("Registration Successful!");
+    setTimeout(() => navigate('/'), 1500);
   };
 
   // Validation
@@ -109,11 +125,100 @@ export default function RegistrationPage() {
     return /^[6-9]\d{9}$/.test(mobile);
   };
 
-  // DOB Auto-tabbing logic
+  const validateDOB = () => {
+    const day = parseInt(formData.dobDay);
+    const month = parseInt(formData.dobMonth);
+    const year = parseInt(formData.dobYear);
+    const newErrors = {};
+
+    if (isNaN(day) || day < 1 || day > 31) {
+      newErrors.dobDay = "Invalid Day (1-31)";
+    }
+    if (isNaN(month) || month < 1 || month > 12) {
+      newErrors.dobMonth = "Invalid Month (1-12)";
+    }
+    const currentYear = new Date().getFullYear();
+    if (isNaN(year) || year < 1950 || year > currentYear - 18) {
+      newErrors.dobYear = "Must be 18+ years";
+    }
+    
+    if (Object.keys(newErrors).length === 0) {
+      const date = new Date(year, month - 1, day);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        newErrors.dobDate = "Invalid Date";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const isStepValid = () => {
+    switch (currentStep) {
+      case 1: return !!(formData.profileFor && formData.gender);
+      case 2: return !!(formData.firstName && formData.middleName && formData.lastName);
+      case 3: return !!(formData.religion && formData.caste);
+      case 4: {
+        const day = parseInt(formData.dobDay);
+        const month = parseInt(formData.dobMonth);
+        const year = parseInt(formData.dobYear);
+        if (isNaN(day) || day < 1 || day > 31) return false;
+        if (isNaN(month) || month < 1 || month > 12) return false;
+        const currentYear = new Date().getFullYear();
+        if (isNaN(year) || year < 1950 || year > currentYear - 18) return false;
+        const date = new Date(year, month - 1, day);
+        return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+      }
+      case 5: return !!(formData.district && formData.taluka);
+      case 6: return !!(formData.maritalStatus && formData.height);
+      case 7: return !!(formData.highestQualification);
+      case 8: return !!(formData.workWith && formData.workAs && formData.income);
+      case 9: return formData.photos.length > 0;
+      case 10: return validateEmail(formData.email) && validateMobile(formData.mobile) && formData.password.length >= 6;
+      default: return true;
+    }
+  };
+
+  // DOB Auto-tabbing logic & Real-time validation
   const handleDOBChange = (field, value, nextFieldId) => {
-    if (value.length > 2) return;
+    if (value.length > 4) return; // Limit to 4 max (for year)
+    if (field !== 'dobYear' && value.length > 2) return;
+    
     updateForm(field, value);
-    if (value.length === 2 && nextFieldId) {
+    
+    // Real-time field validation
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      const val = parseInt(value);
+      
+      if (field === 'dobDay') {
+        if (value && (isNaN(val) || val < 1 || val > 31)) {
+          newErrors.dobDay = "Invalid Day (1-31)";
+        } else {
+          delete newErrors.dobDay;
+        }
+      } else if (field === 'dobMonth') {
+        if (value && (isNaN(val) || val < 1 || val > 12)) {
+          newErrors.dobMonth = "Invalid Month (1-12)";
+        } else {
+          delete newErrors.dobMonth;
+        }
+      } else if (field === 'dobYear') {
+        if (value.length === 4) {
+          const currentYear = new Date().getFullYear();
+          if (isNaN(val) || val < 1950 || val > currentYear - 18) {
+            newErrors.dobYear = "Must be 18+ years";
+          } else {
+            delete newErrors.dobYear;
+          }
+        } else if (value.length > 0 && value.length < 4) {
+          // Don't show error while typing 4 digits unless it's obviously wrong (too short/long)
+        }
+      }
+      return newErrors;
+    });
+
+    if ((field === 'dobDay' || field === 'dobMonth') && value.length === 2 && nextFieldId) {
       document.getElementById(nextFieldId)?.focus();
     }
   };
@@ -163,17 +268,17 @@ export default function RegistrationPage() {
 
   const getStepIconConfig = () => {
     switch (currentStep) {
-      case 1: return { icon: <User size={40} />, bg: '#ffb3b3', color: '#D63447' };
-      case 2: return { icon: <User size={40} />, bg: '#acc9f2', color: '#3182ce' };
-      case 3: return { icon: <Globe size={40} />, bg: '#adedc0', color: '#38a169' };
-      case 4: return { icon: <Calendar size={40} />, bg: '#fcd09f', color: '#dd6b20' };
-      case 5: return { icon: <MapPin size={40} />, bg: '#dabaff', color: '#805ad5' };
-      case 6: return { icon: <Heart size={40} />, bg: '#ffb3cc', color: '#d53f8c' };
-      case 7: return { icon: <GraduationCap size={40} />, bg: '#99f2e4', color: '#319795' };
-      case 8: return { icon: <Briefcase size={40} />, bg: '#c2cedd', color: '#4a5568' };
-      case 9: return { icon: <Camera size={40} />, bg: '#9fd9ff', color: '#3182ce' };
-      case 10: return { icon: <Mail size={40} />, bg: '#ffb3b3', color: '#D63447' };
-      default: return { icon: <User size={40} />, bg: '#ffb3b3', color: '#D63447' };
+      case 1: return { icon: <HiUser size={40} />, bg: '#BEE3F8', color: '#2B6CB0' };
+      case 2: return { icon: <HiIdentification size={40} />, bg: '#C6F6D5', color: '#2F855A' };
+      case 3: return { icon: <HiUserGroup size={40} />, bg: '#FED7E2', color: '#B83280' };
+      case 4: return { icon: <HiCalendarDays size={40} />, bg: '#FEEBC8', color: '#C05621' };
+      case 5: return { icon: <HiMapPin size={40} />, bg: '#E2E8F0', color: '#2D3748' };
+      case 6: return { icon: <HiSparkles size={40} />, bg: '#FED7D7', color: '#C53030' };
+      case 7: return { icon: <HiAcademicCap size={40} />, bg: '#B2F5EA', color: '#2C7A7B' };
+      case 8: return { icon: <HiBriefcase size={40} />, bg: '#E9D8FD', color: '#6B46C1' };
+      case 9: return { icon: <HiCamera size={40} />, bg: '#BEE3F8', color: '#2B6CB0' };
+      case 10: return { icon: <HiLockClosed size={40} />, bg: '#C6F6D5', color: '#2F855A' };
+      default: return { icon: <HiUser size={40} />, bg: '#BEE3F8', color: '#2B6CB0' };
     }
   };
 
@@ -263,7 +368,7 @@ export default function RegistrationPage() {
         <button
           className="primary-btn full-width mt-10"
           onClick={handleNext}
-          disabled={!formData.profileFor || !formData.gender}
+          disabled={!isStepValid()}
         >
           Continue
         </button>
@@ -285,39 +390,43 @@ export default function RegistrationPage() {
     <div className="step-content animate-slide-in">
       <h2 className="step-title">What is your name?</h2>
       <div className="form-group">
-        <label className="input-label">Your Name</label>
+        <label className="input-label">First Name</label>
         <input
           type="text"
           className="text-input"
-          placeholder="Enter Your Name"
+          placeholder="Enter First Name"
           value={formData.firstName}
           onChange={(e) => updateForm('firstName', e.target.value)}
         />
       </div>
-      <div className="form-group">
-        <label className="input-label">Father's Name</label>
-        <input
-          type="text"
-          className="text-input"
-          placeholder="Enter Father's Name"
-          value={formData.middleName}
-          onChange={(e) => updateForm('middleName', e.target.value)}
-        />
-      </div>
-      <div className="form-group">
-        <label className="input-label">Last Name</label>
-        <input
-          type="text"
-          className="text-input"
-          placeholder="Enter Last Name"
-          value={formData.lastName}
-          onChange={(e) => updateForm('lastName', e.target.value)}
-        />
-      </div>
+      {formData.firstName && (
+        <div className="form-group animate-reveal delay-1">
+          <label className="input-label">Father's Name</label>
+          <input
+            type="text"
+            className="text-input"
+            placeholder="Enter Father's Name"
+            value={formData.middleName}
+            onChange={(e) => updateForm('middleName', e.target.value)}
+          />
+        </div>
+      )}
+      {formData.middleName && (
+        <div className="form-group animate-reveal delay-2">
+          <label className="input-label">Last Name</label>
+          <input
+            type="text"
+            className="text-input"
+            placeholder="Enter Last Name"
+            value={formData.lastName}
+            onChange={(e) => updateForm('lastName', e.target.value)}
+          />
+        </div>
+      )}
       <button
         className="primary-btn full-width mt-4"
         onClick={handleNext}
-        disabled={!formData.firstName || !formData.middleName || !formData.lastName}
+        disabled={!isStepValid()}
       >
         Continue
       </button>
@@ -333,12 +442,16 @@ export default function RegistrationPage() {
         <p className="step-subtitle">This helps us find the best matches in your community.</p>
 
         {renderSelectField("Religion", "religion", religionOptions)}
-        {renderSelectField("Caste", "caste", MAHARASHTRA_CASTES)}
+        {formData.religion && (
+          <div className="animate-reveal delay-1">
+            {renderSelectField("Caste", "caste", MAHARASHTRA_CASTES)}
+          </div>
+        )}
 
         <button
           className="primary-btn full-width mt-4"
           onClick={handleNext}
-          disabled={!formData.religion || !formData.caste}
+          disabled={!isStepValid()}
         >
           Continue
         </button>
@@ -356,40 +469,51 @@ export default function RegistrationPage() {
           <input
             id="dobDay"
             type="number"
-            className="text-input text-center"
+            className={`text-input text-center ${errors.dobDay ? 'input-error' : ''}`}
             placeholder="DD"
             value={formData.dobDay}
             onChange={(e) => handleDOBChange('dobDay', e.target.value, 'dobMonth')}
           />
+          {errors.dobDay && <span className="error-text">{errors.dobDay}</span>}
         </div>
         <div className="form-group">
           <label className="input-label text-center">Month</label>
           <input
             id="dobMonth"
             type="number"
-            className="text-input text-center"
+            className={`text-input text-center ${errors.dobMonth ? 'input-error' : ''}`}
             placeholder="MM"
             value={formData.dobMonth}
             onChange={(e) => handleDOBChange('dobMonth', e.target.value, 'dobYear')}
           />
+          {errors.dobMonth && <span className="error-text">{errors.dobMonth}</span>}
         </div>
         <div className="form-group">
           <label className="input-label text-center">Year</label>
           <input
             id="dobYear"
             type="number"
-            className="text-input text-center"
+            className={`text-input text-center ${errors.dobYear ? 'input-error' : ''}`}
             placeholder="YYYY"
-            min="1950" max="2005"
             value={formData.dobYear}
-            onChange={(e) => updateForm('dobYear', e.target.value)}
+            onChange={(e) => handleDOBChange('dobYear', e.target.value)}
+            onBlur={(e) => {
+              // Final year validation on blur
+              const val = parseInt(e.target.value);
+              const currentYear = new Date().getFullYear();
+              if (e.target.value.length > 0 && (isNaN(val) || val < 1950 || val > currentYear - 18)) {
+                setErrors(prev => ({ ...prev, dobYear: "Must be 18+ years" }));
+              }
+            }}
           />
+          {errors.dobYear && <span className="error-text">{errors.dobYear}</span>}
         </div>
       </div>
+      {errors.dobDate && <p className="error-text text-center mt-2">{errors.dobDate}</p>}
       <button
-        className="primary-btn full-width mt-4"
+        className="primary-btn full-width mt-6"
         onClick={handleNext}
-        disabled={!formData.dobDay || !formData.dobMonth || !formData.dobYear}
+        disabled={!isStepValid()}
       >
         Continue
       </button>
@@ -407,12 +531,16 @@ export default function RegistrationPage() {
         <h2 className="step-title">Where do you live?</h2>
 
         {renderSelectField("District", "district", districtNames)}
-        {renderSelectField("Taluka", "taluka", talukas)}
+        {formData.district && (
+          <div className="animate-reveal delay-1">
+            {renderSelectField("Taluka", "taluka", talukas)}
+          </div>
+        )}
 
         <button
           className="primary-btn full-width mt-4"
           onClick={handleNext}
-          disabled={!formData.district || !formData.taluka}
+          disabled={!isStepValid()}
         >
           Continue
         </button>
@@ -429,22 +557,24 @@ export default function RegistrationPage() {
 
         {renderSelectField("Marital Status", "maritalStatus", maritalOptions)}
 
-        <div className="form-group">
-          <label className="input-label">Height</label>
-          <select
-            className="select-input"
-            value={formData.height}
-            onChange={(e) => updateForm('height', e.target.value)}
-          >
-            <option value="">Select Height</option>
-            {HEIGHTS_CM.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
-          </select>
-        </div>
+        {formData.maritalStatus && (
+          <div className="form-group animate-reveal delay-1">
+            <label className="input-label">Height</label>
+            <select
+              className="select-input"
+              value={formData.height}
+              onChange={(e) => updateForm('height', e.target.value)}
+            >
+              <option value="">Select Height</option>
+              {HEIGHTS_CM.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+            </select>
+          </div>
+        )}
 
         <button
           className="primary-btn full-width mt-4"
           onClick={handleNext}
-          disabled={!formData.maritalStatus || !formData.height}
+          disabled={!isStepValid()}
         >
           Continue
         </button>
@@ -473,7 +603,7 @@ export default function RegistrationPage() {
       <button
         className="primary-btn full-width mt-4"
         onClick={handleNext}
-        disabled={!formData.highestQualification}
+        disabled={!isStepValid()}
       >
         Continue
       </button>
@@ -490,13 +620,21 @@ export default function RegistrationPage() {
         <h2 className="step-title">Work & Income</h2>
 
         {renderSelectField("Sector", "workWith", workWithOptions)}
-        {renderSelectField("Profession", "workAs", CATEGORIZED_PROFESSIONS, true)}
-        {renderSelectField("Annual Income", "income", incomeOptions)}
+        {formData.workWith && (
+          <div className="animate-reveal delay-1">
+            {renderSelectField("Profession", "workAs", CATEGORIZED_PROFESSIONS, true)}
+          </div>
+        )}
+        {formData.workAs && (
+          <div className="animate-reveal delay-2">
+            {renderSelectField("Annual Income", "income", incomeOptions)}
+          </div>
+        )}
 
         <button
-          className="primary-btn full-width mt-4"
+          className="primary-btn full-width mt-10"
           onClick={handleNext}
-          disabled={!formData.workWith || !formData.workAs || !formData.income}
+          disabled={!isStepValid()}
         >
           Continue
         </button>
@@ -547,7 +685,7 @@ export default function RegistrationPage() {
 
           {formData.photos.length < 3 && (
             <div className="photo-add-card centered-box" onClick={() => fileInputRef.current.click()}>
-              <Camera size={36} />
+              <HiCamera size={36} />
               <span>Add Photo</span>
             </div>
           )}
@@ -568,7 +706,7 @@ export default function RegistrationPage() {
       <button
         className="primary-btn full-width mt-4"
         onClick={handleNext}
-        disabled={formData.photos.length === 0}
+        disabled={!isStepValid()}
       >
         {formData.photos.length > 0 ? "Continue" : "Upload at least 1 photo"}
       </button>
@@ -613,6 +751,17 @@ export default function RegistrationPage() {
           {!isMobileValid && <span className="error-text">Please enter a valid 10-digit mobile number</span>}
         </div>
 
+        <div className="form-group">
+          <label className="input-label">Create Password</label>
+          <input
+            type="password"
+            className="text-input"
+            placeholder="Min. 6 characters"
+            value={formData.password}
+            onChange={(e) => updateForm('password', e.target.value)}
+          />
+        </div>
+
         <div className="security-badge">
           <ShieldCheck size={16} className="text-green" />
           <span>100% Privacy Guaranteed</span>
@@ -621,7 +770,7 @@ export default function RegistrationPage() {
         <button
           className="primary-btn full-width mt-4"
           onClick={handleSubmit}
-          disabled={!canSubmit}
+          disabled={!isStepValid()}
         >
           Complete Registration
         </button>
@@ -705,6 +854,20 @@ export default function RegistrationPage() {
           background: rgba(0,0,0,0.2);
           z-index: 1;
         }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-reveal {
+          animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        .delay-5 { animation-delay: 0.5s; }
+        .delay-6 { animation-delay: 0.6s; }
+
         .register-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
         .register-card {
           background: #fff;
@@ -921,7 +1084,24 @@ export default function RegistrationPage() {
           background: #D9475C; color: white; border: none; padding: 16px; border-radius: 30px;
           font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
-        .primary-btn:disabled { background: #e2e8f0; color: #a0aec0; cursor: not-allowed; }
+        .primary-btn:disabled {
+          background: #e2e8f0 !important;
+          color: #a0aec0 !important;
+          cursor: not-allowed;
+          box-shadow: none !important;
+          transform: none !important;
+        }
+        .input-error {
+          border-color: #D63447 !important;
+          background-color: #fff5f5 !important;
+        }
+        .error-text {
+          color: #D63447;
+          font-size: 11px;
+          margin-top: 4px;
+          display: block;
+          font-weight: 500;
+        }
         .full-width { width: 100%; }
         .mt-4 { margin-top: 25px; }
         .mt-6 { margin-top: 30px; }
@@ -950,6 +1130,17 @@ export default function RegistrationPage() {
         }
 
         .reg-logo { height: 24px; filter: none; }
+
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-reveal {
+          animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
