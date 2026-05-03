@@ -355,3 +355,55 @@ a {
   background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url('https://images.pexels.com/photos/15130688/pexels-photo-15130688.jpeg?auto=compress&cs=tinysrgb&w=1600') center/cover no-repeat fixed;
   min-height: 100vh;
 }
+
+/* AVATAR SYSTEM */
+.avatar {
+  position: relative;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f5;
+  color: var(--clr-primary);
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: visible;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-xs { width: 24px; height: 24px; font-size: 10px; }
+.avatar-sm { width: 32px; height: 32px; font-size: 12px; }
+.avatar-md { width: 48px; height: 48px; font-size: 16px; }
+.avatar-lg { width: 64px; height: 64px; font-size: 20px; }
+.avatar-xl { width: 100px; height: 100px; font-size: 32px; }
+
+.avatar-verified-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #00b85c;
+  color: #fff;
+  width: 24%;
+  height: 24%;
+  min-width: 14px;
+  min-height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  border: 2px solid #fff;
+  z-index: 2;
+}
+
+.avatar-initials {
+  text-transform: uppercase;
+}

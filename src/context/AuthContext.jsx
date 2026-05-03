@@ -29,36 +29,28 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    // Restore session on mount
-    authService.getSession().then((s) => {
+    // Restore session on mount — await profile load before clearing loading flag
+    authService.getSession().then(async (s) => {
       setSession(s);
       setUser(s?.user ?? null);
       setIsAdmin(authService.isAdmin(s?.user));
-      if (s?.user) loadProfile(s.user.id);
+      if (s?.user) {
+        await loadProfile(s.user.id);
+      }
       setLoading(false);
     });
 
-    // Listen for auth state changes
+    // Listen for auth state changes (fires on login/logout)
     const subscription = authService.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       setIsAdmin(authService.isAdmin(newSession?.user));
-      
+
       if (newSession?.user) {
-        loadProfile(newSession.user.id).then(async (hasProfile) => {
-          // If they just signed in (e.g. Google OAuth) and have no profile, reject the login
-          if (!hasProfile && event === 'SIGNED_IN') {
-            const userEmail = newSession.user.email;
-            try {
-              // Delete the auth user that Supabase OAuth auto-created
-              await authService.deleteAccount();
-            } catch (err) {
-              console.error("Failed to delete orphaned auth user:", err);
-            }
-            await authService.logout();
-            toast.error(`User does not have account with email "${userEmail}"`);
-          }
-        }).finally(() => setLoading(false));
+        // Set loading=true BEFORE the async profile fetch so ProtectedRoute
+        // shows a spinner instead of rendering Dashboard with profile=null
+        setLoading(true);
+        loadProfile(newSession.user.id).finally(() => setLoading(false));
       } else {
         setProfile(null);
         setLoading(false);

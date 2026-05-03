@@ -121,18 +121,19 @@ export default function RegistrationPage() {
     };
 
     try {
-      // 0. Check if email or mobile already exists
+      // 0. Check if email already exists
       const emailExists = await authService.checkEmailExists(finalData.email);
       if (emailExists) {
         throw new Error('This email is already registered. Please login instead.');
       }
-      
+
+      // 1. Check if mobile already exists
       const mobileExists = await authService.checkMobileExists(finalData.mobile);
       if (mobileExists) {
-        throw new Error('This mobile number is already registered. Please login instead.');
+        throw new Error('This mobile number is already registered. Please use a different number.');
       }
 
-      // 1. Create Supabase auth user
+      // 2. Create Supabase auth user
       const authData = await authService.signupWithPassword(
         finalData.email.trim(),
         finalData.password
@@ -163,7 +164,7 @@ export default function RegistrationPage() {
         country: 'India',
         bio: '',
         marital_status: finalData.maritalStatus?.toLowerCase().replace(/\s+/g, '_'),
-        profile_for: finalData.profileFor?.toLowerCase(),
+        profile_for: finalData.profileFor,
         college_name: finalData.college,
         company_type: finalData.workWith,
       });
@@ -197,19 +198,13 @@ export default function RegistrationPage() {
       }, 4000);
 
     } catch (err) {
-      console.error('Registration error:', err);
-      const msg = err.message || 'Registration failed. Please try again.';
-      if (msg.includes('already registered')) {
-        toast.error('This email is already registered. Please login instead.');
-      } else {
-        toast.error(msg);
-      }
+      const msg = err.message || 'Registration failed.';
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Validation
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -225,10 +220,10 @@ export default function RegistrationPage() {
     const newErrors = {};
 
     if (isNaN(day) || day < 1 || day > 31) {
-      newErrors.dobDay = "Invalid Day (1-31)";
+      newErrors.dobDay = "Invalid Day";
     }
     if (isNaN(month) || month < 1 || month > 12) {
-      newErrors.dobMonth = "Invalid Month (1-12)";
+      newErrors.dobMonth = "Invalid Month";
     }
     const currentYear = new Date().getFullYear();
     if (isNaN(year) || year < 1950 || year > currentYear - 18) {
@@ -276,21 +271,20 @@ export default function RegistrationPage() {
     }
   };
 
-  // --- Fast Increment Logic for DOB ---
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
 
   const startAdjusting = (field, delta) => {
     const adjust = () => {
       setFormData(prev => {
-        let val = parseInt(prev[field]) || 0;
+        let val = parseInt(prev[field]);
         if (isNaN(val)) {
-          if (field === 'dobYear') val = 1995;
+          if (field === 'dobYear') val = new Date().getFullYear() - 25;
           else val = 1;
         }
         let newVal = val + delta;
 
-        // Bounds
+        // Bounds check
         if (field === 'dobDay' && (newVal < 1 || newVal > 31)) return prev;
         if (field === 'dobMonth' && (newVal < 1 || newVal > 12)) return prev;
         const currentYear = new Date().getFullYear();
@@ -303,7 +297,7 @@ export default function RegistrationPage() {
     adjust();
     timeoutRef.current = setTimeout(() => {
       intervalRef.current = setInterval(adjust, 60);
-    }, 400);
+    }, 400); 
   };
 
   const stopAdjusting = () => {
@@ -311,11 +305,9 @@ export default function RegistrationPage() {
     clearInterval(intervalRef.current);
   };
 
-  // DOB Auto-tabbing logic & Real-time validation
   const handleDOBChange = (field, value, nextFieldId) => {
-    if (value.length > 4) return; // Limit to 4 max (for year)
+    if (value.length > 4) return;
     if (field !== 'dobYear' && value.length > 2) return;
-
     updateForm(field, value);
 
     // Real-time field validation
@@ -343,8 +335,6 @@ export default function RegistrationPage() {
           } else {
             delete newErrors.dobYear;
           }
-        } else if (value.length > 0 && value.length < 4) {
-          // Don't show error while typing 4 digits unless it's obviously wrong (too short/long)
         }
       }
       return newErrors;
@@ -355,21 +345,17 @@ export default function RegistrationPage() {
     }
   };
 
-  // Photo Handling
   const handlePhotoSelect = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-
     const newPhotos = files.map(file => ({
       file,
       preview: URL.createObjectURL(file)
     }));
-
     setFormData(prev => {
       const combined = [...prev.photos, ...newPhotos].slice(0, 3);
       return { ...prev, photos: combined };
     });
-
     e.target.value = '';
   };
 
@@ -396,8 +382,6 @@ export default function RegistrationPage() {
     });
   };
 
-  // --- Reusable Components ---
-
   const getStepIconConfig = () => {
     switch (currentStep) {
       case 1: return { icon: <HiUser size={40} />, bg: '#BEE3F8', color: '#2B6CB0' };
@@ -418,7 +402,6 @@ export default function RegistrationPage() {
 
   const renderSelectField = (label, field, options, isCategorized = false) => {
     const isOtherSelected = formData[field] === 'Other';
-
     return (
       <div className="form-group animate-fade-in">
         <label className="input-label">{label}</label>
@@ -437,9 +420,8 @@ export default function RegistrationPage() {
           ) : (
             options.map(opt => <option key={opt} value={opt}>{opt}</option>)
           )}
-          <option value="Other">Other (Not in list)</option>
+          <option value="Other">Other</option>
         </select>
-
         {isOtherSelected && (
           <div className="mt-2 animate-fade-in">
             <input
@@ -456,16 +438,12 @@ export default function RegistrationPage() {
     );
   };
 
-  // --- Step Content Renders ---
-
-  // Step 1: Profile For & Gender
   const renderStep1 = () => {
-    const profileOptions = ["Myself", "My Son", "My Daughter", "My Brother", "My Sister", "My Friend", "My Relative"];
+    const profileOptions = ["Myself", "Son", "Daughter", "Brother", "Sister", "Friend", "Relative"];
     const genderOptions = ["Male", "Female"];
-
     return (
       <div className="step-content animate-slide-in">
-        <h2 className="step-title">Who are you creating this profile for?</h2>
+        <h2 className="step-title">Who is this profile for?</h2>
         <div className="chip-grid">
           {profileOptions.map(opt => (
             <button
@@ -477,18 +455,15 @@ export default function RegistrationPage() {
             </button>
           ))}
         </div>
-
         {formData.profileFor && (
           <div className="animate-fade-in mt-4">
-            <h3 className="input-label">What is their gender?</h3>
+            <h3 className="input-label">Gender</h3>
             <div className="chip-grid gender-grid">
               {genderOptions.map(opt => (
                 <button
                   key={opt}
                   className={`chip-btn gender-btn ${formData.gender === opt ? 'selected' : ''}`}
-                  onClick={() => {
-                    updateForm('gender', opt);
-                  }}
+                  onClick={() => updateForm('gender', opt)}
                 >
                   {opt}
                 </button>
@@ -496,102 +471,50 @@ export default function RegistrationPage() {
             </div>
           </div>
         )}
-
-        <button
-          className="primary-btn full-width mt-10"
-          onClick={handleNext}
-          disabled={!isStepValid()}
-        >
-          Continue
-        </button>
-
-        <div className="trust-info-box mt-6">
-          <div className="info-icon-box">
-            <ShieldCheck size={20} className="info-icon" />
-          </div>
-          <div className="info-text">
-            SakharPuda is built for genuine match-seekers. Falsification, commercial use, and marriage bureaus are strictly prohibited and may be reported to law enforcement.
-          </div>
-        </div>
+        <button className="primary-btn full-width mt-10" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
       </div>
     );
   };
 
-  // Step 2: Name (Updated with Middle Name)
   const renderStep2 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">What is your name?</h2>
       <div className="form-group">
         <label className="input-label">First Name</label>
-        <input
-          type="text"
-          className="text-input"
-          placeholder="Enter First Name"
-          value={formData.firstName}
-          onChange={(e) => updateForm('firstName', e.target.value)}
-        />
+        <input type="text" className="text-input" placeholder="First Name" value={formData.firstName} onChange={(e) => updateForm('firstName', e.target.value)} />
       </div>
       {formData.firstName && (
         <div className="form-group animate-reveal delay-1">
           <label className="input-label">Middle Name</label>
-          <input
-            type="text"
-            className="text-input"
-            placeholder="Enter Middle Name"
-            value={formData.middleName}
-            onChange={(e) => updateForm('middleName', e.target.value)}
-          />
+          <input type="text" className="text-input" placeholder="Middle Name" value={formData.middleName} onChange={(e) => updateForm('middleName', e.target.value)} />
         </div>
       )}
       {formData.middleName && (
         <div className="form-group animate-reveal delay-2">
           <label className="input-label">Last Name</label>
-          <input
-            type="text"
-            className="text-input"
-            placeholder="Enter Last Name"
-            value={formData.lastName}
-            onChange={(e) => updateForm('lastName', e.target.value)}
-          />
+          <input type="text" className="text-input" placeholder="Last Name" value={formData.lastName} onChange={(e) => updateForm('lastName', e.target.value)} />
         </div>
       )}
-      <button
-        className="primary-btn full-width mt-4"
-        onClick={handleNext}
-        disabled={!isStepValid()}
-      >
-        Continue
-      </button>
+      <button className="primary-btn full-width mt-4" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
     </div>
   );
 
-  // Step 3: Background (Religion & Caste)
   const renderStep3 = () => {
     const religionOptions = ["Hindu", "Muslim", "Christian", "Sikh", "Jain", "Buddhist", "Parsi"];
     return (
       <div className="step-content animate-slide-in">
-        <h2 className="step-title">Let's start with your background</h2>
-        <p className="step-subtitle">This helps us find the best matches in your community.</p>
-
+        <h2 className="step-title">Background</h2>
         {renderSelectField("Religion", "religion", religionOptions)}
         {formData.religion && (
           <div className="animate-reveal delay-1">
             {renderSelectField("Caste", "caste", MAHARASHTRA_CASTES)}
           </div>
         )}
-
-        <button
-          className="primary-btn full-width mt-4"
-          onClick={handleNext}
-          disabled={!isStepValid()}
-        >
-          Continue
-        </button>
+        <button className="primary-btn full-width mt-4" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
       </div>
     );
   };
 
-  // Step 4: DOB (Auto-tabbing)
   const renderStep4 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">What is your Date of Birth?</h2>
@@ -608,16 +531,17 @@ export default function RegistrationPage() {
               onChange={(e) => handleDOBChange('dobDay', e.target.value, 'dobMonth')}
             />
             <div className="number-arrows">
-              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobDay', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Increase">
+              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobDay', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
                 <ChevronUp size={14} />
               </button>
-              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobDay', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Decrease">
+              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobDay', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
                 <ChevronDown size={14} />
               </button>
             </div>
           </div>
-          {errors.dobDay && <span className="error-text">{errors.dobDay}</span>}
+          {errors.dobDay && <span className="error-text text-center">{errors.dobDay}</span>}
         </div>
+        
         <div className="form-group">
           <label className="input-label text-center">Month</label>
           <div className="custom-number-input">
@@ -630,16 +554,17 @@ export default function RegistrationPage() {
               onChange={(e) => handleDOBChange('dobMonth', e.target.value, 'dobYear')}
             />
             <div className="number-arrows">
-              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobMonth', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Increase">
+              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobMonth', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
                 <ChevronUp size={14} />
               </button>
-              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobMonth', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Decrease">
+              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobMonth', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
                 <ChevronDown size={14} />
               </button>
             </div>
           </div>
-          {errors.dobMonth && <span className="error-text">{errors.dobMonth}</span>}
+          {errors.dobMonth && <span className="error-text text-center">{errors.dobMonth}</span>}
         </div>
+
         <div className="form-group">
           <label className="input-label text-center">Year</label>
           <div className="custom-number-input">
@@ -650,200 +575,99 @@ export default function RegistrationPage() {
               placeholder="YYYY"
               value={formData.dobYear}
               onChange={(e) => handleDOBChange('dobYear', e.target.value)}
-              onBlur={(e) => {
-                const val = parseInt(e.target.value);
-                const currentYear = new Date().getFullYear();
-                if (e.target.value.length > 0 && (isNaN(val) || val < 1950 || val > currentYear - 18)) {
-                  setErrors(prev => ({ ...prev, dobYear: "Must be 18+ years" }));
-                }
-              }}
             />
             <div className="number-arrows">
-              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobYear', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Increase">
+              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobYear', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
                 <ChevronUp size={14} />
               </button>
-              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobYear', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Decrease">
+              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobYear', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
                 <ChevronDown size={14} />
               </button>
             </div>
           </div>
-          {errors.dobYear && <span className="error-text">{errors.dobYear}</span>}
+          {errors.dobYear && <span className="error-text text-center">{errors.dobYear}</span>}
         </div>
       </div>
-      {errors.dobDate && <p className="error-text text-center mt-2">{errors.dobDate}</p>}
-      <button
-        className="primary-btn full-width mt-6"
-        onClick={handleNext}
-        disabled={!isStepValid()}
-      >
-        Continue
-      </button>
+      <button className="primary-btn full-width mt-6" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
     </div>
   );
 
-  // Step 5: Location (District & Taluka)
   const renderStep5 = () => {
     const selectedDistrictData = MAHARASHTRA_DISTRICTS.find(d => d.district === formData.district);
     const talukas = selectedDistrictData ? selectedDistrictData.talukas : [];
     const districtNames = MAHARASHTRA_DISTRICTS.map(d => d.district);
-
     return (
       <div className="step-content animate-slide-in">
-        <h2 className="step-title">Where do you live?</h2>
-
+        <h2 className="step-title">Location</h2>
         {renderSelectField("District", "district", districtNames)}
-        {formData.district && (
-          <div className="animate-reveal delay-1">
-            {renderSelectField("Taluka", "taluka", talukas)}
-          </div>
-        )}
-
-        <button
-          className="primary-btn full-width mt-4"
-          onClick={handleNext}
-          disabled={!isStepValid()}
-        >
-          Continue
-        </button>
+        {formData.district && <div className="animate-reveal delay-1">{renderSelectField("Taluka", "taluka", talukas)}</div>}
+        <button className="primary-btn full-width mt-4" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
       </div>
     );
   };
 
-  // Step 6: Personal Traits
   const renderStep6 = () => {
     const maritalOptions = ["Never Married", "Divorced", "Widowed", "Awaiting Divorce"];
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Personal Traits</h2>
-
         {renderSelectField("Marital Status", "maritalStatus", maritalOptions)}
-
         {formData.maritalStatus && (
           <div className="form-group animate-reveal delay-1">
             <label className="input-label">Height</label>
-            <select
-              className="select-input"
-              value={formData.height}
-              onChange={(e) => updateForm('height', e.target.value)}
-            >
+            <select className="select-input" value={formData.height} onChange={(e) => updateForm('height', e.target.value)}>
               <option value="">Select Height</option>
               {HEIGHTS_CM.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
             </select>
           </div>
         )}
-
-        <button
-          className="primary-btn full-width mt-4"
-          onClick={handleNext}
-          disabled={!isStepValid()}
-        >
-          Continue
-        </button>
+        <button className="primary-btn full-width mt-4" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
       </div>
     );
   };
 
-  // Step 7: Education
   const renderStep7 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">Education</h2>
-
-      {renderSelectField("Highest Qualification", "highestQualification", COMPREHENSIVE_EDUCATION, true)}
-
+      {renderSelectField("Qualification", "highestQualification", COMPREHENSIVE_EDUCATION, true)}
       <div className="form-group">
-        <label className="input-label">College Name (Optional)</label>
-        <input
-          type="text"
-          className="text-input"
-          placeholder="e.g : Saint Francis Institute Of Technology,Mumbai"
-          value={formData.college}
-          onChange={(e) => updateForm('college', e.target.value)}
-        />
+        <label className="input-label">College</label>
+        <input type="text" className="text-input" placeholder="College Name" value={formData.college} onChange={(e) => updateForm('college', e.target.value)} />
       </div>
-
-      <button
-        className="primary-btn full-width mt-4"
-        onClick={handleNext}
-        disabled={!isStepValid()}
-      >
-        Continue
-      </button>
+      <button className="primary-btn full-width mt-4" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
     </div>
   );
 
-  // Step 8: Work & Income
   const renderStep8 = () => {
-    const workWithOptions = ["Private Company", "Government / PSU", "Defense", "Business / Self Employed", "Not Working"];
-    const incomeOptions = ["Upto 3 Lakhs", "3 - 5 Lakhs", "5 - 10 Lakhs", "10 - 20 Lakhs", "20 - 30 Lakhs", "30 Lakhs+"];
-
+    const workWithOptions = ["Private", "Government", "Defense", "Business", "Not Working"];
+    const incomeOptions = ["Upto 3L", "3-5L", "5-10L", "10-20L", "20-30L", "30L+"];
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Work & Income</h2>
-
         {renderSelectField("Sector", "workWith", workWithOptions)}
-        {formData.workWith && (
-          <div className="animate-reveal delay-1">
-            {renderSelectField("Profession", "workAs", CATEGORIZED_PROFESSIONS, true)}
-          </div>
-        )}
-        {formData.workAs && (
-          <div className="animate-reveal delay-2">
-            {renderSelectField("Annual Income", "income", incomeOptions)}
-          </div>
-        )}
-
-        <button
-          className="primary-btn full-width mt-10"
-          onClick={handleNext}
-          disabled={!isStepValid()}
-        >
-          Continue
-        </button>
+        {formData.workWith && <div className="animate-reveal delay-1">{renderSelectField("Profession", "workAs", CATEGORIZED_PROFESSIONS, true)}</div>}
+        {formData.workAs && <div className="animate-reveal delay-2">{renderSelectField("Income", "income", incomeOptions)}</div>}
+        <button className="primary-btn full-width mt-10" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
       </div>
     );
   };
 
-  // Step 9: Profile Photo (Overhauled UI)
   const renderStep9 = () => (
     <div className="step-content animate-slide-in">
-      <h2 className="step-title">Add your Profile Photos</h2>
-      <p className="step-subtitle">Upload 1-3 photos. Minimum 1 photo required.</p>
-
+      <h2 className="step-title">Photos</h2>
       <div className="photo-container-centered">
         <div className="multi-photo-grid">
           {formData.photos.map((photo, index) => (
             <div key={index} className="photo-item-card">
-              <img src={photo.preview} alt={`Upload ${index}`} className="photo-item-img" />
-
+              <img src={photo.preview} alt="Upload" className="photo-item-img" />
               <div className="photo-actions-overlay">
-                <button
-                  className="photo-action-text-btn"
-                  onClick={() => setAsProfilePhoto(index)}
-                >
-                  {formData.profilePhotoIndex === index ? (
-                    <span className="active-label"><Check size={14} /> Profile Picture</span>
-                  ) : (
-                    <span>Make it as profile picture</span>
-                  )}
+                <button className="photo-action-text-btn" onClick={() => setAsProfilePhoto(index)}>
+                  {formData.profilePhotoIndex === index ? <span>Profile Photo</span> : <span>Set as profile</span>}
                 </button>
               </div>
-
-              <button
-                className="photo-corner-btn"
-                onClick={() => removePhoto(index)}
-                title="Remove photo"
-              >
-                <X size={16} />
-              </button>
-
-              {formData.profilePhotoIndex === index && (
-                <div className="main-photo-indicator">
-                  <Star size={12} fill="white" />
-                </div>
-              )}
+              <button className="photo-corner-btn" onClick={() => removePhoto(index)}><X size={16} /></button>
             </div>
           ))}
-
           {formData.photos.length < 3 && (
             <div className="photo-add-card centered-box" onClick={() => fileInputRef.current.click()}>
               <HiCamera size={36} />

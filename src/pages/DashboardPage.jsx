@@ -2,455 +2,504 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
-  Home,
+  Settings, 
+  Shield, 
+  LogOut, 
+  ChevronRight, 
+  CheckCircle, 
+  AlertCircle, 
+  Camera, 
+  Lock, 
   Heart,
-  Eye,
-  Settings,
-  Shield,
-  LogOut,
   Search,
+  MessageSquare,
   Users,
-  Mail,
-  Zap,
-  ChevronRight
+  Bell,
+  Star,
+  Check,
+  TrendingUp,
+  UserPlus
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
-import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
-import InterestList from '../components/interests/InterestList';
 import ProfileCard from '../components/profile/ProfileCard';
-import PhoneVerifyModal from '../components/auth/PhoneVerifyModal';
+import TopNav from '../components/ui/TopNav';
+import EditProfileModal from '../components/profile/EditProfileModal';
 import { useAuth } from '../hooks/useAuth';
 import { useInterests } from '../hooks/useInterests';
 import { searchService } from '../services/searchService';
 import { photoService } from '../services/photoService';
 import { profileService } from '../services/profileService';
-import { authService } from '../services/authService';
-import { differenceInYears, parseISO, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, profile, logout, isAdmin, refreshProfile } = useAuth();
-  const { received, sent, loading: loadingInterests, remainingToday, refresh } = useInterests();
+  const { received, remainingToday, refresh } = useInterests();
 
-  const [tab, setTab] = useState('overview');
-  const [recentProfiles, setRecent] = useState([]);
-  const [loadingRecent, setLoadingRecent] = useState(false);
+  const [dailyMatches, setDailyMatches] = useState([]);
+  const [newMatches, setNewMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [profileViewers, setViewers] = useState([]);
   const [avatarUrl, setAvatarUrl] = useState(null);
-  const [showPhoneModal, setShowPhone] = useState(false);
-  const [stats, setStats] = useState({ viewers: 0, received: 0, sent: 0 });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editStep, setEditStep] = useState(1);
 
-  const age = profile?.dob ? differenceInYears(new Date(), parseISO(profile.dob)) : null;
+  const openEditModal = (step = 1) => {
+    setEditStep(step);
+    setIsEditModalOpen(true);
+  };
+
+  const handleProfileUpdate = async () => {
+    await refreshProfile(); // Refresh AuthContext profile
+    await loadData(); // Refresh dashboard specific data (matches, photos)
+  };
 
   const loadData = useCallback(async () => {
-    if (!user?.id) return;
-    setLoadingRecent(true);
+    if (!user?.id || !profile) return;
+    setLoading(true);
     try {
-      const recent = await searchService.getRecentProfiles(12);
-      setRecent(recent.filter((p) => p.user_id !== user.id));
-
-      if (profile) {
-        const [viewers, photo] = await Promise.all([
-          profileService.getProfileViewers(user.id),
-          photoService.getPrimaryPhoto(user.id),
-        ]);
-        setViewers(viewers);
-        if (photo?.signed_url) setAvatarUrl(photo.signed_url);
-      }
-    } catch {
-      // Fail silently
+      const oppositeGender = (profile.gender || '').toLowerCase() === 'male' ? 'female' : 'male';
+      
+      const [newest, viewers, photo, recommendations] = await Promise.all([
+        searchService.getNewMatches(user.id, oppositeGender, 8),
+        profileService.getProfileViewers(user.id),
+        photoService.getPrimaryPhoto(user.id),
+        searchService.getRecommendedProfiles(user.id, profile)
+      ]);
+      
+      setDailyMatches(recommendations?.profiles || []);
+      setNewMatches(newest || []);
+      setViewers(viewers || []);
+      if (photo?.signed_url) setAvatarUrl(photo.signed_url);
+    } catch (err) {
+      console.error(err);
     } finally {
-      setLoadingRecent(false);
+      setLoading(false);
     }
   }, [user?.id, profile]);
 
-  useEffect(() => { loadData(); }, [loadData]);
-
-  const completion = profileService.calculateCompletion(profile, !!avatarUrl);
-
   useEffect(() => {
-    setStats({ viewers: profileViewers.length, received: received.length, sent: sent.length });
-  }, [profileViewers, received, sent]);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/', { replace: true });
-  };
+    loadData();
+  }, [loadData]);
 
   if (!profile) {
     return (
-      <div className="dashboard-no-profile-wrapper">
-        <div className="incomplete-banner">
-          ⚠️ Your profile is incomplete. <Link to="/create-profile" className="complete-link">Complete it now →</Link>
-        </div>
-        <div className="dashboard-no-profile-content container">
-          <h2 className="dash-section-title">Discover Matches</h2>
-          {loadingRecent ? <Spinner /> : (
-            <div className="dash-profiles-grid">
-              {recentProfiles.map((p) => <ProfileCard key={p.user_id} profile={p} />)}
-            </div>
-          )}
-        </div>
+      <div className="loading-state">
+        <Spinner size="lg" />
+        <p>Loading your dashboard...</p>
       </div>
     );
   }
 
+  const pendingReceived = received.filter(r => r.status === 'pending');
+
   return (
-    <div className="dashboard-wrapper">
-      {/* PREMIUM SIDEBAR */}
-      <aside className="dash-sidebar">
-        <div className="sidebar-top">
-          <div className="sidebar-brand">
-            <img src="/images/logo.png" alt="SakharPuda" style={{ height: '30px' }} />
+    <div className="dashboard-container">
+      <TopNav />
+      
+      <div className="dashboard-hero">
+        <div className="container hero-content">
+          <div className="greeting-box">
+            <h1>Namaste, {profile?.name?.split(' ')[0]}!</h1>
+            <p>Welcome back to your SakharPuda dashboard. Here's what's happening today.</p>
           </div>
-          <div className="sidebar-user">
-            <Avatar src={avatarUrl} name={profile.name} size="md" verified={profile.admin_verified} />
-            <div className="user-info">
-              <span className="user-name">{profile.name?.split(' ')[0]}</span>
-              <span className="user-status">{profile.admin_verified ? 'Premium Member' : 'Free Member'}</span>
+          <div className="hero-stats desktop-only">
+            <div className="hero-stat-item">
+              <span className="stat-num">{profileViewers.length}</span>
+              <span className="stat-label">Profile Views</span>
+            </div>
+            <div className="hero-stat-item">
+              <span className="stat-num">{pendingReceived.length}</span>
+              <span className="stat-label">Interests</span>
+            </div>
+            <div className="hero-stat-item">
+              <span className="stat-num">{remainingToday}</span>
+              <span className="stat-label">Left Today</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <nav className="sidebar-menu">
-          <button className={`menu-item ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')}>
-            <Home size={18} className="icon" /> Dashboard
-          </button>
-          <button className={`menu-item ${tab === 'interests' ? 'active' : ''}`} onClick={() => setTab('interests')}>
-            <Heart size={18} className="icon" /> Interests {stats.received > 0 && <span className="count">{stats.received}</span>}
-          </button>
-          <button className={`menu-item ${tab === 'viewers' ? 'active' : ''}`} onClick={() => setTab('viewers')}>
-            <Eye size={18} className="icon" /> Profile Views
-          </button>
-          <button className={`menu-item ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>
-            <Settings size={18} className="icon" /> Settings
-          </button>
-          {isAdmin && (
-            <Link to="/admin" className="menu-item admin-link">
-              <Shield size={18} className="icon" /> Admin Panel
-            </Link>
-          )}
-        </nav>
-
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
-            <LogOut size={16} /> Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* DASHBOARD CONTENT */}
-      <main className="dash-main">
-        {/* TOP BAR */}
-        <header className="dash-header">
-          <div className="header-left">
-            <h1>Hello, {profile.name?.split(' ')[0]}!</h1>
-            <p>Here are your matches for today.</p>
-          </div>
-          <div className="header-right">
-            <Link to="/search" className="btn btn-primary btn-sm btn-icon">
-              <Search size={16} /> Advanced Search
-            </Link>
-          </div>
-        </header>
-
-        {/* OVERVIEW CONTENT */}
-        {tab === 'overview' && (
-          <div className="overview-grid">
-            {/* STATS ROW */}
-            <div className="stats-row">
-              <div className="stat-card">
-                <div className="stat-icon-bg"><Eye className="pink" /></div>
-                <div className="stat-details">
-                  <span className="stat-val">{stats.viewers}</span>
-                  <span className="stat-label">Profile Views</span>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon-bg"><Mail className="pink" /></div>
-                <div className="stat-details">
-                  <span className="stat-val">{stats.received}</span>
-                  <span className="stat-label">Interests Received</span>
-                </div>
-              </div>
-              <div className="stat-card completion-card">
-                <div className="completion-info">
-                  <span className="stat-label">Profile Strength</span>
-                  <span className="completion-val">{completion}%</span>
-                </div>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${completion}%` }}></div>
-                </div>
-              </div>
+      <main className="dashboard-grid container">
+        {/* LEFT SIDEBAR: QUICK NAVIGATION */}
+        <aside className="dashboard-sidebar">
+          <div className="profile-snapshot">
+            <div className="snapshot-avatar-wrap">
+              <Avatar src={avatarUrl} name={profile?.name} size="xl" verified={profile?.admin_verified} />
+              <button className="edit-overlay-btn" onClick={() => openEditModal(9)} title="Edit Photos">
+                <Camera size={18} />
+                <span>Edit</span>
+              </button>
             </div>
+            <div className="snapshot-details">
+              <h3>{profile?.name}</h3>
+              <p>{profile?.caste} • {profile?.city}</p>
+              <button onClick={() => openEditModal(1)} className="text-link">Edit Profile</button>
+            </div>
+          </div>
 
-            {/* PREMIUM UPGRADE BANNER */}
-            {!profile.admin_verified && (
-              <div className="premium-banner">
-                <div className="banner-content">
-                  <div className="banner-icon"><Zap size={32} /></div>
-                  <div>
-                    <h3>Get more with Premium</h3>
-                    <p>View contact numbers and chat unlimitedly with your matches.</p>
-                  </div>
-                </div>
-                <Link to="/membership" className="btn btn-gold">Explore Plans</Link>
-              </div>
-            )}
+          <nav className="side-nav">
+            <Link to="/dashboard" className="side-nav-link active">
+              <Heart size={18} /> <span>My Dashboard</span>
+            </Link>
+            <Link to="/search" className="side-nav-link">
+              <Search size={18} /> <span>Find Matches</span>
+            </Link>
+            <Link to="/inbox" className="side-nav-link">
+              <MessageSquare size={18} /> <span>Inbox</span>
+              {pendingReceived.length > 0 && <span className="nav-badge">{pendingReceived.length}</span>}
+            </Link>
+            <Link to="/my-matches" className="side-nav-link">
+              <Users size={18} /> <span>My Matches</span>
+            </Link>
+            <Link to="/interests" className="side-nav-link">
+              <Star size={18} /> <span>Interests</span>
+            </Link>
+            <div className="nav-divider"></div>
+            <Link to="/settings" className="side-nav-link">
+              <Settings size={18} /> <span>Settings</span>
+            </Link>
+            <button onClick={logout} className="side-nav-link logout-btn">
+              <LogOut size={18} /> <span>Logout</span>
+            </button>
+          </nav>
 
-            {/* RECENT MATCHES SECTION */}
-            <section className="dash-section">
-              <div className="section-header">
+          <div className="verification-card">
+            <Shield size={24} className="shield-icon" />
+            <h4>Trust & Safety</h4>
+            <p>Verified profiles receive 3x more interests.</p>
+            <Link to="/verify" className="btn-verify-mini">Get Verified Now</Link>
+          </div>
+        </aside>
+
+        {/* MIDDLE CONTENT: MATCHES */}
+        <div className="dashboard-content">
+          
+          {/* SECTION 1: DAILY RECOMMENDATIONS */}
+          <section className="dashboard-section">
+            <div className="section-header">
+              <div className="title-with-icon">
+                <TrendingUp size={20} className="header-icon red" />
                 <h2>Daily Recommendations</h2>
-                <Link to="/search" className="view-all">View All</Link>
               </div>
-              {loadingRecent ? <Spinner /> : (
-                <div className="dash-profiles-grid">
-                  {recentProfiles.map((p) => (
-                    <ProfileCard key={p.user_id} profile={p} onInterestSent={refresh} />
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-        )}
-
-        {/* INTERESTS TAB */}
-        {tab === 'interests' && (
-          <div className="tab-content">
-            <div className="content-card">
-              <h2>Interests Received</h2>
-              <InterestList interests={received} type="received" onUpdate={refresh} />
+              <Link to="/search" className="view-all">View All</Link>
             </div>
-            <div className="content-card" style={{ marginTop: '30px' }}>
-              <h2>Interests Sent</h2>
-              <InterestList interests={sent} type="sent" onUpdate={refresh} />
-            </div>
-          </div>
-        )}
-
-        {/* VIEWERS TAB */}
-        {tab === 'viewers' && (
-          <div className="tab-content">
-            <div className="content-card">
-              <h2>Who Viewed Your Profile</h2>
-              {profileViewers.length === 0 ? (
-                <div className="empty-state">
-                  <span className="icon">👀</span>
-                  <p>No views yet. Try completing your profile for better visibility!</p>
-                </div>
-              ) : (
-                <div className="viewers-list">
-                  {profileViewers.map((v) => (
-                    <div key={v.viewer_id} className="viewer-item">
-                      <Avatar name={v.profiles?.name} size="sm" />
-                      <div className="viewer-info">
-                        <strong>{v.profiles?.name}</strong>
-                        <span>{v.profiles?.city} • {v.viewed_at && formatDistanceToNow(new Date(v.viewed_at), { addSuffix: true })}</span>
-                      </div>
-                      <Link to={`/profile/${v.viewer_id}`} className="btn btn-ghost btn-sm">View →</Link>
+            <div className="matches-scroll">
+              {loading ? <Spinner /> : (
+                <div className="matches-grid-horizontal">
+                  {dailyMatches.map(p => (
+                    <div className="match-card-wrapper" key={p.user_id}>
+                      <ProfileCard profile={p} onInterestSent={refresh} />
                     </div>
                   ))}
+                  {dailyMatches.length === 0 && <p className="empty-state">No recommendations yet. Try adjusting your preferences.</p>}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          </section>
 
-        {/* SETTINGS TAB */}
-        {tab === 'settings' && (
-          <div className="tab-content">
-            <div className="content-card settings-grid">
-              <div className="settings-section">
-                <h3>Account Information</h3>
-                <div className="info-row"><span>Email</span> <strong>{user?.email}</strong></div>
-                <div className="info-row"><span>Phone</span> <strong>{profile.mobile_verified ? 'Verified' : 'Not Verified'}</strong></div>
-                <div className="info-row"><span>Interests Today</span> <strong>{remainingToday}/10</strong></div>
+          {/* SECTION 2: NEW MATCHES */}
+          <section className="dashboard-section">
+            <div className="section-header">
+              <div className="title-with-icon">
+                <UserPlus size={20} className="header-icon gold" />
+                <h2>New Members</h2>
               </div>
-              <div className="settings-section">
-                <h3>Actions</h3>
-                <div className="btn-group">
-                  <Button variant="outline" onClick={() => setShowPhone(true)}>Verify Mobile</Button>
-                  <Button variant="danger" size="sm" onClick={async () => {
-                    if (window.confirm('Delete account permanently?')) {
-                      await authService.deleteAccount();
-                      logout();
-                      navigate('/');
-                    }
-                  }}>Delete Account</Button>
-                </div>
-              </div>
+              <Link to="/search" className="view-all">View All</Link>
             </div>
+            <div className="matches-scroll">
+              {loading ? <Spinner /> : (
+                <div className="matches-grid-horizontal">
+                  {newMatches.map(p => (
+                    <div className="match-card-wrapper" key={p.user_id}>
+                      <ProfileCard profile={p} onInterestSent={refresh} />
+                    </div>
+                  ))}
+                  {newMatches.length === 0 && <p className="empty-state">No new members today.</p>}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* SECTION 3: RECENT ACTIVITY */}
+          <section className="dashboard-section activity-section">
+            <div className="section-header">
+              <h2>Recent Activity</h2>
+            </div>
+            <div className="activity-list">
+              {profileViewers.length > 0 ? (
+                profileViewers.slice(0, 3).map((v, i) => (
+                  <div className="activity-item" key={i}>
+                    <div className="activity-avatar">
+                      <Avatar src={null} name={v.profiles?.name} size="sm" />
+                    </div>
+                    <div className="activity-text">
+                      <span className="user-name">{v.profiles?.name || 'Someone'}</span>
+                      <span className="action-text">viewed your profile</span>
+                      <span className="time-text">{formatDistanceToNow(new Date(v.viewed_at))} ago</span>
+                    </div>
+                    <Link to={`/profile/${v.viewer_id}`} className="activity-btn">View Back</Link>
+                  </div>
+                ))
+              ) : (
+                <p className="empty-state">No recent activity found.</p>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* RIGHT SIDEBAR: NUDGES */}
+        <aside className="dashboard-nudges">
+          <div className="nudge-card premium">
+            <div className="premium-badge">PREMIUM</div>
+            <h3>Upgrade to Gold</h3>
+            <p>Directly contact matches and see who viewed your profile.</p>
+            <ul className="premium-list">
+              <li><Check size={14} /> Unlimited Interests</li>
+              <li><Check size={14} /> Priority Support</li>
+              <li><Check size={14} /> Profile Boost</li>
+            </ul>
+            <button className="btn-premium-action">Upgrade Now</button>
           </div>
-        )}
+
+          <div className="nudge-card referral">
+            <h3>Invite & Earn</h3>
+            <p>Invite friends to SakharPuda and get premium benefits.</p>
+            <button 
+              className="btn-outline-mini"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.origin);
+                toast.success('Referral link copied!');
+              }}
+            >
+              Share Link
+            </button>
+          </div>
+
+          <div className="tip-card">
+            <Bell size={20} className="tip-icon" />
+            <p><strong>Pro Tip:</strong> Profiles with at least 3 photos receive 5x more responses!</p>
+          </div>
+        </aside>
       </main>
 
-      <PhoneVerifyModal
-        isOpen={showPhoneModal}
-        onClose={() => setShowPhone(false)}
-        onVerified={refreshProfile}
+      <EditProfileModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onSave={handleProfileUpdate} 
+        defaultStep={editStep}
       />
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        .dashboard-wrapper {
-          display: grid;
-          grid-template-columns: 280px 1fr;
+      <style dangerouslySetInnerHTML={{ __html: `
+        .dashboard-container {
           min-height: 100vh;
-          background: #f8f9fb;
+          background: #f8fafc;
+          padding-bottom: 60px;
         }
 
-        /* SIDEBAR */
-        .dash-sidebar {
-          background: #fff;
-          border-right: 1px solid #eee;
+        .loading-state {
           display: flex;
           flex-direction: column;
-          padding: 30px 20px;
-          position: sticky;
-          top: 0;
-          height: 100vh;
-        }
-
-        .sidebar-brand {
-          font-size: 24px;
-          font-weight: 800;
-          color: #D63447;
-          margin-bottom: 40px;
-        }
-
-        .sidebar-user {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding-bottom: 30px;
-          border-bottom: 1px solid #f0f0f0;
-          margin-bottom: 30px;
-        }
-
-        .user-name { font-weight: 700; color: #333; display: block; }
-        .user-status { font-size: 12px; color: #D63447; font-weight: 600; }
-
-        .sidebar-menu { flex: 1; }
-        .menu-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          width: 100%;
-          padding: 12px 16px;
-          border-radius: 8px;
-          border: none;
-          background: transparent;
-          color: #666;
-          font-weight: 600;
-          cursor: pointer;
-          transition: 0.2s;
-          margin-bottom: 4px;
-          text-decoration: none;
-        }
-
-        .menu-item:hover, .menu-item.active {
-          background: #fdf5f6;
-          color: #D63447;
-        }
-
-        .menu-item .count {
-          background: #D63447;
-          color: #fff;
-          padding: 2px 8px;
-          border-radius: 10px;
-          font-size: 10px;
-          margin-left: auto;
-        }
-
-        .logout-btn {
-          width: 100%;
-          padding: 12px;
-          border: 1px solid #eee;
-          background: #fff;
-          border-radius: 8px;
-          color: #888;
-          font-weight: 600;
-          cursor: pointer;
-        }
-
-        /* MAIN CONTENT */
-        .dash-main { padding: 40px; }
-        .dash-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
-        .dash-header h1 { font-size: 28px; font-weight: 800; color: #333; }
-        .dash-header p { color: #888; margin-top: 4px; }
-
-        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px; }
-        .stat-card {
-          background: #fff;
-          padding: 24px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        }
-
-        .stat-icon-bg {
-          width: 48px;
-          height: 48px;
-          background: #fdf5f6;
-          border-radius: 12px;
-          display: flex;
           align-items: center;
           justify-content: center;
+          height: 60vh;
+          gap: 15px;
+          color: #64748b;
         }
 
-        .stat-val { font-size: 24px; font-weight: 800; color: #333; display: block; }
-        .stat-label { font-size: 13px; color: #888; font-weight: 600; }
-
-        .completion-card { flex-direction: column; align-items: stretch; justify-content: center; }
-        .completion-info { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .progress-bar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #D63447; }
-
-        .premium-banner {
-          background: linear-gradient(to right, #D63447, #e04a5c);
+        /* --- HERO SECTION --- */
+        .dashboard-hero {
+          background: linear-gradient(135deg, #D63447 0%, #a52837 100%);
           color: #fff;
-          padding: 30px;
-          border-radius: 12px;
+          padding: 60px 0 100px;
+          margin-bottom: -60px;
+        }
+        .hero-content {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 40px;
+        }
+        .greeting-box h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+        .greeting-box p { font-size: 16px; opacity: 0.9; }
+
+        .hero-stats { display: flex; gap: 40px; }
+        .hero-stat-item { text-align: center; }
+        .stat-num { display: block; font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.5px; }
+
+        /* --- MAIN GRID --- */
+        .dashboard-grid {
+          display: grid;
+          grid-template-columns: 280px 1fr 280px;
+          gap: 24px;
+          padding-top: 20px;
         }
 
-        .banner-icon {
-          background: rgba(255, 255, 255, 0.2);
-          padding: 15px;
-          border-radius: 50%;
+        /* --- SIDEBAR --- */
+        .dashboard-sidebar { display: flex; flex-direction: column; gap: 20px; }
+        
+        .profile-snapshot {
+          background: #fff;
+          border-radius: 16px;
+          padding: 30px 20px;
+          text-align: center;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+          border: 1px solid #edf2f7;
+        }
+        .snapshot-avatar-wrap {
+          position: relative;
+          display: inline-block;
+          margin-bottom: 15px;
+        }
+        .avatar-edit-btn {
+          position: absolute;
+          bottom: 0; right: 0;
+          background: #D63447; color: #fff;
+          width: 32px; height: 32px; border-radius: 50%;
+          border: 3px solid #fff;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: 0.2s;
+        }
+        .avatar-edit-btn:hover { transform: scale(1.1); }
+        .snapshot-details h3 { font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+        .snapshot-details p { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+        .text-link { background: none; border: none; color: #D63447; font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; }
+
+        .side-nav {
+          background: #fff;
+          border-radius: 16px;
+          padding: 10px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+          border: 1px solid #edf2f7;
+        }
+        .side-nav-link {
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 12px;
+          padding: 12px 16px;
+          color: #475569;
+          font-weight: 600;
+          font-size: 14px;
+          text-decoration: none;
+          border-radius: 10px;
+          transition: 0.2s;
+          position: relative;
+        }
+        .side-nav-link:hover { background: #f8fafc; color: #D63447; }
+        .side-nav-link.active { background: #fff1f2; color: #D63447; }
+        .nav-divider { height: 1px; background: #f1f5f9; margin: 10px 16px; }
+        .nav-badge {
+          position: absolute; right: 12px;
+          background: #D63447; color: #fff;
+          font-size: 10px; padding: 2px 6px; border-radius: 10px;
+        }
+        .logout-btn { width: 100%; border: none; background: none; cursor: pointer; }
+        .logout-btn:hover { color: #dc2626; background: #fef2f2; }
+
+        .verification-card {
+          background: #fff; border-radius: 16px; padding: 20px;
+          text-align: center; border: 1px dashed #cbd5e0;
+        }
+        .shield-icon { color: #3b82f6; margin-bottom: 12px; }
+        .verification-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+        .verification-card p { font-size: 12px; color: #64748b; margin-bottom: 15px; }
+        .btn-verify-mini {
+          display: block; background: #3b82f6; color: #fff;
+          padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700;
+          text-decoration: none;
         }
 
-        .banner-content { display: flex; align-items: center; gap: 20px; }
-        .banner-content h3 { font-size: 20px; margin-bottom: 5px; }
-        .btn-gold { background: #fff; color: #D63447; font-weight: 700; padding: 10px 24px; border-radius: 25px; text-decoration: none; }
-        .btn-icon { display: flex; align-items: center; gap: 8px; }
+        /* --- MIDDLE CONTENT --- */
+        .dashboard-content { display: flex; flex-direction: column; gap: 30px; }
+        
+        .dashboard-section {
+          background: #fff; border-radius: 16px; padding: 24px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #edf2f7;
+        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .title-with-icon { display: flex; align-items: center; gap: 10px; }
+        .title-with-icon h2 { font-size: 18px; font-weight: 800; color: #1e293b; }
+        .header-icon { padding: 6px; border-radius: 8px; }
+        .header-icon.red { background: #fff1f2; color: #D63447; }
+        .header-icon.gold { background: #fffbeb; color: #C9956C; }
+        .view-all { color: #D63447; font-weight: 700; font-size: 14px; text-decoration: none; }
 
-        .dash-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .view-all { color: #D63447; font-weight: 700; text-decoration: none; font-size: 14px; }
+        .matches-grid-horizontal {
+          display: flex; overflow-x: auto; gap: 20px; padding-bottom: 15px;
+          scrollbar-width: thin;
+        }
+        .match-card-wrapper { flex: 0 0 240px; }
+        .empty-state { color: #94a3b8; font-size: 14px; padding: 20px; text-align: center; width: 100%; }
 
-        .content-card { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .viewers-list { display: flex; flex-direction: column; gap: 15px; }
-        .viewer-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-bottom: 1px solid #f0f0f0; }
-        .viewer-info { flex: 1; display: flex; flex-direction: column; }
-        .viewer-info span { font-size: 12px; color: #888; }
+        .activity-list { display: flex; flex-direction: column; gap: 12px; }
+        .activity-item {
+          display: flex; align-items: center; gap: 15px;
+          padding: 12px; border-radius: 12px; background: #f8fafc;
+          transition: 0.2s;
+        }
+        .activity-item:hover { background: #f1f5f9; }
+        .activity-text { flex: 1; font-size: 14px; }
+        .user-name { font-weight: 700; color: #1e293b; margin-right: 6px; }
+        .action-text { color: #64748b; margin-right: 6px; }
+        .time-text { font-size: 12px; color: #94a3b8; display: block; }
+        .activity-btn {
+          font-size: 12px; font-weight: 700; color: #D63447;
+          background: #fff; border: 1px solid #D63447;
+          padding: 6px 12px; border-radius: 20px; text-decoration: none;
+        }
 
-        @media (max-width: 992px) {
-          .dashboard-wrapper { grid-template-columns: 1fr; }
-          .dash-sidebar { display: none; }
-          .stats-row { grid-template-columns: 1fr; }
-          .premium-banner { flex-direction: column; text-align: center; gap: 20px; }
+        /* --- RIGHT SIDEBAR --- */
+        .dashboard-nudges { display: flex; flex-direction: column; gap: 20px; }
+        
+        .nudge-card {
+          background: #fff; border-radius: 16px; padding: 24px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #edf2f7;
+          position: relative; overflow: hidden;
+        }
+        .nudge-card.premium {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          color: #fff;
+        }
+        .premium-badge {
+          position: absolute; top: 12px; right: 12px;
+          background: #C9956C; color: #000; font-size: 9px;
+          font-weight: 800; padding: 2px 6px; border-radius: 4px;
+        }
+        .nudge-card h3 { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+        .nudge-card p { font-size: 13px; opacity: 0.8; margin-bottom: 15px; }
+        .premium-list { list-style: none; padding: 0; margin-bottom: 20px; }
+        .premium-list li { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; }
+        .btn-premium-action {
+          width: 100%; background: #C9956C; color: #000; border: none;
+          padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer;
+        }
+
+        .btn-outline-mini {
+          width: 100%; background: #fff; color: #D63447;
+          border: 1.5px solid #D63447; padding: 10px;
+          border-radius: 10px; font-weight: 700; cursor: pointer;
+        }
+
+        .tip-card {
+          background: #fffbeb; border-radius: 16px; padding: 20px;
+          display: flex; gap: 12px; align-items: flex-start;
+          border: 1px solid #fde68a;
+        }
+        .tip-icon { color: #d97706; }
+        .tip-card p { font-size: 13px; color: #92400e; line-height: 1.5; }
+
+        @media (max-width: 1100px) {
+          .dashboard-grid { grid-template-columns: 240px 1fr; }
+          .dashboard-nudges { display: none; }
+        }
+
+        @media (max-width: 850px) {
+          .dashboard-grid { grid-template-columns: 1fr; }
+          .dashboard-sidebar { display: none; }
+          .hero-content { flex-direction: column; text-align: center; }
+          .greeting-box { margin-bottom: 20px; }
         }
       `}} />
     </div>

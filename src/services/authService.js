@@ -26,7 +26,7 @@ export const authService = {
 
     // Supabase returns a fake user with empty identities if email already exists
     if (data.user && data.user.identities && data.user.identities.length === 0) {
-      throw new Error('This email is already registered. Please login instead.');
+      throw new Error('📧 EMAIL ALREADY IN USE: This email is already registered. Please login instead.');
     }
 
     return data;
@@ -162,20 +162,6 @@ export const authService = {
   },
 
   /**
-   * Login with Google OAuth
-   */
-  async signInWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/dashboard',
-      },
-    });
-    if (error) throw error;
-    return data;
-  },
-
-  /**
    * Delete current user's account (destructive)
    * This calls an RPC function that must be defined in Supabase
    */
@@ -197,12 +183,16 @@ export const authService = {
    * Check if a mobile number is already registered
    */
   async checkMobileExists(mobile) {
-    // mobile might have +91 prefix, strip it if so
-    let cleanMobile = mobile.replace('+91', '').trim();
-    if (cleanMobile.length === 10) cleanMobile = '+91' + cleanMobile; // Ensure format
+    // Extract only digits to match the robust SQL function
+    const digits = mobile.replace(/\D/g, '');
+    const cleanMobile = digits.length > 10 ? digits.slice(-10) : digits;
     
+    console.log("Checking mobile existence for digits:", cleanMobile);
     const { data, error } = await supabase.rpc('check_mobile_exists', { p_mobile: cleanMobile });
-    if (error) throw error;
+    if (error) {
+      console.error("RPC Error in check_mobile_exists:", error);
+      throw error;
+    }
     return !!data;
   },
 };

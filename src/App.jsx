@@ -15,6 +15,9 @@ import DashboardPage     from './pages/DashboardPage';
 import SearchPage        from './pages/SearchPage';
 import ViewProfilePage   from './pages/ViewProfilePage';
 import AdminPage         from './pages/AdminPage';
+import InboxPage         from './pages/InboxPage';
+import InterestsPage     from './pages/InterestsPage';
+import MyMatchesPage     from './pages/MyMatchesPage';
 
 // Legal & Info Pages
 import TermsPage         from './pages/TermsPage';
@@ -81,6 +84,15 @@ export default function App() {
             } />
             <Route path="/profile/:id" element={
               <ProtectedRoute><ViewProfilePage /></ProtectedRoute>
+            } />
+            <Route path="/inbox" element={
+              <ProtectedRoute><InboxPage /></ProtectedRoute>
+            } />
+            <Route path="/interests" element={
+              <ProtectedRoute><InterestsPage /></ProtectedRoute>
+            } />
+            <Route path="/my-matches" element={
+              <ProtectedRoute><MyMatchesPage /></ProtectedRoute>
             } />
 
             {/* Admin only */}

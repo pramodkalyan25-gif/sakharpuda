@@ -75,7 +75,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
       // Try sending - the service will enforce limits
       await interestService.sendInterest(user.id, profile.user_id, myProfile);
       setInterestStatus({ status: 'pending', sender_id: user.id });
-      toast.success(`Interest sent to ${profile.name}!`);
+      toast.success(`Interest sent to ${profile?.name}!`);
       onInterestSent?.();
     } catch (err) {
       if (err.message.includes('DAILY_LIMIT_REACHED')) {
@@ -99,7 +99,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
     try {
       await interestService.acceptInterest(interestStatus.id);
       setInterestStatus({ ...interestStatus, status: 'accepted' });
-      toast.success(`You and ${profile.name} are now connected!`);
+      toast.success(`You and ${profile?.name} are now connected!`);
       onInterestSent?.();
     } catch (err) {
       toast.error(err.message);
@@ -194,15 +194,15 @@ export default function ProfileCard({ profile, onInterestSent }) {
   return (
     <div
       className="profile-card"
-      onClick={() => navigate(`/profile/${profile.user_id}`)}
+      onClick={() => navigate(`/profile/${profile?.user_id}`)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && navigate(`/profile/${profile.user_id}`)}
-      aria-label={`View ${profile.name}'s profile`}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/profile/${profile?.user_id}`)}
+      aria-label={`View ${profile?.name}'s profile`}
     >
       <div className="profile-card-photo">
         {canSeePhoto() ? (
-          <Avatar src={photoUrl} name={profile.name} size="xl" verified={profile.admin_verified} />
+          <Avatar src={photoUrl} name={profile?.name} size="xl" verified={profile?.admin_verified} />
         ) : (
           <div className="card-photo-placeholder">
             <span className="placeholder-icon">👤</span>
@@ -212,7 +212,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
       </div>
 
       <div className="profile-card-info">
-        <h3 className="profile-card-name">{profile.name}</h3>
+        <h3 className="profile-card-name">{profile?.name}</h3>
         <p className="profile-card-meta">
           {age && `${age} yrs`}
           {profile.city && ` • ${profile.city}`}

@@ -73,7 +73,7 @@ export const searchService = {
     }
 
     // Exact filters
-    if (gender) query = query.eq('gender', gender);
+    if (gender) query = query.eq('gender', gender.toLowerCase());
     if (religion) query = query.ilike('religion', `%${religion}%`);
     if (caste) query = query.ilike('caste', `%${caste}%`);
     if (education) query = query.ilike('education', `%${education}%`);
@@ -101,29 +101,60 @@ export const searchService = {
     if (!preferences) return { profiles: [], total: 0 };
 
     return searchService.searchProfiles({
-      age_min: preferences.preferred_age_min,
-      age_max: preferences.preferred_age_max,
-      city: preferences.preferred_city,
-      religion: preferences.preferred_religion,
-      caste: preferences.preferred_caste,
-      limit: 6,
-    });
+      age_min: preferences.pref_age_min,
+      age_max: preferences.pref_age_max,
+      city: preferences.pref_city,
+      religion: preferences.pref_religion,
+      caste: preferences.pref_caste,
+      limit: 8,
+    }, userId);
   },
 
   /**
-   * Get recently joined profiles (for dashboard)
-   * @param {number} limit
+   * Get recently joined profiles (for dashboard New Matches)
    */
-  async getRecentProfiles(limit = 8) {
-    const { data, error } = await supabase
+  async getNewMatches(currentUserId, oppositeGender = null, limit = 8) {
+    let query = supabase
       .from('profiles')
       .select(`
         user_id, name, gender, dob, city, religion, education,
         profession, mobile_verified, photo_visibility, admin_verified, created_at
       `)
       .neq('profile_visibility', 'hidden')
+      .neq('user_id', currentUserId)
       .order('created_at', { ascending: false })
       .limit(limit);
+      
+    if (oppositeGender) {
+      query = query.eq('gender', oppositeGender.toLowerCase());
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Get premium matches (users who are admin_verified)
+   */
+  async getPremiumMatches(currentUserId, oppositeGender = null, limit = 8) {
+    let query = supabase
+      .from('profiles')
+      .select(`
+        user_id, name, gender, dob, city, religion, education,
+        profession, mobile_verified, photo_visibility, admin_verified, created_at
+      `)
+      .eq('admin_verified', true)
+      .neq('profile_visibility', 'hidden')
+      .neq('user_id', currentUserId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+      
+    if (oppositeGender) {
+      query = query.eq('gender', oppositeGender.toLowerCase());
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },

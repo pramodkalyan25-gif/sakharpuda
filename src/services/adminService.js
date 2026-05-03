@@ -73,15 +73,27 @@ export const adminService = {
   async getPendingRevealRequests() {
     const { data, error } = await supabase
       .from('contact_reveal_requests')
-      .select(`
-        id, requester_id, target_id, status, created_at,
-        profiles!contact_reveal_requests_requester_id_fkey (name, city),
-        profiles!contact_reveal_requests_target_id_fkey (name, city)
-      `)
+      .select('id, requester_id, target_id, status, created_at')
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
-    if (error) throw error;
-    return data;
+    if (error) { console.warn('getPendingRevealRequests:', error.message); return []; }
+
+    const ids = [...new Set([
+      ...(data || []).map(r => r.requester_id),
+      ...(data || []).map(r => r.target_id)
+    ])];
+    if (ids.length === 0) return data || [];
+
+    const { data: profiles } = await supabase
+      .from('profiles').select('user_id, name, city').in('user_id', ids);
+    const pm = {};
+    (profiles || []).forEach(p => { pm[p.user_id] = p; });
+
+    return (data || []).map(r => ({
+      ...r,
+      requester: pm[r.requester_id] || null,
+      target: pm[r.target_id] || null,
+    }));
   },
 
   /**
@@ -132,15 +144,27 @@ export const adminService = {
   async getReportedInterests() {
     const { data, error } = await supabase
       .from('interests')
-      .select(`
-        id, sender_id, receiver_id, status, is_reported, created_at,
-        profiles!interests_sender_id_fkey (name, city),
-        profiles!interests_receiver_id_fkey (name, city)
-      `)
+      .select('id, sender_id, receiver_id, status, is_reported, created_at')
       .eq('is_reported', true)
       .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
+    if (error) { console.warn('getReportedInterests:', error.message); return []; }
+
+    const ids = [...new Set([
+      ...(data || []).map(i => i.sender_id),
+      ...(data || []).map(i => i.receiver_id)
+    ])];
+    if (ids.length === 0) return data || [];
+
+    const { data: profiles } = await supabase
+      .from('profiles').select('user_id, name, city').in('user_id', ids);
+    const pm = {};
+    (profiles || []).forEach(p => { pm[p.user_id] = p; });
+
+    return (data || []).map(i => ({
+      ...i,
+      sender_profile: pm[i.sender_id] || null,
+      receiver_profile: pm[i.receiver_id] || null,
+    }));
   },
 
   /**

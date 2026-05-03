@@ -91,18 +91,25 @@ export const interestService = {
   async getReceivedInterests(userId) {
     const { data, error } = await supabase
       .from('interests')
-      .select(`
-        id, status, created_at, is_blocked,
-        sender_id,
-        profiles!interests_sender_id_fkey (
-          user_id, name, gender, dob, city, religion, education, mobile_verified
-        )
-      `)
+      .select('id, status, created_at, is_blocked, sender_id, receiver_id')
       .eq('receiver_id', userId)
       .eq('is_blocked', false)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data;
+
+    // Fetch sender profiles separately
+    const senderIds = [...new Set((data || []).map(i => i.sender_id))];
+    if (senderIds.length === 0) return data || [];
+
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, name, gender, dob, city, religion, education, mobile_verified')
+      .in('user_id', senderIds);
+
+    const profileMap = {};
+    (profilesData || []).forEach(p => { profileMap[p.user_id] = p; });
+
+    return (data || []).map(i => ({ ...i, profiles: profileMap[i.sender_id] || null }));
   },
 
   /**
@@ -112,17 +119,24 @@ export const interestService = {
   async getSentInterests(userId) {
     const { data, error } = await supabase
       .from('interests')
-      .select(`
-        id, status, created_at,
-        receiver_id,
-        profiles!interests_receiver_id_fkey (
-          user_id, name, gender, dob, city, religion, education
-        )
-      `)
+      .select('id, status, created_at, sender_id, receiver_id')
       .eq('sender_id', userId)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data;
+
+    // Fetch receiver profiles separately
+    const receiverIds = [...new Set((data || []).map(i => i.receiver_id))];
+    if (receiverIds.length === 0) return data || [];
+
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, name, gender, dob, city, religion, education')
+      .in('user_id', receiverIds);
+
+    const profileMap = {};
+    (profilesData || []).forEach(p => { profileMap[p.user_id] = p; });
+
+    return (data || []).map(i => ({ ...i, profiles: profileMap[i.receiver_id] || null }));
   },
 
   /**
@@ -132,15 +146,28 @@ export const interestService = {
   async getMutualConnections(userId) {
     const { data, error } = await supabase
       .from('interests')
-      .select(`
-        id, created_at,
-        sender_id, receiver_id,
-        profiles!interests_sender_id_fkey ( user_id, name, city, profession )
-      `)
+      .select('id, created_at, sender_id, receiver_id')
       .eq('status', 'accepted')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
     if (error) throw error;
-    return data;
+
+    // Fetch the other party's profile
+    const otherIds = (data || []).map(i => i.sender_id === userId ? i.receiver_id : i.sender_id);
+    const uniqueIds = [...new Set(otherIds)];
+    if (uniqueIds.length === 0) return data || [];
+
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, name, city, profession')
+      .in('user_id', uniqueIds);
+
+    const profileMap = {};
+    (profilesData || []).forEach(p => { profileMap[p.user_id] = p; });
+
+    return (data || []).map(i => ({
+      ...i,
+      profiles: profileMap[i.sender_id === userId ? i.receiver_id : i.sender_id] || null
+    }));
   },
 
   /**

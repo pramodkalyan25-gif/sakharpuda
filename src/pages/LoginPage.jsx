@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 import OTPInput from '../components/auth/OTPInput';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, profile, loading: authLoading } = useAuth();
   const from = location.state?.from?.pathname || '/dashboard';
 
   const [mode, setMode] = useState('password'); // 'password' | 'otp_request' | 'otp_verify'
@@ -15,6 +17,13 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect only when auth loading is done AND profile is fully fetched
+  useEffect(() => {
+    if (!authLoading && user && profile) {
+      navigate(from, { replace: true });
+    }
+  }, [authLoading, user, profile, navigate, from]);
 
   // --- Handlers ---
 
@@ -31,8 +40,8 @@ export default function LoginPage() {
         throw new Error(`User does not have an account with email "${email.trim()}"`);
       }
       await authService.loginWithPassword(email.trim(), password);
-      toast.success('Welcome back!');
-      navigate(from, { replace: true });
+      toast.success('Welcome back! Loading your dashboard...');
+      // navigate() is handled by the useEffect above once profile loads
     } catch (err) {
       toast.error(err.message || 'Invalid email or password.');
     } finally {
@@ -71,20 +80,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await authService.verifyLoginOTP(email.trim(), otp);
-      toast.success('Welcome back!');
-      navigate(from, { replace: true });
+      toast.success('Welcome back! Loading your dashboard...');
+      // navigate() is handled by the useEffect above once profile loads
     } catch (err) {
       toast.error(err.message || 'Invalid OTP.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      await authService.signInWithGoogle();
-    } catch (err) {
-      toast.error(err.message || 'Google Login failed.');
     }
   };
 
@@ -180,15 +181,6 @@ export default function LoginPage() {
                   onClick={() => setMode('otp_request')}
                 >
                   Login with OTP
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-google btn-full btn-lg"
-                  onClick={handleGoogleLogin}
-                >
-                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="google-icon" />
-                  Continue with Google
                 </button>
               </div>
             </form>
@@ -399,25 +391,10 @@ export default function LoginPage() {
 
         .btn-full { width: 100%; }
 
-        .btn-google {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          border: 1px solid #D63447;
-          color: #D63447;
-          background: #fff;
-        }
-
         .btn-ghost {
           background: transparent;
           color: #666;
           font-size: 14px;
-        }
-
-        .google-icon {
-          width: 18px;
-          height: 18px;
         }
 
         .login-footer {

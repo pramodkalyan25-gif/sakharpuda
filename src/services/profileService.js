@@ -120,6 +120,20 @@ export const profileService = {
   },
 
   /**
+   * Get the raw mobile number for the authenticated user
+   * @param {string} userId
+   */
+  async getMobileNumber(userId) {
+    const { data, error } = await supabase
+      .from('contact_details')
+      .select('full_mobile')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.full_mobile || '';
+  },
+
+  /**
    * Save the user's mobile number in the contact_details table
    * NOT in profiles table — strict privacy separation
    * @param {string} userId
@@ -215,17 +229,15 @@ export const profileService = {
   async getProfileViewers(userId) {
     const { data, error } = await supabase
       .from('profile_views')
-      .select(`
-        viewer_id,
-        viewed_at,
-        profiles!profile_views_viewer_id_fkey (
-          user_id, name, city, photo_visibility
-        )
-      `)
+      .select('viewer_id, viewed_at')
       .eq('viewed_id', userId)
       .order('viewed_at', { ascending: false });
-    
-    if (error) throw error;
+
+    if (error) {
+      // profile_views table may not exist yet — return empty gracefully
+      console.warn('[profileService] getProfileViewers error (table may not exist):', error.message);
+      return [];
+    }
 
     // Deduplicate: only keep the latest view per viewer
     const uniqueViewers = [];
@@ -236,7 +248,21 @@ export const profileService = {
         uniqueViewers.push(v);
       }
     });
-    return uniqueViewers.slice(0, 50);
+
+    const sliced = uniqueViewers.slice(0, 50);
+    if (sliced.length === 0) return sliced;
+
+    // Fetch viewer profiles separately
+    const viewerIds = sliced.map(v => v.viewer_id);
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, name, city, photo_visibility')
+      .in('user_id', viewerIds);
+
+    const profileMap = {};
+    (profilesData || []).forEach(p => { profileMap[p.user_id] = p; });
+
+    return sliced.map(v => ({ ...v, profiles: profileMap[v.viewer_id] || null }));
   },
 
   /**

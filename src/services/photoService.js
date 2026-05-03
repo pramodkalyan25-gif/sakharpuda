@@ -32,6 +32,11 @@ export const photoService = {
       });
     if (uploadError) throw uploadError;
 
+    // If this is primary, unset others
+    if (isPrimary) {
+      await supabase.from('photos').update({ is_primary: false }).eq('user_id', userId);
+    }
+
     // Insert record in photos table (store path, NOT the URL)
     const { data, error: dbError } = await supabase
       .from('photos')
@@ -112,6 +117,12 @@ export const photoService = {
    * @param {string} userId
    */
   async setPrimaryPhoto(photoId, userId) {
+    // First, unset all other photos as primary for this user
+    await supabase
+      .from('photos')
+      .update({ is_primary: false })
+      .eq('user_id', userId);
+
     const { data, error } = await supabase
       .from('photos')
       .update({ is_primary: true })
