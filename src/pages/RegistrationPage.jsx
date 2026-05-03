@@ -121,19 +121,19 @@ export default function RegistrationPage() {
     };
 
     try {
-      // 0. Check if email already exists
-      const emailExists = await authService.checkEmailExists(finalData.email);
-      if (emailExists) {
-        throw new Error('This email is already registered. Please login instead.');
+      // 0. Check if mobile already exists
+      let mobileExists = false;
+      try {
+        mobileExists = await authService.checkMobileExists(finalData.mobile);
+      } catch (checkErr) {
+        throw new Error(`Database Error: ${checkErr.message || 'Connection failed'}`);
       }
 
-      // 1. Check if mobile already exists
-      const mobileExists = await authService.checkMobileExists(finalData.mobile);
       if (mobileExists) {
-        throw new Error('This mobile number is already registered. Please use a different number.');
+        throw new Error('This mobile number is already registered. Please use a different number or login.');
       }
 
-      // 2. Create Supabase auth user
+      // 1. Create Supabase auth user
       const authData = await authService.signupWithPassword(
         finalData.email.trim(),
         finalData.password
@@ -277,27 +277,23 @@ export default function RegistrationPage() {
   const startAdjusting = (field, delta) => {
     const adjust = () => {
       setFormData(prev => {
-        let val = parseInt(prev[field]);
+        let val = parseInt(prev[field]) || 0;
         if (isNaN(val)) {
-          if (field === 'dobYear') val = new Date().getFullYear() - 25;
+          if (field === 'dobYear') val = 1995;
           else val = 1;
         }
         let newVal = val + delta;
-
-        // Bounds check
         if (field === 'dobDay' && (newVal < 1 || newVal > 31)) return prev;
         if (field === 'dobMonth' && (newVal < 1 || newVal > 12)) return prev;
         const currentYear = new Date().getFullYear();
         if (field === 'dobYear' && (newVal < 1950 || newVal > currentYear - 18)) return prev;
-
         return { ...prev, [field]: String(newVal) };
       });
     };
-
     adjust();
     timeoutRef.current = setTimeout(() => {
       intervalRef.current = setInterval(adjust, 60);
-    }, 400); 
+    }, 400);
   };
 
   const stopAdjusting = () => {
@@ -309,37 +305,6 @@ export default function RegistrationPage() {
     if (value.length > 4) return;
     if (field !== 'dobYear' && value.length > 2) return;
     updateForm(field, value);
-
-    // Real-time field validation
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      const val = parseInt(value);
-
-      if (field === 'dobDay') {
-        if (value && (isNaN(val) || val < 1 || val > 31)) {
-          newErrors.dobDay = "Invalid Day (1-31)";
-        } else {
-          delete newErrors.dobDay;
-        }
-      } else if (field === 'dobMonth') {
-        if (value && (isNaN(val) || val < 1 || val > 12)) {
-          newErrors.dobMonth = "Invalid Month (1-12)";
-        } else {
-          delete newErrors.dobMonth;
-        }
-      } else if (field === 'dobYear') {
-        if (value.length === 4) {
-          const currentYear = new Date().getFullYear();
-          if (isNaN(val) || val < 1950 || val > currentYear - 18) {
-            newErrors.dobYear = "Must be 18+ years";
-          } else {
-            delete newErrors.dobYear;
-          }
-        }
-      }
-      return newErrors;
-    });
-
     if ((field === 'dobDay' || field === 'dobMonth') && value.length === 2 && nextFieldId) {
       document.getElementById(nextFieldId)?.focus();
     }
@@ -517,7 +482,7 @@ export default function RegistrationPage() {
 
   const renderStep4 = () => (
     <div className="step-content animate-slide-in">
-      <h2 className="step-title">What is your Date of Birth?</h2>
+      <h2 className="step-title">Date of Birth</h2>
       <div className="dob-grid">
         <div className="form-group">
           <label className="input-label text-center">Day</label>
@@ -531,17 +496,16 @@ export default function RegistrationPage() {
               onChange={(e) => handleDOBChange('dobDay', e.target.value, 'dobMonth')}
             />
             <div className="number-arrows">
-              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobDay', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
-                <ChevronUp size={14} />
+              <button type="button" onMouseDown={() => startAdjusting('dobDay', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                <ChevronUp size={12} />
               </button>
-              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobDay', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
-                <ChevronDown size={14} />
+              <button type="button" onMouseDown={() => startAdjusting('dobDay', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                <ChevronDown size={12} />
               </button>
             </div>
           </div>
-          {errors.dobDay && <span className="error-text text-center">{errors.dobDay}</span>}
+          {errors.dobDay && <span className="error-text text-center block">{errors.dobDay}</span>}
         </div>
-        
         <div className="form-group">
           <label className="input-label text-center">Month</label>
           <div className="custom-number-input">
@@ -554,17 +518,16 @@ export default function RegistrationPage() {
               onChange={(e) => handleDOBChange('dobMonth', e.target.value, 'dobYear')}
             />
             <div className="number-arrows">
-              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobMonth', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
-                <ChevronUp size={14} />
+              <button type="button" onMouseDown={() => startAdjusting('dobMonth', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                <ChevronUp size={12} />
               </button>
-              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobMonth', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
-                <ChevronDown size={14} />
+              <button type="button" onMouseDown={() => startAdjusting('dobMonth', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                <ChevronDown size={12} />
               </button>
             </div>
           </div>
-          {errors.dobMonth && <span className="error-text text-center">{errors.dobMonth}</span>}
+          {errors.dobMonth && <span className="error-text text-center block">{errors.dobMonth}</span>}
         </div>
-
         <div className="form-group">
           <label className="input-label text-center">Year</label>
           <div className="custom-number-input">
@@ -577,18 +540,27 @@ export default function RegistrationPage() {
               onChange={(e) => handleDOBChange('dobYear', e.target.value)}
             />
             <div className="number-arrows">
-              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobYear', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
-                <ChevronUp size={14} />
+              <button type="button" onMouseDown={() => startAdjusting('dobYear', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                <ChevronUp size={12} />
               </button>
-              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobYear', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
-                <ChevronDown size={14} />
+              <button type="button" onMouseDown={() => startAdjusting('dobYear', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                <ChevronDown size={12} />
               </button>
             </div>
           </div>
-          {errors.dobYear && <span className="error-text text-center">{errors.dobYear}</span>}
+          {errors.dobYear && <span className="error-text text-center block">{errors.dobYear}</span>}
         </div>
       </div>
-      <button className="primary-btn full-width mt-6" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
+      {errors.dobDate && <p className="error-text text-center mt-2">{errors.dobDate}</p>}
+      <button 
+        className="primary-btn full-width mt-6" 
+        onClick={() => {
+          if (validateDOB()) handleNext();
+        }}
+        disabled={!formData.dobDay || !formData.dobMonth || !formData.dobYear}
+      >
+        Continue
+      </button>
     </div>
   );
 
@@ -686,7 +658,10 @@ export default function RegistrationPage() {
         onChange={handlePhotoSelect}
       />
 
-      <p className="photo-tip text-center mt-4">🔒 Photos are kept private and secure</p>
+      <p className="photo-tip text-center mt-4">
+        📸 Upload 1-3 photos. Minimum 1 photo required.
+      </p>
+      <p className="photo-tip-sub text-center">🔒 Photos are kept private and secure</p>
 
       <button
         className="primary-btn full-width mt-4"
@@ -829,7 +804,7 @@ export default function RegistrationPage() {
               </svg>
             </div>
             <h2 className="success-title">🎉 Profile Created Successfully!</h2>
-            <p className="success-subtitle">Welcome to ManglaSutra! Your journey to find the perfect match begins now.</p>
+            <p className="success-subtitle">Welcome to SakharPuda! Your journey to find the perfect match begins now.</p>
             <p className="success-redirect">Redirecting to login in a few seconds...</p>
             <button className="success-btn" onClick={() => navigate('/login', { replace: true })}>
               Go to Login Now

@@ -186,7 +186,7 @@ export const authService = {
     // Extract only digits to match the robust SQL function
     const digits = mobile.replace(/\D/g, '');
     const cleanMobile = digits.length > 10 ? digits.slice(-10) : digits;
-    
+
     console.log("Checking mobile existence for digits:", cleanMobile);
     const { data, error } = await supabase.rpc('check_mobile_exists', { p_mobile: cleanMobile });
     if (error) {

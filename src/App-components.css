@@ -96,6 +96,218 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+/* ============================================================
+   JEEVANSATHI STYLE PROFILE CARD (HORIZONTAL)
+   ============================================================ */
+.js-profile-card {
+  background: #fff;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.js-profile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  border-color: #fbd5d5;
+}
+
+.js-card-main {
+  display: flex;
+  padding: 16px;
+  gap: 20px;
+}
+
+.js-card-photo-box {
+  flex-shrink: 0;
+  width: 180px;
+  height: 240px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background: #f1f5f9;
+}
+
+.js-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.js-photo-count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.js-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.js-info-header {
+  margin-bottom: 12px;
+}
+
+.js-active-status {
+  font-size: 11px;
+  color: #64748b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.js-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.js-card-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.js-verified-check {
+  color: #3b82f6;
+  font-size: 18px;
+}
+
+.js-details-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.js-detail-line {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.js-icon-detail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.js-detail-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.js-tag-row {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.js-tag-gold {
+  background: #fef3c7;
+  color: #d97706;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #fde68a;
+}
+
+.js-action-bar {
+  display: flex;
+  border-top: 1px solid #fff1f2;
+  background: #fff8f8;
+}
+
+.js-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: #d63447;
+  transition: background 0.2s;
+}
+
+.js-action-btn:hover:not(:disabled) {
+  background: #fff1f2;
+}
+
+.js-action-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.js-action-icon {
+  font-size: 18px;
+}
+
+.js-photo-blur-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.js-blur-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.js-blur-text {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .js-card-main {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .js-card-photo-box {
+    width: 100%;
+    height: 240px;
+  }
+  .js-action-bar {
+    flex-wrap: wrap;
+  }
+  .js-action-btn {
+    flex: 0 0 50%;
+    border-bottom: 1px solid #fff1f2;
+  }
+}
+
 /* VIEW PROFILE PAGE */
 .view-profile-page {
   min-height: 100vh;

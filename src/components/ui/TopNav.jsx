@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Search, Heart, User, Bell, ChevronDown, LogOut, Settings, Shield } from 'lucide-react';
+import { Search, Heart, User, Bell, ChevronDown, LogOut, Settings, Shield, Menu } from 'lucide-react';
 import Avatar from './Avatar';
 
 export default function TopNav() {
@@ -15,77 +15,45 @@ export default function TopNav() {
     navigate('/', { replace: true });
   };
 
-  const navLinks = [
-    { name: 'My Dashboard', path: '/dashboard' },
-    { name: 'My Matches', path: '/matches' },
-    { name: 'Search', path: '/search' },
-    { name: 'Inbox', path: '/inbox' }
-  ];
-
   return (
-    <nav className="topnav-wrapper">
-      <div className="topnav-container">
-        {/* Logo Area */}
-        <Link to="/dashboard" className="topnav-brand">
-          <img src="/images/logo.png" alt="SakharPuda" style={{ height: '30px' }} />
+    <nav className="js-header-wrapper">
+      <div className="js-header-container container">
+        {/* LEFT: LOGO */}
+        <Link to="/dashboard" className="js-header-logo">
+          <img src="/images/logo.png" alt="SakharPuda" />
         </Link>
 
-        {/* Primary Navigation */}
-        <div className="topnav-links">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className={`topnav-link ${location.pathname === link.path ? 'active' : ''}`}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </div>
-
-        {/* Actions & Profile */}
-        <div className="topnav-actions">
-          <Link to="/upgrade" className="upgrade-btn">Upgrade</Link>
+        {/* RIGHT: ACTIONS */}
+        <div className="js-header-actions">
+          <button className="js-header-icon-btn">
+            <User size={22} color="#64748b" />
+          </button>
           
-          <button className="icon-btn">
-            <Bell size={20} />
-            <span className="badge">3</span>
+          <button className="js-header-icon-btn">
+            <Bell size={22} color="#64748b" />
+            <span className="js-header-dot"></span>
           </button>
 
-          <div className="profile-menu-container">
+          <div className="js-header-menu-wrap">
             <button 
-              className="profile-trigger" 
+              className="js-header-icon-btn"
               onClick={() => setDropdownOpen(!dropdownOpen)}
               onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
             >
-              <Avatar src={null} name={profile?.name || 'User'} size="sm" />
-              <ChevronDown size={16} />
+              <Menu size={22} color="#64748b" />
             </button>
 
             {dropdownOpen && (
-              <div className="profile-dropdown">
-                <div className="dropdown-header">
+              <div className="js-header-dropdown">
+                <div className="js-dropdown-user">
                   <strong>{profile?.name}</strong>
-                  <span className="account-type">{profile?.admin_verified ? 'Premium Member' : 'Free Member'}</span>
+                  <span>{profile?.admin_verified ? 'Premium Member' : 'Free Member'}</span>
                 </div>
-                
-                <Link to={`/profile/${user?.id}`} className="dropdown-item">
-                  <User size={16} /> View Profile
-                </Link>
-                <Link to="/settings" className="dropdown-item">
-                  <Settings size={16} /> Account Settings
-                </Link>
-                {isAdmin && (
-                  <Link to="/admin" className="dropdown-item">
-                    <Shield size={16} /> Admin Panel
-                  </Link>
-                )}
-                
-                <div className="dropdown-divider"></div>
-                
-                <button onClick={handleLogout} className="dropdown-item logout">
-                  <LogOut size={16} /> Logout
-                </button>
+                <Link to="/create-profile" className="js-dropdown-item">Edit Profile</Link>
+                <Link to="/settings" className="js-dropdown-item">Account Settings</Link>
+                {isAdmin && <Link to="/admin" className="js-dropdown-item">Admin Panel</Link>}
+                <div className="js-dropdown-divider"></div>
+                <button onClick={handleLogout} className="js-dropdown-item logout">Logout</button>
               </div>
             )}
           </div>
@@ -93,159 +61,99 @@ export default function TopNav() {
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .topnav-wrapper {
+        .js-header-wrapper {
           background: #fff;
-          border-bottom: 1px solid #eaeaea;
+          border-bottom: 1px solid #e2e8f0;
+          height: 70px;
+          display: flex;
+          align-items: center;
           position: sticky;
           top: 0;
-          z-index: 100;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+          z-index: 1000;
         }
 
-        .topnav-container {
-          max-width: 1200px;
-          margin: 0 auto;
+        .js-header-container {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          height: 70px;
-          padding: 0 20px;
+          align-items: center;
+          width: 100%;
         }
 
-        .topnav-links {
-          display: flex;
-          gap: 30px;
-          height: 100%;
+        .js-header-logo img {
+          height: 30px;
+          display: block;
         }
 
-        .topnav-link {
-          text-decoration: none;
-          color: #555;
-          font-weight: 600;
-          font-size: 15px;
+        .js-header-actions {
           display: flex;
           align-items: center;
-          position: relative;
-          height: 100%;
-          transition: color 0.2s;
+          gap: 15px;
         }
 
-        .topnav-link:hover { color: #D63447; }
-        
-        .topnav-link.active { color: #D63447; }
-        .topnav-link.active::after {
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: #D63447;
-          border-radius: 3px 3px 0 0;
-        }
-
-        .topnav-actions {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
-
-        .upgrade-btn {
-          background: #ffb822;
-          color: #fff;
-          padding: 6px 16px;
-          border-radius: 20px;
-          font-weight: 700;
-          font-size: 13px;
-          text-decoration: none;
-          transition: background 0.2s;
-        }
-        .upgrade-btn:hover { background: #e5a41c; }
-
-        .icon-btn {
-          background: transparent;
+        .js-header-icon-btn {
+          background: #f8fafc;
           border: none;
-          color: #666;
-          cursor: pointer;
-          position: relative;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
+          cursor: pointer;
+          position: relative;
+          transition: background 0.2s;
         }
-        .icon-btn:hover { color: #D63447; }
+        .js-header-icon-btn:hover { background: #f1f5f9; }
 
-        .badge {
+        .js-header-dot {
           position: absolute;
-          top: -5px;
-          right: -8px;
-          background: #D63447;
-          color: white;
-          font-size: 10px;
-          font-weight: bold;
-          padding: 2px 5px;
-          border-radius: 10px;
+          top: 10px;
+          right: 10px;
+          width: 8px;
+          height: 8px;
+          background: #ef4444;
           border: 2px solid #fff;
+          border-radius: 50%;
         }
 
-        .profile-menu-container {
+        .js-header-menu-wrap {
           position: relative;
         }
 
-        .profile-trigger {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          padding: 0;
-          color: #555;
-        }
-
-        .profile-dropdown {
+        .js-header-dropdown {
           position: absolute;
           top: calc(100% + 10px);
           right: 0;
           background: #fff;
-          border-radius: 8px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-          min-width: 200px;
-          padding: 8px 0;
-          border: 1px solid #eee;
+          border-radius: 12px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+          min-width: 220px;
+          padding: 10px 0;
+          border: 1px solid #f1f5f9;
         }
 
-        .dropdown-header {
-          padding: 12px 16px;
-          border-bottom: 1px solid #f0f0f0;
+        .js-dropdown-user {
+          padding: 12px 20px;
+          border-bottom: 1px solid #f1f5f9;
           display: flex;
           flex-direction: column;
         }
-        .dropdown-header strong { font-size: 14px; color: #333; }
-        .account-type { font-size: 12px; color: #D63447; font-weight: 600; margin-top: 2px; }
+        .js-dropdown-user strong { font-size: 14px; color: #1e293b; }
+        .js-dropdown-user span { font-size: 12px; color: #D63447; font-weight: 600; }
 
-        .dropdown-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 16px;
-          color: #555;
+        .js-dropdown-item {
+          display: block;
+          padding: 10px 20px;
+          color: #475569;
           text-decoration: none;
           font-size: 14px;
+          font-weight: 500;
           transition: background 0.2s;
-          cursor: pointer;
-          border: none;
-          background: transparent;
-          width: 100%;
-          text-align: left;
         }
-        .dropdown-item:hover { background: #f9f9f9; color: #D63447; }
-        .dropdown-divider { height: 1px; background: #eee; margin: 4px 0; }
-        .logout { color: #e53e3e; }
-        .logout:hover { background: #fff5f5; color: #c53030; }
-
-        @media (max-width: 768px) {
-          .topnav-links { display: none; }
-        }
+        .js-dropdown-item:hover { background: #f8fafc; color: #D63447; }
+        .js-dropdown-divider { height: 1px; background: #f1f5f9; margin: 5px 0; }
+        .js-dropdown-item.logout { width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: #ef4444; }
+        .js-dropdown-item.logout:hover { background: #fef2f2; }
       `}} />
     </nav>
   );
