@@ -519,7 +519,7 @@ export default function LandingPage() {
         }
 
         .logo-img {
-          height: 32px;
+          height: 28px;
           display: block;
         }
 
@@ -1602,7 +1602,7 @@ export default function LandingPage() {
         }
 
         .footer-logo {
-          height: 30px;
+          height: 24px;
           margin-bottom: 20px;
           opacity: 0.8;
         }

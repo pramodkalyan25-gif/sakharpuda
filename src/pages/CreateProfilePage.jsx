@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { profileService } from '../services/profileService';
@@ -15,8 +16,16 @@ const TOTAL_STEPS = 12;
 
 export default function CreateProfilePage() {
   const navigate = useNavigate();
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const fileInputRef = useRef(null);
+
+  // If user already has a profile, redirect to dashboard
+  useEffect(() => {
+    if (profile) {
+      toast.success('You already have a profile!');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [profile, navigate]);
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -50,6 +59,41 @@ export default function CreateProfilePage() {
   const next = () => setStep(s => Math.min(s + 1, TOTAL_STEPS - 1));
   const back = () => setStep(s => Math.max(s - 1, 0));
 
+  // --- Fast Increment Logic for DOB ---
+  const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  const startAdjusting = (field, delta) => {
+    const adjust = () => {
+      setData(prev => {
+        let val = parseInt(prev[field]) || 0;
+        if (isNaN(val)) {
+          if (field === 'dob_year') val = 1995;
+          else val = 1;
+        }
+        let newVal = val + delta;
+
+        // Bounds
+        if (field === 'dob_day' && (newVal < 1 || newVal > 31)) return prev;
+        if (field === 'dob_month' && (newVal < 1 || newVal > 12)) return prev;
+        const currentYear = new Date().getFullYear();
+        if (field === 'dob_year' && (newVal < 1950 || newVal > currentYear - 18)) return prev;
+
+        return { ...prev, [field]: String(newVal) };
+      });
+    };
+
+    adjust();
+    timeoutRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(adjust, 60);
+    }, 400);
+  };
+
+  const stopAdjusting = () => {
+    clearTimeout(timeoutRef.current);
+    clearInterval(intervalRef.current);
+  };
+
   const toggleHobby = (hobby) => {
     setData(prev => {
       const arr = prev.hobbies.includes(hobby)
@@ -73,7 +117,7 @@ export default function CreateProfilePage() {
   const handleFinalSubmit = async () => {
     setSaving(true);
     try {
-      const dob = `${data.dob_year}-${String(data.dob_month).padStart(2,'0')}-${String(data.dob_day).padStart(2,'0')}`;
+      const dob = `${data.dob_year}-${String(data.dob_month).padStart(2, '0')}-${String(data.dob_day).padStart(2, '0')}`;
       const fullName = `${data.first_name} ${data.last_name}`.trim();
 
       await profileService.createProfile(user.id, {
@@ -163,7 +207,7 @@ export default function CreateProfilePage() {
                   background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8,
                   padding: '14px 18px', marginTop: 30, fontSize: 13, color: '#666', lineHeight: 1.6
                 }}>
-                  <strong style={{color:'#ef6c00'}}>ℹ</strong> ManglaSutra is built for genuine match-seekers. Any falsification, commercial use or marriage bureaus is strictly prohibited & may be reported to law enforcement.
+                  <strong style={{ color: '#ef6c00' }}>ℹ</strong> ManglaSutra is built for genuine match-seekers. Any falsification, commercial use or marriage bureaus is strictly prohibited & may be reported to law enforcement.
                 </div>
               </div>
               <button className="wizard-continue" disabled={!data.profile_for} onClick={next}>Continue</button>
@@ -187,7 +231,7 @@ export default function CreateProfilePage() {
                 <div className="wizard-field-group">
                   <label>Gender</label>
                   <div className="wizard-pills">
-                    {['male','female','other'].map(g => (
+                    {['male', 'female', 'other'].map(g => (
                       <button key={g} type="button"
                         className={`wizard-pill ${data.gender === g ? 'active' : ''}`}
                         onClick={() => set('gender', g)}>
@@ -199,20 +243,50 @@ export default function CreateProfilePage() {
                 <div className="wizard-field-group">
                   <label>Date of birth</label>
                   <div className="wizard-row">
-                    <div>
-                      <small style={{color:'#888',fontSize:11}}>Day</small>
-                      <input className="wizard-input" placeholder="DD" type="number" min="1" max="31"
-                        value={data.dob_day} onChange={e => set('dob_day', e.target.value)} />
+                    <div className="custom-number-wrapper">
+                      <small style={{ color: '#888', fontSize: 11 }}>Day</small>
+                      <div className="custom-number-input">
+                        <input className="wizard-input" placeholder="DD" type="number" min="1" max="31"
+                          value={data.dob_day} onChange={e => set('dob_day', e.target.value)} />
+                        <div className="number-arrows">
+                          <button type="button" onMouseDown={() => startAdjusting('dob_day', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                            <ChevronUp size={12} />
+                          </button>
+                          <button type="button" onMouseDown={() => startAdjusting('dob_day', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                            <ChevronDown size={12} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <small style={{color:'#888',fontSize:11}}>Month</small>
-                      <input className="wizard-input" placeholder="MM" type="number" min="1" max="12"
-                        value={data.dob_month} onChange={e => set('dob_month', e.target.value)} />
+                    <div className="custom-number-wrapper">
+                      <small style={{ color: '#888', fontSize: 11 }}>Month</small>
+                      <div className="custom-number-input">
+                        <input className="wizard-input" placeholder="MM" type="number" min="1" max="12"
+                          value={data.dob_month} onChange={e => set('dob_month', e.target.value)} />
+                        <div className="number-arrows">
+                          <button type="button" onMouseDown={() => startAdjusting('dob_month', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                            <ChevronUp size={12} />
+                          </button>
+                          <button type="button" onMouseDown={() => startAdjusting('dob_month', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                            <ChevronDown size={12} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <small style={{color:'#888',fontSize:11}}>Year</small>
-                      <input className="wizard-input" placeholder="YYYY" type="number" min="1960" max="2008"
-                        value={data.dob_year} onChange={e => set('dob_year', e.target.value)} />
+                    <div className="custom-number-wrapper">
+                      <small style={{ color: '#888', fontSize: 11 }}>Year</small>
+                      <div className="custom-number-input">
+                        <input className="wizard-input" placeholder="YYYY" type="number" min="1960" max="2008"
+                          value={data.dob_year} onChange={e => set('dob_year', e.target.value)} />
+                        <div className="number-arrows">
+                          <button type="button" onMouseDown={() => startAdjusting('dob_year', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                            <ChevronUp size={12} />
+                          </button>
+                          <button type="button" onMouseDown={() => startAdjusting('dob_year', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting}>
+                            <ChevronDown size={12} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -271,7 +345,7 @@ export default function CreateProfilePage() {
                       <option value="">Your Sub-community</option>
                       {subCommunities.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                    <label style={{display:'flex',alignItems:'center',gap:8,marginTop:12,fontSize:14,color:'#666',fontWeight:400,cursor:'pointer'}}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 14, color: '#666', fontWeight: 400, cursor: 'pointer' }}>
                       <input type="checkbox" checked={data.caste_no_bar}
                         onChange={e => set('caste_no_bar', e.target.checked)} />
                       Not particular about my Partner's Community (caste no bar)
@@ -338,7 +412,7 @@ export default function CreateProfilePage() {
                 </div>
                 <div className="wizard-field-group">
                   <label>College name</label>
-                  <input className="wizard-input" placeholder="College you attended"
+                  <input className="wizard-input" placeholder="e.g : Saint Francis Institute Of Technology,Mumbai"
                     value={data.college_name} onChange={e => set('college_name', e.target.value)} />
                 </div>
               </div>
@@ -364,18 +438,18 @@ export default function CreateProfilePage() {
                 <div className="wizard-field-group">
                   <label>Work details</label>
                   <select className="wizard-select" value={data.company_type}
-                    onChange={e => set('company_type', e.target.value)} style={{marginBottom:12}}>
+                    onChange={e => set('company_type', e.target.value)} style={{ marginBottom: 12 }}>
                     <option value="">You work with</option>
                     {COMPANY_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <select className="wizard-select" value={data.profession}
-                    onChange={e => set('profession', e.target.value)} style={{marginBottom:12}}>
+                    onChange={e => set('profession', e.target.value)} style={{ marginBottom: 12 }}>
                     <option value="">You work as</option>
                     {PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                   <input className="wizard-input" placeholder="Your current company name"
                     value={data.company_name} onChange={e => set('company_name', e.target.value)} />
-                  <small style={{color:'#00897b',fontSize:12,marginTop:4,display:'block'}}>Specify current organization</small>
+                  <small style={{ color: '#00897b', fontSize: 12, marginTop: 4, display: 'block' }}>Specify current organization</small>
                 </div>
               </div>
               <button className="wizard-continue green-btn" onClick={next}>Create Profile</button>
@@ -395,9 +469,9 @@ export default function CreateProfilePage() {
                     onChange={e => set('bio', e.target.value)}
                     placeholder="Let me introduce myself..."
                     maxLength={4000} />
-                  <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}>
-                    <small style={{color:'#888',fontStyle:'italic'}}>Edit the text above to make it more personal.</small>
-                    <small style={{color:'#00897b'}}>{data.bio.length} /4000</small>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                    <small style={{ color: '#888', fontStyle: 'italic' }}>Edit the text above to make it more personal.</small>
+                    <small style={{ color: '#00897b' }}>{data.bio.length} /4000</small>
                   </div>
                 </div>
               </div>
@@ -409,7 +483,7 @@ export default function CreateProfilePage() {
           {/* Step 8: Photo Upload */}
           {step === 8 && (
             <>
-              <h2 className="wizard-title" style={{color:'#6a1b9a'}}>Congrats! Your Profile has been created.</h2>
+              <h2 className="wizard-title" style={{ color: '#6a1b9a' }}>Congrats! Your Profile has been created.</h2>
               <p className="wizard-subtitle">Upload Photo and get better Matches</p>
               <div className="wizard-fields">
                 <div className="wizard-photo-area">
@@ -446,7 +520,7 @@ export default function CreateProfilePage() {
             <>
               <h2 className="wizard-title">Now let's add hobbies & interests</h2>
               <p className="wizard-subtitle">This will help find better Matches</p>
-              <div className="wizard-fields" style={{maxHeight:400,overflowY:'auto'}}>
+              <div className="wizard-fields" style={{ maxHeight: 400, overflowY: 'auto' }}>
                 {Object.entries(HOBBIES).map(([category, items]) => (
                   <div key={category} className="wizard-chip-section">
                     <h4>{category}</h4>
@@ -476,7 +550,7 @@ export default function CreateProfilePage() {
               <p className="wizard-subtitle">This really helps find common connections</p>
               <div className="wizard-fields">
                 <div className="wizard-field-group">
-                  <small style={{color:'#888'}}>Mother's details</small>
+                  <small style={{ color: '#888' }}>Mother's details</small>
                   <select className="wizard-select" value={data.family_mother_occupation}
                     onChange={e => set('family_mother_occupation', e.target.value)}>
                     <option value="">Select</option>
@@ -484,7 +558,7 @@ export default function CreateProfilePage() {
                   </select>
                 </div>
                 <div className="wizard-field-group">
-                  <small style={{color:'#888'}}>Father's details</small>
+                  <small style={{ color: '#888' }}>Father's details</small>
                   <select className="wizard-select" value={data.family_father_occupation}
                     onChange={e => set('family_father_occupation', e.target.value)}>
                     <option value="">Select</option>
@@ -493,17 +567,17 @@ export default function CreateProfilePage() {
                 </div>
                 <div className="wizard-row">
                   <div className="wizard-field-group">
-                    <small style={{color:'#888'}}>No. of Sisters</small>
+                    <small style={{ color: '#888' }}>No. of Sisters</small>
                     <select className="wizard-select" value={data.num_sisters}
                       onChange={e => set('num_sisters', e.target.value)}>
-                      {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n === 0 ? 'None' : n}</option>)}
+                      {[0, 1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n === 0 ? 'None' : n}</option>)}
                     </select>
                   </div>
                   <div className="wizard-field-group">
-                    <small style={{color:'#888'}}>No. of Brothers</small>
+                    <small style={{ color: '#888' }}>No. of Brothers</small>
                     <select className="wizard-select" value={data.num_brothers}
                       onChange={e => set('num_brothers', e.target.value)}>
-                      {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n === 0 ? 'None' : n}</option>)}
+                      {[0, 1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n === 0 ? 'None' : n}</option>)}
                     </select>
                   </div>
                 </div>

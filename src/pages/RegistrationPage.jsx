@@ -1,7 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { ArrowLeft, ShieldCheck, Search, User, Trash2, Star, Check, X, Globe } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, ShieldCheck, Search, User, Trash2, Star, Check, X, Globe, ChevronUp, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { authService } from '../services/authService';
+import { profileService } from '../services/profileService';
+import { photoService } from '../services/photoService';
 import {
   MAHARASHTRA_DISTRICTS,
   MAHARASHTRA_CASTES,
@@ -32,12 +35,14 @@ export default function RegistrationPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 10;
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     profileFor: '',
     gender: '',
     firstName: '',
-    middleName: '', // Father's Name
+    middleName: '', // Middle Name
     lastName: '',
     religion: '',
     caste: '',
@@ -55,6 +60,7 @@ export default function RegistrationPage() {
     income: '',
     email: '',
     mobile: '',
+    password: '',
     photos: [], // Array of { file, preview }
     profilePhotoIndex: 0
   });
@@ -99,9 +105,11 @@ export default function RegistrationPage() {
     else navigate(-1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateEmail(formData.email) || !validateMobile(formData.mobile)) return;
+    setSubmitting(true);
 
+    // Resolve "Other" custom values
     const finalData = {
       ...formData,
       ...Object.keys(customValues).reduce((acc, key) => {
@@ -111,9 +119,94 @@ export default function RegistrationPage() {
         return acc;
       }, {})
     };
-    console.log("Submitting Profile:", finalData);
-    toast.success("Registration Successful!");
-    setTimeout(() => navigate('/'), 1500);
+
+    try {
+      // 0. Check if email or mobile already exists
+      const emailExists = await authService.checkEmailExists(finalData.email);
+      if (emailExists) {
+        throw new Error('This email is already registered. Please login instead.');
+      }
+      
+      const mobileExists = await authService.checkMobileExists(finalData.mobile);
+      if (mobileExists) {
+        throw new Error('This mobile number is already registered. Please login instead.');
+      }
+
+      // 1. Create Supabase auth user
+      const authData = await authService.signupWithPassword(
+        finalData.email.trim(),
+        finalData.password
+      );
+      const userId = authData.user?.id;
+      if (!userId) throw new Error('Account creation failed. Please try again.');
+
+      // 2. Build DOB string
+      const dob = `${finalData.dobYear}-${String(finalData.dobMonth).padStart(2, '0')}-${String(finalData.dobDay).padStart(2, '0')}`;
+      const fullName = `${finalData.firstName} ${finalData.middleName} ${finalData.lastName}`.replace(/\s+/g, ' ').trim();
+
+      // 3. Create profile in database
+      await profileService.createProfile(userId, {
+        name: fullName,
+        first_name: finalData.firstName,
+        last_name: finalData.lastName,
+        gender: finalData.gender?.toLowerCase(),
+        dob,
+        height: finalData.height ? parseInt(finalData.height) : null,
+        religion: finalData.religion,
+        caste: finalData.caste,
+        sub_community: finalData.caste,
+        education: finalData.highestQualification,
+        profession: finalData.workAs,
+        salary: finalData.income,
+        city: finalData.district,
+        state: finalData.taluka,
+        country: 'India',
+        bio: '',
+        marital_status: finalData.maritalStatus?.toLowerCase().replace(/\s+/g, '_'),
+        profile_for: finalData.profileFor?.toLowerCase(),
+        college_name: finalData.college,
+        company_type: finalData.workWith,
+      });
+
+      // 4. Save mobile number
+      if (finalData.mobile) {
+        try {
+          await profileService.saveMobileNumber(userId, `+91${finalData.mobile}`);
+        } catch { /* non-critical */ }
+      }
+
+      // 5. Upload photos
+      if (finalData.photos && finalData.photos.length > 0) {
+        for (let i = 0; i < finalData.photos.length; i++) {
+          try {
+            const isPrimary = i === (finalData.profilePhotoIndex || 0);
+            await photoService.uploadPhoto(userId, finalData.photos[i].file, isPrimary);
+          } catch { /* non-critical, continue with other photos */ }
+        }
+      }
+
+      // 6. Log out so user must log in fresh
+      await authService.logout();
+
+      // 7. Show success screen
+      setShowSuccess(true);
+
+      // 8. Auto-redirect to login after 4 seconds
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 4000);
+
+    } catch (err) {
+      console.error('Registration error:', err);
+      const msg = err.message || 'Registration failed. Please try again.';
+      if (msg.includes('already registered')) {
+        toast.error('This email is already registered. Please login instead.');
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Validation
@@ -141,7 +234,7 @@ export default function RegistrationPage() {
     if (isNaN(year) || year < 1950 || year > currentYear - 18) {
       newErrors.dobYear = "Must be 18+ years";
     }
-    
+
     if (Object.keys(newErrors).length === 0) {
       const date = new Date(year, month - 1, day);
       if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
@@ -174,23 +267,62 @@ export default function RegistrationPage() {
       case 7: return !!(formData.highestQualification);
       case 8: return !!(formData.workWith && formData.workAs && formData.income);
       case 9: return formData.photos.length > 0;
-      case 10: return validateEmail(formData.email) && validateMobile(formData.mobile) && formData.password.length >= 6;
+      case 10: {
+        const pass = formData.password;
+        const isPassValid = pass.length >= 8 && /[A-Z]/.test(pass) && /[0-9]/.test(pass);
+        return validateEmail(formData.email) && validateMobile(formData.mobile) && isPassValid;
+      }
       default: return true;
     }
+  };
+
+  // --- Fast Increment Logic for DOB ---
+  const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  const startAdjusting = (field, delta) => {
+    const adjust = () => {
+      setFormData(prev => {
+        let val = parseInt(prev[field]) || 0;
+        if (isNaN(val)) {
+          if (field === 'dobYear') val = 1995;
+          else val = 1;
+        }
+        let newVal = val + delta;
+
+        // Bounds
+        if (field === 'dobDay' && (newVal < 1 || newVal > 31)) return prev;
+        if (field === 'dobMonth' && (newVal < 1 || newVal > 12)) return prev;
+        const currentYear = new Date().getFullYear();
+        if (field === 'dobYear' && (newVal < 1950 || newVal > currentYear - 18)) return prev;
+
+        return { ...prev, [field]: String(newVal) };
+      });
+    };
+
+    adjust();
+    timeoutRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(adjust, 60);
+    }, 400);
+  };
+
+  const stopAdjusting = () => {
+    clearTimeout(timeoutRef.current);
+    clearInterval(intervalRef.current);
   };
 
   // DOB Auto-tabbing logic & Real-time validation
   const handleDOBChange = (field, value, nextFieldId) => {
     if (value.length > 4) return; // Limit to 4 max (for year)
     if (field !== 'dobYear' && value.length > 2) return;
-    
+
     updateForm(field, value);
-    
+
     // Real-time field validation
     setErrors(prev => {
       const newErrors = { ...prev };
       const val = parseInt(value);
-      
+
       if (field === 'dobDay') {
         if (value && (isNaN(val) || val < 1 || val > 31)) {
           newErrors.dobDay = "Invalid Day (1-31)";
@@ -385,7 +517,7 @@ export default function RegistrationPage() {
     );
   };
 
-  // Step 2: Name (Updated with Father's Name)
+  // Step 2: Name (Updated with Middle Name)
   const renderStep2 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">What is your name?</h2>
@@ -401,11 +533,11 @@ export default function RegistrationPage() {
       </div>
       {formData.firstName && (
         <div className="form-group animate-reveal delay-1">
-          <label className="input-label">Father's Name</label>
+          <label className="input-label">Middle Name</label>
           <input
             type="text"
             className="text-input"
-            placeholder="Enter Father's Name"
+            placeholder="Enter Middle Name"
             value={formData.middleName}
             onChange={(e) => updateForm('middleName', e.target.value)}
           />
@@ -466,46 +598,75 @@ export default function RegistrationPage() {
       <div className="dob-grid">
         <div className="form-group">
           <label className="input-label text-center">Day</label>
-          <input
-            id="dobDay"
-            type="number"
-            className={`text-input text-center ${errors.dobDay ? 'input-error' : ''}`}
-            placeholder="DD"
-            value={formData.dobDay}
-            onChange={(e) => handleDOBChange('dobDay', e.target.value, 'dobMonth')}
-          />
+          <div className="custom-number-input">
+            <input
+              id="dobDay"
+              type="number"
+              className={`text-input text-center ${errors.dobDay ? 'input-error' : ''}`}
+              placeholder="DD"
+              value={formData.dobDay}
+              onChange={(e) => handleDOBChange('dobDay', e.target.value, 'dobMonth')}
+            />
+            <div className="number-arrows">
+              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobDay', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Increase">
+                <ChevronUp size={14} />
+              </button>
+              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobDay', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Decrease">
+                <ChevronDown size={14} />
+              </button>
+            </div>
+          </div>
           {errors.dobDay && <span className="error-text">{errors.dobDay}</span>}
         </div>
         <div className="form-group">
           <label className="input-label text-center">Month</label>
-          <input
-            id="dobMonth"
-            type="number"
-            className={`text-input text-center ${errors.dobMonth ? 'input-error' : ''}`}
-            placeholder="MM"
-            value={formData.dobMonth}
-            onChange={(e) => handleDOBChange('dobMonth', e.target.value, 'dobYear')}
-          />
+          <div className="custom-number-input">
+            <input
+              id="dobMonth"
+              type="number"
+              className={`text-input text-center ${errors.dobMonth ? 'input-error' : ''}`}
+              placeholder="MM"
+              value={formData.dobMonth}
+              onChange={(e) => handleDOBChange('dobMonth', e.target.value, 'dobYear')}
+            />
+            <div className="number-arrows">
+              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobMonth', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Increase">
+                <ChevronUp size={14} />
+              </button>
+              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobMonth', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Decrease">
+                <ChevronDown size={14} />
+              </button>
+            </div>
+          </div>
           {errors.dobMonth && <span className="error-text">{errors.dobMonth}</span>}
         </div>
         <div className="form-group">
           <label className="input-label text-center">Year</label>
-          <input
-            id="dobYear"
-            type="number"
-            className={`text-input text-center ${errors.dobYear ? 'input-error' : ''}`}
-            placeholder="YYYY"
-            value={formData.dobYear}
-            onChange={(e) => handleDOBChange('dobYear', e.target.value)}
-            onBlur={(e) => {
-              // Final year validation on blur
-              const val = parseInt(e.target.value);
-              const currentYear = new Date().getFullYear();
-              if (e.target.value.length > 0 && (isNaN(val) || val < 1950 || val > currentYear - 18)) {
-                setErrors(prev => ({ ...prev, dobYear: "Must be 18+ years" }));
-              }
-            }}
-          />
+          <div className="custom-number-input">
+            <input
+              id="dobYear"
+              type="number"
+              className={`text-input text-center ${errors.dobYear ? 'input-error' : ''}`}
+              placeholder="YYYY"
+              value={formData.dobYear}
+              onChange={(e) => handleDOBChange('dobYear', e.target.value)}
+              onBlur={(e) => {
+                const val = parseInt(e.target.value);
+                const currentYear = new Date().getFullYear();
+                if (e.target.value.length > 0 && (isNaN(val) || val < 1950 || val > currentYear - 18)) {
+                  setErrors(prev => ({ ...prev, dobYear: "Must be 18+ years" }));
+                }
+              }}
+            />
+            <div className="number-arrows">
+              <button type="button" className="arrow-up" onMouseDown={() => startAdjusting('dobYear', 1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Increase">
+                <ChevronUp size={14} />
+              </button>
+              <button type="button" className="arrow-down" onMouseDown={() => startAdjusting('dobYear', -1)} onMouseUp={stopAdjusting} onMouseLeave={stopAdjusting} title="Decrease">
+                <ChevronDown size={14} />
+              </button>
+            </div>
+          </div>
           {errors.dobYear && <span className="error-text">{errors.dobYear}</span>}
         </div>
       </div>
@@ -594,7 +755,7 @@ export default function RegistrationPage() {
         <input
           type="text"
           className="text-input"
-          placeholder="e.g. Pune University"
+          placeholder="e.g : Saint Francis Institute Of Technology,Mumbai"
           value={formData.college}
           onChange={(e) => updateForm('college', e.target.value)}
         />
@@ -756,10 +917,22 @@ export default function RegistrationPage() {
           <input
             type="password"
             className="text-input"
-            placeholder="Min. 6 characters"
+            placeholder="e.g : Sakhar@1234"
+            autoComplete="new-password"
             value={formData.password}
             onChange={(e) => updateForm('password', e.target.value)}
           />
+          <div className="password-requirements mt-2">
+            <p className={`req-item ${formData.password.length >= 8 ? 'valid' : ''}`}>
+              {formData.password.length >= 8 ? '✅' : '○'} At least 8 characters
+            </p>
+            <p className={`req-item ${/[A-Z]/.test(formData.password) ? 'valid' : ''}`}>
+              {/[A-Z]/.test(formData.password) ? '✅' : '○'} At least one uppercase letter
+            </p>
+            <p className={`req-item ${/[0-9]/.test(formData.password) ? 'valid' : ''}`}>
+              {/[0-9]/.test(formData.password) ? '✅' : '○'} At least one number
+            </p>
+          </div>
         </div>
 
         <div className="security-badge">
@@ -770,9 +943,9 @@ export default function RegistrationPage() {
         <button
           className="primary-btn full-width mt-4"
           onClick={handleSubmit}
-          disabled={!isStepValid()}
+          disabled={!isStepValid() || submitting}
         >
-          Complete Registration
+          {submitting ? 'Creating your account...' : 'Complete Registration'}
         </button>
       </div>
     );
@@ -820,6 +993,26 @@ export default function RegistrationPage() {
           {currentStep === 10 && renderStep10()}
         </div>
       </main>
+
+      {/* SUCCESS OVERLAY */}
+      {showSuccess && (
+        <div className="success-overlay">
+          <div className="success-card">
+            <div className="success-checkmark">
+              <svg viewBox="0 0 52 52" className="checkmark-svg">
+                <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              </svg>
+            </div>
+            <h2 className="success-title">🎉 Profile Created Successfully!</h2>
+            <p className="success-subtitle">Welcome to ManglaSutra! Your journey to find the perfect match begins now.</p>
+            <p className="success-redirect">Redirecting to login in a few seconds...</p>
+            <button className="success-btn" onClick={() => navigate('/login', { replace: true })}>
+              Go to Login Now
+            </button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .register-page-wrapper {
@@ -1129,23 +1322,92 @@ export default function RegistrationPage() {
           color: #4a5568;
         }
 
+        .custom-number-input {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .custom-number-input input {
+          padding-right: 38px !important;
+        }
+        .number-arrows {
+          position: absolute;
+          right: 5px;
+          display: flex;
+          flex-direction: column;
+          height: calc(100% - 10px);
+          justify-content: center;
+          gap: 2px;
+        }
+        .number-arrows button {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 4px;
+          width: 26px;
+          height: calc(50% - 1px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #64748b;
+          transition: all 0.2s;
+          padding: 0;
+        }
+        .number-arrows button:hover {
+          background: #f1f5f9;
+          color: #D9475C;
+          border-color: #cbd5e0;
+        }
+        .number-arrows button:active {
+          background: #e2e8f0;
+          transform: translateY(1px);
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        .password-requirements {
+          padding: 8px;
+          background: #f8fafc;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+        }
+        .req-item {
+          font-size: 11px;
+          color: #718096;
+          margin-bottom: 4px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .req-item.valid {
+          color: #2f855a;
+          font-weight: 600;
+        }
+        .req-item:last-child { margin-bottom: 0; }
+
         .reg-logo { height: 24px; filter: none; }
 
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(15px); }
+          from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-reveal {
-          animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+          animation: fadeInUp 0.2s cubic-bezier(0.4, 0, 0.2, 1) both;
         }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
+        .delay-1 { animation-delay: 0.05s; }
+        .delay-2 { animation-delay: 0.1s; }
+        .delay-3 { animation-delay: 0.15s; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-        .animate-slide-in { animation: slideIn 0.3s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.25s ease forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
+        .animate-slide-in { animation: slideIn 0.2s ease forwards; }
 
         @media (max-width: 768px) {
           .desktop-only { display: none; }
@@ -1165,6 +1427,104 @@ export default function RegistrationPage() {
             color: #333;
           }
           .step-icon-container { margin-top: 40px; }
+        }
+
+        /* SUCCESS OVERLAY */
+        .success-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+          animation: overlayFadeIn 0.3s ease;
+        }
+        @keyframes overlayFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .success-card {
+          background: #fff;
+          border-radius: 20px;
+          padding: 50px 40px;
+          text-align: center;
+          max-width: 440px;
+          width: 90%;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          animation: successCardPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          animation-delay: 0.15s;
+        }
+        @keyframes successCardPop {
+          from { opacity: 0; transform: scale(0.8) translateY(30px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .success-checkmark {
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 24px;
+        }
+        .checkmark-svg {
+          width: 80px;
+          height: 80px;
+        }
+        .checkmark-circle {
+          stroke-dasharray: 166;
+          stroke-dashoffset: 166;
+          stroke-width: 2;
+          stroke-miterlimit: 10;
+          stroke: #4ade80;
+          animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+          animation-delay: 0.3s;
+        }
+        .checkmark-check {
+          stroke-dasharray: 48;
+          stroke-dashoffset: 48;
+          stroke-width: 3;
+          stroke-linecap: round;
+          stroke: #4ade80;
+          animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+          animation-delay: 0.7s;
+        }
+        @keyframes stroke {
+          100% { stroke-dashoffset: 0; }
+        }
+        .success-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #1a202c;
+          margin-bottom: 12px;
+        }
+        .success-subtitle {
+          font-size: 15px;
+          color: #4a5568;
+          line-height: 1.6;
+          margin-bottom: 8px;
+        }
+        .success-redirect {
+          font-size: 13px;
+          color: #a0aec0;
+          margin-bottom: 24px;
+        }
+        .success-btn {
+          background: #D9475C;
+          color: white;
+          border: none;
+          padding: 14px 36px;
+          border-radius: 30px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .success-btn:hover {
+          background: #c53d50;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(217, 71, 92, 0.3);
         }
       `}</style>
     </div>

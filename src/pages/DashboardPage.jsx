@@ -26,6 +26,7 @@ import { useInterests } from '../hooks/useInterests';
 import { searchService } from '../services/searchService';
 import { photoService } from '../services/photoService';
 import { profileService } from '../services/profileService';
+import { authService } from '../services/authService';
 import { differenceInYears, parseISO, formatDistanceToNow } from 'date-fns';
 
 export default function DashboardPage() {

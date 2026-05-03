@@ -25,8 +25,10 @@ export default function RegisterPage() {
       toast.error('Please fill in all fields.');
       return;
     }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters.');
+    const pass = password;
+    const isPassValid = pass.length >= 8 && /[A-Z]/.test(pass) && /[0-9]/.test(pass);
+    if (!isPassValid) {
+      toast.error('Password must be at least 8 characters, with one uppercase letter and one number.');
       return;
     }
     setLoading(true);
@@ -114,12 +116,23 @@ export default function RegisterPage() {
                 <label className="input-label">Password</label>
                 <input
                   type="password"
-                  placeholder="Minimum 6 characters"
+                  placeholder="e.g. Sakhar@2024"
                   className="input-field"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <div className="password-requirements" style={{marginTop: 8, padding: 8, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0'}}>
+                  <p style={{fontSize: 11, color: password.length >= 8 ? '#2f855a' : '#718096', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6, fontWeight: password.length >= 8 ? 600 : 400}}>
+                    {password.length >= 8 ? '✅' : '○'} At least 8 characters
+                  </p>
+                  <p style={{fontSize: 11, color: /[A-Z]/.test(password) ? '#2f855a' : '#718096', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6, fontWeight: /[A-Z]/.test(password) ? 600 : 400}}>
+                    {/[A-Z]/.test(password) ? '✅' : '○'} At least one uppercase letter
+                  </p>
+                  <p style={{fontSize: 11, color: /[0-9]/.test(password) ? '#2f855a' : '#718096', marginBottom: 0, display: 'flex', alignItems: 'center', gap: 6, fontWeight: /[0-9]/.test(password) ? 600 : 400}}>
+                    {/[0-9]/.test(password) ? '✅' : '○'} At least one number
+                  </p>
+                </div>
               </div>
 
               <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>

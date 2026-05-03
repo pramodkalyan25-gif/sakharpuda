@@ -183,4 +183,26 @@ export const authService = {
     const { error } = await supabase.rpc('delete_own_user');
     if (error) throw error;
   },
+
+  /**
+   * Check if an email is already registered
+   */
+  async checkEmailExists(email) {
+    const { data, error } = await supabase.rpc('check_email_exists', { p_email: email.trim().toLowerCase() });
+    if (error) throw error;
+    return !!data;
+  },
+
+  /**
+   * Check if a mobile number is already registered
+   */
+  async checkMobileExists(mobile) {
+    // mobile might have +91 prefix, strip it if so
+    let cleanMobile = mobile.replace('+91', '').trim();
+    if (cleanMobile.length === 10) cleanMobile = '+91' + cleanMobile; // Ensure format
+    
+    const { data, error } = await supabase.rpc('check_mobile_exists', { p_mobile: cleanMobile });
+    if (error) throw error;
+    return !!data;
+  },
 };

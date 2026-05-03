@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
 
@@ -17,9 +18,13 @@ export function AuthProvider({ children }) {
       if (exists) {
         const p = await profileService.getOwnProfile(userId);
         setProfile(p);
+        return true;
       }
+      setProfile(null);
+      return false;
     } catch {
       setProfile(null);
+      return false;
     }
   }, []);
 
@@ -38,9 +43,22 @@ export function AuthProvider({ children }) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       setIsAdmin(authService.isAdmin(newSession?.user));
+      
       if (newSession?.user) {
-        // Fire and forget, do not await!
-        loadProfile(newSession.user.id).finally(() => setLoading(false));
+        loadProfile(newSession.user.id).then(async (hasProfile) => {
+          // If they just signed in (e.g. Google OAuth) and have no profile, reject the login
+          if (!hasProfile && event === 'SIGNED_IN') {
+            const userEmail = newSession.user.email;
+            try {
+              // Delete the auth user that Supabase OAuth auto-created
+              await authService.deleteAccount();
+            } catch (err) {
+              console.error("Failed to delete orphaned auth user:", err);
+            }
+            await authService.logout();
+            toast.error(`User does not have account with email "${userEmail}"`);
+          }
+        }).finally(() => setLoading(false));
       } else {
         setProfile(null);
         setLoading(false);

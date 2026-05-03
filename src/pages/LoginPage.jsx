@@ -26,6 +26,10 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
+      const emailExists = await authService.checkEmailExists(email.trim());
+      if (!emailExists) {
+        throw new Error(`User does not have an account with email "${email.trim()}"`);
+      }
       await authService.loginWithPassword(email.trim(), password);
       toast.success('Welcome back!');
       navigate(from, { replace: true });
@@ -44,6 +48,10 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
+      const emailExists = await authService.checkEmailExists(email.trim());
+      if (!emailExists) {
+        throw new Error(`User does not have an account with email "${email.trim()}"`);
+      }
       await authService.sendLoginOTP(email.trim());
       setMode('otp_verify');
       toast.success('OTP sent to your email!');
