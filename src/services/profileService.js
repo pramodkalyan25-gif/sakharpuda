@@ -5,7 +5,7 @@ import { supabase } from '../config/supabaseClient';
  * mobile_number is NEVER in this list.
  */
 const PUBLIC_PROFILE_FIELDS = `
-  user_id, name, first_name, last_name, gender, dob, height, religion, caste, education,
+  user_id, profile_id, name, first_name, last_name, gender, dob, height, religion, caste, education,
   profession, city, state, country, bio, marital_status,
   mobile_verified, photo_visibility, profile_visibility,
   admin_verified, created_at,
@@ -35,6 +35,11 @@ export const profileService = {
    * @param {object} profileData
    */
   async createProfile(userId, profileData) {
+    // Generate unique profile ID if not present
+    if (!profileData.profile_id) {
+      profileData.profile_id = await this.generateUniqueProfileId(profileData.gender);
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .upsert({ user_id: userId, ...profileData }, { onConflict: 'user_id' })
@@ -42,6 +47,35 @@ export const profileService = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  /**
+   * Generate a unique profile ID: [B/G][YY][RRRR]
+   * B = Male, G = Female
+   * YY = Last 2 digits of current year
+   * RRRR = 4 random digits
+   * @param {string} gender 
+   */
+  async generateUniqueProfileId(gender) {
+    const prefix = (gender || '').toLowerCase() === 'male' ? 'B' : 'G';
+    const year = new Date().getFullYear().toString().slice(-2);
+    let isUnique = false;
+    let newId = '';
+
+    while (!isUnique) {
+      const random = Math.floor(1000 + Math.random() * 9000).toString();
+      newId = `${prefix}${year}${random}`;
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('profile_id')
+        .eq('profile_id', newId)
+        .maybeSingle();
+
+      if (!data) isUnique = true;
+    }
+
+    return newId;
   },
 
   /**

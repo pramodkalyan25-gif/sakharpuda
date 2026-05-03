@@ -86,9 +86,9 @@ export default function LandingPage() {
     <div className="landing-wrapper">
       {/* PROFESSIONAL HEADER */}
       <header className="main-header">
-        <div className="container header-content">
+        <nav className="container header-content" aria-label="Primary Navigation">
           <Link to="/" className="brand">
-            <img src="/images/logo.png" alt="SakharPuda" className="logo-img" />
+            <img src="/images/logo.png" alt="SakharPuda Matrimony" className="logo-img" />
           </Link>
           <div className="header-actions">
             <div className="header-action-group desktop-only">
@@ -101,23 +101,23 @@ export default function LandingPage() {
               <Link to="/login" className="login-link">Login</Link>
             </div>
             <div className="help-dropdown-container">
-              <button className="help-trigger">
+              <button className="help-trigger" aria-haspopup="true" aria-expanded="false">
                 Help <ChevronDown size={14} />
               </button>
-              <div className="help-dropdown-menu">
+              <div className="help-dropdown-menu" role="menu">
                 <div className="help-item header">Customer Support</div>
-                <a href="mailto:sakharpuda@zohomail.com" className="help-item">
+                <a href="mailto:sakharpuda@zohomail.com" className="help-item" role="menuitem">
                   sakharpuda@zohomail.com
                 </a>
-                <Link to="/about" className="help-item">About Us</Link>
-                <Link to="/contact" className="help-item">Contact Us</Link>
-                <Link to="/fraud-alert" className="help-item">Safety Tips</Link>
-                <Link to="/help" className="help-item">Help Center / FAQ</Link>
-                <Link to="/grievances" className="help-item">Grievances</Link>
+                <Link to="/about" className="help-item" role="menuitem">About Us</Link>
+                <Link to="/contact" className="help-item" role="menuitem">Contact Us</Link>
+                <Link to="/fraud-alert" className="help-item" role="menuitem">Safety Tips</Link>
+                <Link to="/help" className="help-item" role="menuitem">Help Center / FAQ</Link>
+                <Link to="/grievances" className="help-item" role="menuitem">Grievances</Link>
               </div>
             </div>
           </div>
-        </div>
+        </nav>
       </header>
 
       {/* HERO SECTION */}
@@ -425,17 +425,18 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER SECTION */}
-      <footer className="main-footer">
+      <footer className="main-footer" aria-label="Main Footer">
         <div className="container">
           <div className="footer-intro">
-            <img src="/images/logo.png" alt="SakharPuda" className="footer-logo" />
+            <img src="/images/logo.png" alt="SakharPuda Matrimony" className="footer-logo" />
+            <h2 className="footer-about-title">India's First Truly Community-Specific Matrimony Site</h2>
             <p>
-              SakharPuda.com is one of the leading and most trusted community-driven matrimony platforms in India.
-              We understand that finding the right partner involves deep cultural and community alignment.
-              SakharPuda adapts to your identity, creating a dedicated space for your specific religion and caste.
-              We ensure a secure and convenient matchmaking experience with 100% screening, exclusive privacy options,
-              and identity-driven search filters. Whether you are looking for a deeper connection within your community
-              or a professional match-making service, SakharPuda is here to make your journey easier.
+              SakharPuda.com is India's first truly community-specific matrimony platform. 
+              Built by a Maharashtrian, for Maharashtrians, we understand that finding the right partner 
+              involves deep cultural and community alignment. SakharPuda adapts to your identity, 
+              creating a dedicated space for your specific religion and caste. 
+              Whether you are looking for a deeper connection within your community or a professional 
+              match-making service, SakharPuda is here to make your journey easier.
             </p>
             <p className="footer-note">
               Please note: SakharPuda is only meant for users with a bonafide intent to enter into a matrimonial alliance
@@ -445,26 +446,37 @@ export default function LandingPage() {
 
           <div className="footer-links-grid">
             <div className="footer-col">
-              <h4>Services</h4>
-              <a href="#membership-section">Membership Options</a>
-              <a href="#exclusive-section">SakharPuda Exclusive</a>
+              <h4>Direct Access</h4>
+              <nav aria-label="Direct access links">
+                <Link to="/login">Member Login</Link>
+                <Link to="/register">Register Free</Link>
+                <Link to="/search">Partner Search</Link>
+              </nav>
             </div>
+            
             <div className="footer-col">
-              <h4>Help</h4>
-              <Link to="/contact">Contact us</Link>
-              <Link to="/fraud-alert">Safety Tips</Link>
-              <Link to="/help">Help Center</Link>
-            </div>
-            <div className="footer-col">
-              <h4>Legal</h4>
-              <Link to="/about">About Us</Link>
-              <Link to="/fraud-alert">Fraud Alert</Link>
-              <Link to="/terms">Terms of use</Link>
-              <Link to="/privacy">Privacy policy</Link>
-              <Link to="/privacy">Cookie policy</Link>
-              <Link to="/grievances">Grievances</Link>
+              <h4>Support</h4>
+              <nav aria-label="Support links">
+                <Link to="/contact">Contact us</Link>
+                <Link to="/help">Help Center / FAQ</Link>
+                <Link to="/fraud-alert">Safety Tips</Link>
+                <Link to="/grievances">Grievances</Link>
+              </nav>
             </div>
 
+            <div className="footer-col">
+              <h4>Legal</h4>
+              <nav aria-label="Legal links">
+                <Link to="/about">About Us</Link>
+                <Link to="/terms">Terms of Use</Link>
+                <Link to="/privacy">Privacy Policy</Link>
+                <Link to="/fraud-alert">Fraud Alert</Link>
+              </nav>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <p>&copy; 2024 SakharPuda.com - Built by a Maharashtrian, For Maharashtrians.</p>
           </div>
         </div>
       </footer>

@@ -113,6 +113,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
             <span className="js-active-now">Active Today</span>
             <div className="js-name-row">
               <h3>{profile?.name}, {age}</h3>
+              <span className="js-profile-id-badge">{profile?.profile_id || profile?.user_id?.substring(0, 8).toUpperCase()}</span>
               {profile?.admin_verified && <CheckCircle size={16} fill="#3b82f6" color="#fff" />}
               {profile.is_top_profile && <span className="js-top-profile-badge">Top Profiles</span>}
             </div>
@@ -253,6 +254,15 @@ export default function ProfileCard({ profile, onInterestSent }) {
           font-weight: 800;
           color: #1e293b;
           margin: 0;
+        }
+        .js-profile-id-badge {
+          font-size: 11px;
+          color: #94a3b8;
+          font-weight: 600;
+          background: #f1f5f9;
+          padding: 2px 6px;
+          border-radius: 4px;
+          letter-spacing: 0.5px;
         }
         .js-top-profile-badge {
           background: #fbbf24;

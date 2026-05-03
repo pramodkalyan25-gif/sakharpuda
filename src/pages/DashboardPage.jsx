@@ -95,7 +95,18 @@ export default function DashboardPage() {
             </div>
             <div className="js-brief-info">
               <h3>Hi {profile?.name?.split(' ')[0]}!</h3>
-              <p>{profile?.user_id?.substring(0, 8)} <Link to="/create-profile" className="js-edit-link">Edit Profile</Link></p>
+              <p>{profile?.profile_id || profile?.user_id?.substring(0, 8)} <Link to="/create-profile" className="js-edit-link">Edit Profile</Link></p>
+            </div>
+            
+            {/* Profile Completion Tracker */}
+            <div className="js-completion-wrapper">
+              <div className="js-completion-label">
+                <span>Profile Strength</span>
+                <span>{profileService.calculateCompletion(profile, !!avatarUrl)}%</span>
+              </div>
+              <div className="js-completion-bar">
+                <div className="js-completion-fill" style={{ width: `${profileService.calculateCompletion(profile, !!avatarUrl)}%` }} />
+              </div>
             </div>
           </div>
 
@@ -133,6 +144,44 @@ export default function DashboardPage() {
 
         {/* MIDDLE CONTENT */}
         <div className="js-content-area">
+          {/* Activity Summary Stats */}
+          <div className="js-activity-stats">
+            <div className="js-stat-item">
+              <span className="js-stat-num">{profileViewers.length}</span>
+              <span className="js-stat-label">Profile Views</span>
+            </div>
+            <div className="js-stat-divider"></div>
+            <div className="js-stat-item">
+              <span className="js-stat-num">{received.length}</span>
+              <span className="js-stat-label">Interests Received</span>
+            </div>
+            <div className="js-stat-divider"></div>
+            <div className="js-stat-item">
+              <span className="js-stat-num">{remainingToday}</span>
+              <span className="js-stat-label">Daily Remaining</span>
+            </div>
+          </div>
+
+          {/* Recent Viewers Section */}
+          {profileViewers.length > 0 && (
+            <section className="js-dashboard-section viewer-section">
+              <div className="js-section-header">
+                <div className="js-title-row">
+                  <Users size={18} className="blue" />
+                  <h2>Recently Viewed You</h2>
+                </div>
+              </div>
+              <div className="js-viewer-avatars">
+                {profileViewers.slice(0, 6).map(v => (
+                  <div key={v.viewer_id} className="js-viewer-item" onClick={() => navigate(`/profile/${v.viewer_id}`)}>
+                    <Avatar src={null} name={v.profiles?.name} size="md" />
+                    <span className="js-viewer-name">{v.profiles?.name?.split(' ')[0]}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="js-dashboard-section">
             <div className="js-section-header">
               <div className="js-title-row">
@@ -321,6 +370,28 @@ export default function DashboardPage() {
           display: flex; gap: 12px; border: 1px solid #fde68a;
         }
         .js-tip-card p { font-size: 13px; color: #92400e; line-height: 1.5; }
+
+        /* Refinements */
+        .js-completion-wrapper { width: 100%; margin-top: 15px; }
+        .js-completion-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 5px; }
+        .js-completion-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+        .js-completion-fill { height: 100%; background: #10b981; border-radius: 3px; transition: width 0.5s ease; }
+
+        .js-activity-stats {
+          background: #fff; border-radius: 12px; padding: 20px;
+          display: flex; justify-content: space-around; align-items: center;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .js-stat-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .js-stat-num { font-size: 24px; font-weight: 800; color: #1e293b; }
+        .js-stat-label { font-size: 12px; color: #64748b; font-weight: 600; }
+        .js-stat-divider { width: 1px; height: 30px; background: #f1f5f9; }
+
+        .js-viewer-avatars { display: flex; gap: 20px; overflow-x: auto; padding: 10px 0; }
+        .js-viewer-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 60px; }
+        .js-viewer-name { font-size: 11px; font-weight: 700; color: #475569; }
+        .js-dashboard-section.viewer-section { padding-bottom: 10px; }
+        .js-title-row .blue { color: #3b82f6; }
 
         @media (max-width: 1024px) {
           .js-main-grid { grid-template-columns: 200px 1fr; }

@@ -51,7 +51,7 @@ export default function MyMatchesPage() {
             </div>
             <div className="js-brief-info">
               <h3>Hi {profile?.name?.split(' ')[0]}!</h3>
-              <p>{profile?.user_id?.substring(0, 8)} <Link to="/create-profile" className="js-edit-link">Edit Profile</Link></p>
+              <p>{profile?.profile_id || profile?.user_id?.substring(0, 8)} <Link to="/create-profile" className="js-edit-link">Edit Profile</Link></p>
             </div>
           </div>
 
