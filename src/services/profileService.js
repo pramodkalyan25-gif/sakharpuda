@@ -4,25 +4,8 @@ import { supabase } from '../config/supabaseClient';
  * SAFE_SELECT — Fields that can be exposed to other users.
  * mobile_number is NEVER in this list.
  */
-const PUBLIC_PROFILE_FIELDS = `
-  user_id, profile_id, name, first_name, last_name, gender, dob, height, religion, caste, education,
-  profession, city, state, country, bio, marital_status,
-  mobile_verified, photo_visibility, profile_visibility,
-  admin_verified, created_at,
-  profile_for, diet, mother_tongue, sub_community, college_name,
-  company_name, company_type, hobbies,
-  family_mother_occupation, family_father_occupation,
-  num_sisters, num_brothers, family_financial_status,
-  live_with_family, caste_no_bar
-`;
-
-/**
- * FULL_PROFILE_FIELDS — Fields for the profile owner only.
- * Salary is included here as it's owner-only context.
- */
-const FULL_PROFILE_FIELDS = `
-  ${PUBLIC_PROFILE_FIELDS}, salary, daily_interest_count, last_interest_reset, updated_at
-`;
+const PUBLIC_PROFILE_FIELDS = '*';
+const FULL_PROFILE_FIELDS   = '*';
 
 /**
  * profileService — All profile CRUD operations.
@@ -315,12 +298,12 @@ export const profileService = {
     fields.forEach(f => {
       if (profile[f] && String(profile[f]).trim().length > 0) filled++;
     });
-    
+
     // Weighted points for critical sections
     if (hasPhoto) filled += 2;
     if (profile.family_mother_occupation || profile.family_father_occupation) filled += 1;
     if (profile.college_name || profile.company_name) filled += 1;
-    
+
     const totalPoints = fields.length + 4;
     return Math.min(100, Math.round((filled / totalPoints) * 100));
   },

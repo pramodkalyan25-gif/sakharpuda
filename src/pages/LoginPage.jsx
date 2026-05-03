@@ -130,7 +130,7 @@ export default function LoginPage() {
       <main className="login-main">
         <div className="login-card">
           <h1 className="login-title">
-            {mode === 'password' ? 'Login to ManglaSutra' :
+            {mode === 'password' ? 'Login to SakharPuda' :
               mode === 'otp_request' ? 'Login with OTP' : 'Enter OTP'}
           </h1>
 
@@ -239,7 +239,7 @@ export default function LoginPage() {
           )}
 
           <div className="login-footer">
-            New to ManglaSutra? <Link to="/register" className="register-link">Register Now</Link>
+            New to SakharPuda? <Link to="/register" className="register-link">Register Now</Link>
           </div>
         </div>
       </main>
