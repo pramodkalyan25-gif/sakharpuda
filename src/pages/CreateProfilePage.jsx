@@ -19,13 +19,68 @@ export default function CreateProfilePage() {
   const { user, profile, refreshProfile } = useAuth();
   const fileInputRef = useRef(null);
 
-  // If user already has a profile, redirect to dashboard
+  // Load existing profile data if available for editing
   useEffect(() => {
     if (profile) {
-      toast.success('You already have a profile!');
-      navigate('/dashboard', { replace: true });
+      const dobParts = profile.dob ? profile.dob.split('-') : ['', '', ''];
+      
+      const newData = {
+        profile_for: profile.profile_for || '',
+        first_name: profile.first_name || profile.name?.split(' ')[0] || '',
+        last_name: profile.last_name || (profile.name?.split(' ').length > 1 ? profile.name.split(' ').slice(1).join(' ') : ''),
+        dob_day: dobParts[2] || '',
+        dob_month: dobParts[1] || '',
+        dob_year: dobParts[0] || '',
+        gender: profile.gender || 'male',
+        religion: profile.religion || '',
+        city: profile.city || '',
+        live_with_family: profile.live_with_family ?? true,
+        sub_community: profile.sub_community || profile.caste || '',
+        caste_no_bar: profile.caste_no_bar ?? false,
+        marital_status: profile.marital_status || 'never_married',
+        height: profile.height ? String(profile.height) : '',
+        diet: profile.diet || '',
+        education: profile.education || '',
+        college_name: profile.college_name || '',
+        salary: profile.salary || '',
+        company_type: profile.company_type || '',
+        profession: profile.profession || '',
+        company_name: profile.company_name || '',
+        bio: profile.bio || '',
+        hobbies: profile.hobbies || [],
+        family_mother_occupation: profile.family_mother_occupation || '',
+        family_father_occupation: profile.family_father_occupation || '',
+        num_sisters: profile.num_sisters || 0,
+        num_brothers: profile.num_brothers || 0,
+        family_financial_status: profile.family_financial_status || 'middle',
+        // Partner preferences - will be updated by separate fetch
+        pref_age_min: 22,
+        pref_age_max: 35,
+        pref_religion: '',
+        pref_caste: '',
+        pref_city: '',
+      };
+
+      // Also fetch preferences to populate the form
+      profileService.getPreferences(user.id).then(prefs => {
+        if (prefs) {
+          setData(prev => ({
+            ...prev,
+            ...newData,
+            pref_age_min: prefs.preferred_age_min || 22,
+            pref_age_max: prefs.preferred_age_max || 35,
+            pref_religion: prefs.preferred_religion || '',
+            pref_caste: prefs.preferred_caste || '',
+            pref_city: prefs.preferred_city || '',
+          }));
+        } else {
+          setData(prev => ({ ...prev, ...newData }));
+        }
+      }).catch(() => {
+        setData(prev => ({ ...prev, ...newData }));
+      });
     }
-  }, [profile, navigate]);
+  }, [profile, user?.id]);
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -120,7 +175,7 @@ export default function CreateProfilePage() {
       const dob = `${data.dob_year}-${String(data.dob_month).padStart(2, '0')}-${String(data.dob_day).padStart(2, '0')}`;
       const fullName = `${data.first_name} ${data.last_name}`.trim();
 
-      await profileService.createProfile(user.id, {
+      const profilePayload = {
         name: fullName,
         first_name: data.first_name,
         last_name: data.last_name,
@@ -138,7 +193,7 @@ export default function CreateProfilePage() {
         country: 'India',
         bio: data.bio,
         marital_status: data.marital_status,
-        profile_for: data.profile_for.toLowerCase(),
+        profile_for: (data.profile_for || '').toLowerCase(),
         diet: data.diet,
         mother_tongue: '',
         college_name: data.college_name,
@@ -152,7 +207,15 @@ export default function CreateProfilePage() {
         family_financial_status: data.family_financial_status,
         live_with_family: data.live_with_family,
         caste_no_bar: data.caste_no_bar,
-      });
+      };
+
+      if (profile) {
+        // Update existing profile
+        await profileService.updateProfile(user.id, profilePayload);
+      } else {
+        // Create new profile
+        await profileService.createProfile(user.id, profilePayload);
+      }
 
       await profileService.savePreferences(user.id, {
         preferred_age_min: parseInt(data.pref_age_min) || 22,
@@ -167,10 +230,10 @@ export default function CreateProfilePage() {
       }
 
       await refreshProfile();
-      toast.success('🎉 Profile created successfully!');
+      toast.success(profile ? 'Profile updated successfully!' : '🎉 Profile created successfully!');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.message || 'Failed to create profile');
+      toast.error(err.message || 'Failed to save profile');
     } finally {
       setSaving(false);
     }

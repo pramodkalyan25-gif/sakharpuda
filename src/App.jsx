@@ -18,6 +18,7 @@ import AdminPage         from './pages/AdminPage';
 import InboxPage         from './pages/InboxPage';
 import InterestsPage     from './pages/InterestsPage';
 import MyMatchesPage     from './pages/MyMatchesPage';
+import SettingsPage      from './pages/SettingsPage';
 
 // Legal & Info Pages
 import TermsPage         from './pages/TermsPage';
@@ -93,6 +94,9 @@ export default function App() {
             } />
             <Route path="/my-matches" element={
               <ProtectedRoute><MyMatchesPage /></ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute><SettingsPage /></ProtectedRoute>
             } />
 
             {/* Admin only */}

@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, ShieldCheck, Search, User, Trash2, Star, Check, X, Globe, ChevronUp, ChevronDown } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
 import { photoService } from '../services/photoService';
+import { useAuth } from '../hooks/useAuth';
+import TopNav from '../components/ui/TopNav';
+import Sidebar from '../components/ui/Sidebar';
 import {
   MAHARASHTRA_DISTRICTS,
   MAHARASHTRA_CASTES,
@@ -31,12 +34,52 @@ import LandingPage from './LandingPage';
 export default function RegistrationPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { user, profile, refreshProfile } = useAuth(); // Access auth context
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get('mode') === 'edit';
 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 10;
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Initialize form data - pre-fill if in edit mode
+  useEffect(() => {
+    if (isEditMode && profile) {
+      const dobParts = profile.dob ? profile.dob.split('-') : ['', '', ''];
+      setFormData({
+        profileFor: profile.profile_for ? (profile.profile_for.charAt(0).toUpperCase() + profile.profile_for.slice(1).toLowerCase()) : '',
+        gender: profile.gender ? (profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1).toLowerCase()) : '',
+        firstName: profile.first_name || profile.name?.split(' ')[0] || '',
+        middleName: profile.middleName || (profile.name?.split(' ').length > 2 ? profile.name.split(' ')[1] : ''),
+        lastName: profile.last_name || (profile.name?.split(' ').length > 1 ? profile.name.split(' ').slice(-1)[0] : ''),
+        religion: profile.religion || '',
+        caste: profile.caste || '',
+        dobDay: dobParts[2] || '',
+        dobMonth: dobParts[1] || '',
+        dobYear: dobParts[0] || '',
+        district: profile.city || '',
+        taluka: profile.state || '',
+        maritalStatus: profile.marital_status?.replace(/_/g, ' ') || '',
+        height: profile.height ? String(profile.height) : '',
+        highestQualification: profile.education || '',
+        college: profile.college_name || '',
+        workWith: profile.company_type || '',
+        workAs: profile.profession || '',
+        income: profile.salary || '',
+        email: user?.email || '',
+        mobile: '', // Handled separately or not editable here
+        password: '',
+      });
+      // Load photo for sidebar if in edit mode
+      photoService.getPrimaryPhoto(user.id).then(photo => {
+        if (photo?.signed_url) setAvatarUrl(photo.signed_url);
+      }).catch(() => { });
+    }
+  }, [isEditMode, profile, user]);
+
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   const [formData, setFormData] = useState({
     profileFor: '',
@@ -96,7 +139,11 @@ export default function RegistrationPage() {
 
   const handleNext = () => {
     if (currentStep === 4 && !validateDOB()) return;
-    if (currentStep < totalSteps) setCurrentStep(prev => prev + 1);
+
+    // In edit mode, we skip Step 10 (Signup)
+    const nextStepThreshold = isEditMode ? 9 : totalSteps;
+
+    if (currentStep < nextStepThreshold) setCurrentStep(prev => prev + 1);
     else handleSubmit();
   };
 
@@ -106,7 +153,7 @@ export default function RegistrationPage() {
   };
 
   const handleSubmit = async () => {
-    if (!validateEmail(formData.email) || !validateMobile(formData.mobile)) return;
+    if (!isEditMode && (!validateEmail(formData.email) || !validateMobile(formData.mobile))) return;
     setSubmitting(true);
 
     // Resolve "Other" custom values
@@ -121,32 +168,35 @@ export default function RegistrationPage() {
     };
 
     try {
-      // 0. Check if mobile already exists
-      let mobileExists = false;
-      try {
-        mobileExists = await authService.checkMobileExists(finalData.mobile);
-      } catch (checkErr) {
-        throw new Error(`Database Error: ${checkErr.message || 'Connection failed'}`);
-      }
+      let activeUserId = user?.id;
 
-      if (mobileExists) {
-        throw new Error('This mobile number is already registered. Please use a different number or login.');
-      }
+      if (!isEditMode) {
+        // 0. Check if mobile already exists
+        let mobileExists = false;
+        try {
+          mobileExists = await authService.checkMobileExists(finalData.mobile);
+        } catch (checkErr) {
+          throw new Error(`Database Error: ${checkErr.message || 'Connection failed'}`);
+        }
 
-      // 1. Create Supabase auth user
-      const authData = await authService.signupWithPassword(
-        finalData.email.trim(),
-        finalData.password
-      );
-      const userId = authData.user?.id;
-      if (!userId) throw new Error('Account creation failed. Please try again.');
+        if (mobileExists) {
+          throw new Error('This mobile number is already registered. Please use a different number or login.');
+        }
+
+        // 1. Create Supabase auth user
+        const authData = await authService.signupWithPassword(
+          finalData.email.trim(),
+          finalData.password
+        );
+        activeUserId = authData.user?.id;
+        if (!activeUserId) throw new Error('Account creation failed. Please try again.');
+      }
 
       // 2. Build DOB string
       const dob = `${finalData.dobYear}-${String(finalData.dobMonth).padStart(2, '0')}-${String(finalData.dobDay).padStart(2, '0')}`;
       const fullName = `${finalData.firstName} ${finalData.middleName} ${finalData.lastName}`.replace(/\s+/g, ' ').trim();
 
-      // 3. Create profile in database
-      await profileService.createProfile(userId, {
+      const profilePayload = {
         name: fullName,
         first_name: finalData.firstName,
         last_name: finalData.lastName,
@@ -162,17 +212,24 @@ export default function RegistrationPage() {
         city: finalData.district,
         state: finalData.taluka,
         country: 'India',
-        bio: '',
+        bio: isEditMode ? profile?.bio : '',
         marital_status: finalData.maritalStatus?.toLowerCase().replace(/\s+/g, '_'),
         profile_for: finalData.profileFor,
         college_name: finalData.college,
         company_type: finalData.workWith,
-      });
+      };
 
-      // 4. Save mobile number
-      if (finalData.mobile) {
+      // 3. Create or Update profile
+      if (isEditMode) {
+        await profileService.updateProfile(activeUserId, profilePayload);
+      } else {
+        await profileService.createProfile(activeUserId, profilePayload);
+      }
+
+      // 4. Save mobile number (Only on signup)
+      if (!isEditMode && finalData.mobile) {
         try {
-          await profileService.saveMobileNumber(userId, `+91${finalData.mobile}`);
+          await profileService.saveMobileNumber(activeUserId, `+91${finalData.mobile}`);
         } catch { /* non-critical */ }
       }
 
@@ -181,24 +238,28 @@ export default function RegistrationPage() {
         for (let i = 0; i < finalData.photos.length; i++) {
           try {
             const isPrimary = i === (finalData.profilePhotoIndex || 0);
-            await photoService.uploadPhoto(userId, finalData.photos[i].file, isPrimary);
+            await photoService.uploadPhoto(activeUserId, finalData.photos[i].file, isPrimary);
           } catch { /* non-critical, continue with other photos */ }
         }
       }
 
-      // 6. Log out so user must log in fresh
-      await authService.logout();
-
-      // 7. Show success screen
-      setShowSuccess(true);
-
-      // 8. Auto-redirect to login after 4 seconds
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 4000);
+      if (isEditMode) {
+        await refreshProfile();
+        toast.success('Profile updated successfully!');
+        navigate('/dashboard');
+      } else {
+        // 6. Log out so user must log in fresh
+        await authService.logout();
+        // 7. Show success screen
+        setShowSuccess(true);
+        // 8. Auto-redirect to login after 4 seconds
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 4000);
+      }
 
     } catch (err) {
-      const msg = err.message || 'Registration failed.';
+      const msg = err.message || 'Saving failed.';
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -409,6 +470,7 @@ export default function RegistrationPage() {
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Who is this profile for?</h2>
+        <p className="step-subtitle">Select the person for whom you are creating this profile.</p>
         <div className="chip-grid">
           {profileOptions.map(opt => (
             <button
@@ -444,6 +506,7 @@ export default function RegistrationPage() {
   const renderStep2 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">What is your name?</h2>
+      <p className="step-subtitle">Please enter your full legal name.</p>
       <div className="form-group">
         <label className="input-label">First Name</label>
         <input type="text" className="text-input" placeholder="First Name" value={formData.firstName} onChange={(e) => updateForm('firstName', e.target.value)} />
@@ -469,6 +532,7 @@ export default function RegistrationPage() {
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Background</h2>
+        <p className="step-subtitle">Tell us about your religion and community.</p>
         {renderSelectField("Religion", "religion", religionOptions)}
         {formData.religion && (
           <div className="animate-reveal delay-1">
@@ -483,6 +547,7 @@ export default function RegistrationPage() {
   const renderStep4 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">Date of Birth</h2>
+        <p className="step-subtitle">Your age helps us find better matches.</p>
       <div className="dob-grid">
         <div className="form-group">
           <label className="input-label text-center">Day</label>
@@ -552,8 +617,8 @@ export default function RegistrationPage() {
         </div>
       </div>
       {errors.dobDate && <p className="error-text text-center mt-2">{errors.dobDate}</p>}
-      <button 
-        className="primary-btn full-width mt-6" 
+      <button
+        className="primary-btn full-width mt-6"
         onClick={() => {
           if (validateDOB()) handleNext();
         }}
@@ -571,6 +636,7 @@ export default function RegistrationPage() {
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Location</h2>
+        <p className="step-subtitle">Where do you currently reside?</p>
         {renderSelectField("District", "district", districtNames)}
         {formData.district && <div className="animate-reveal delay-1">{renderSelectField("Taluka", "taluka", talukas)}</div>}
         <button className="primary-btn full-width mt-4" onClick={handleNext} disabled={!isStepValid()}>Continue</button>
@@ -601,6 +667,7 @@ export default function RegistrationPage() {
   const renderStep7 = () => (
     <div className="step-content animate-slide-in">
       <h2 className="step-title">Education</h2>
+      <p className="step-subtitle">Tell us about your educational background.</p>
       {renderSelectField("Qualification", "highestQualification", COMPREHENSIVE_EDUCATION, true)}
       <div className="form-group">
         <label className="input-label">College</label>
@@ -616,6 +683,7 @@ export default function RegistrationPage() {
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Work & Income</h2>
+        <p className="step-subtitle">Career details are important for matches.</p>
         {renderSelectField("Sector", "workWith", workWithOptions)}
         {formData.workWith && <div className="animate-reveal delay-1">{renderSelectField("Profession", "workAs", CATEGORIZED_PROFESSIONS, true)}</div>}
         {formData.workAs && <div className="animate-reveal delay-2">{renderSelectField("Income", "income", incomeOptions)}</div>}
@@ -751,15 +819,27 @@ export default function RegistrationPage() {
   };
 
   return (
-    <div className="register-page-wrapper">
-      <div className="landing-bg-overlay-wrapper desktop-only">
-        <div className="landing-blur-container">
-          <LandingPage />
+    <div className={`register-page-wrapper ${isEditMode ? 'edit-mode' : ''}`}>
+      {isEditMode ? (
+        <div className="dashboard-backdrop">
+          <TopNav />
+          <div className="backdrop-blur"></div>
         </div>
-        <div className="dark-tint-overlay"></div>
-      </div>
+      ) : (
+        <div className="landing-bg-overlay-wrapper desktop-only">
+          <div className="landing-blur-container">
+            <LandingPage />
+          </div>
+          <div className="dark-tint-overlay"></div>
+        </div>
+      )}
 
-      <main className="register-main">
+      <main className={`register-main ${isEditMode ? 'over-dashboard container' : ''}`}>
+        {isEditMode && (
+          <aside className="edit-sidebar desktop-only">
+            <Sidebar profile={profile} avatarUrl={avatarUrl} />
+          </aside>
+        )}
         <div className="register-card">
           <button className="card-back-btn" onClick={handleBack} title="Go Back">
             <ArrowLeft size={20} />
@@ -1324,6 +1404,57 @@ export default function RegistrationPage() {
           background: #c53d50;
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(217, 71, 92, 0.3);
+        }
+        .register-page-wrapper.edit-mode {
+          background: #f1f2f5 !important;
+        }
+        .dashboard-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 1;
+        }
+        .backdrop-blur {
+          position: absolute;
+          top: 70px; /* Below TopNav */
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(241, 242, 245, 0.6);
+          backdrop-filter: blur(4px);
+        }
+        .register-main.over-dashboard {
+          position: relative;
+          z-index: 10;
+          padding-top: 30px;
+          min-height: calc(100vh - 70px);
+          display: grid;
+          grid-template-columns: 280px 1fr;
+          gap: 40px;
+          align-items: flex-start;
+        }
+        .edit-sidebar {
+          position: sticky;
+          top: 100px;
+        }
+        .register-main.over-dashboard .register-card {
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          margin-bottom: 50px;
+          width: 100%;
+          max-width: 550px;
+          margin-left: 0;
+        }
+        @media (max-width: 1024px) {
+          .register-main.over-dashboard {
+            grid-template-columns: 1fr;
+            padding: 20px;
+          }
+          .edit-sidebar { display: none; }
+          .register-main.over-dashboard .register-card {
+            margin: 0 auto;
+          }
         }
       `}</style>
     </div>

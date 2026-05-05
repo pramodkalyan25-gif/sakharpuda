@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
   Settings, 
@@ -27,23 +27,29 @@ import Avatar from '../components/ui/Avatar';
 import Spinner from '../components/ui/Spinner';
 import ProfileCard from '../components/profile/ProfileCard';
 import TopNav from '../components/ui/TopNav';
+import Footer from '../components/ui/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { useInterests } from '../hooks/useInterests';
 import { searchService } from '../services/searchService';
 import { photoService } from '../services/photoService';
 import { profileService } from '../services/profileService';
 import { formatDistanceToNow } from 'date-fns';
+import Sidebar from '../components/ui/Sidebar';
+import { SUB_COMMUNITIES } from './wizardData';
+import RegistrationWizard from '../components/profile/RegistrationWizard';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, profile, logout, refreshProfile } = useAuth();
   const { received, remainingToday, refresh } = useInterests();
+  const [searchParams] = useSearchParams();
+  const showEditModal = searchParams.get('edit') === 'true';
 
   const [dailyMatches, setDailyMatches] = useState([]);
   const [newMatches, setNewMatches] = useState([]);
+  const [communityMatches, setCommunityMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [profileViewers, setViewers] = useState([]);
-  const [avatarUrl, setAvatarUrl] = useState(null);
 
   const loadData = useCallback(async () => {
     if (!user?.id || !profile) return;
@@ -51,17 +57,27 @@ export default function DashboardPage() {
     try {
       const oppositeGender = (profile.gender || '').toLowerCase() === 'male' ? 'female' : 'male';
       
-      const [newest, viewers, photo, recommendations] = await Promise.all([
+      const [newest, viewers, photo, recommendations, community] = await Promise.all([
         searchService.getNewMatches(user.id, oppositeGender, 8),
         profileService.getProfileViewers(user.id),
         photoService.getPrimaryPhoto(user.id),
-        searchService.getRecommendedProfiles(user.id, profile)
+        searchService.getRecommendedProfiles(user.id, profile),
+        searchService.searchProfiles({
+          gender: oppositeGender,
+          religion: profile.religion,
+          caste: profile.caste,
+          limit: 8
+        }, user.id)
       ]);
       
       setDailyMatches(recommendations?.profiles || []);
       setNewMatches(newest || []);
+      setCommunityMatches(community?.profiles || []);
       setViewers(viewers || []);
-      if (photo?.signed_url) setAvatarUrl(photo.signed_url);
+      if (photo?.signed_url) {
+        // We don't need setAvatarUrl here anymore as AuthContext handles it,
+        // but we could refresh it if needed. For now, just leave it.
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -88,59 +104,14 @@ export default function DashboardPage() {
       
       <main className="js-main-grid container">
         {/* LEFT SIDEBAR */}
-        <aside className="js-left-sidebar">
-          <div className="js-profile-brief">
-            <div className="js-brief-avatar">
-              <Avatar src={avatarUrl} name={profile?.name} size="lg" />
-            </div>
-            <div className="js-brief-info">
-              <h3>Hi {profile?.name?.split(' ')[0]}!</h3>
-              <p>{profile?.profile_id || profile?.user_id?.substring(0, 8)} <Link to="/create-profile" className="js-edit-link">Edit Profile</Link></p>
-            </div>
-            
-            {/* Profile Completion Tracker */}
-            <div className="js-completion-wrapper">
-              <div className="js-completion-label">
-                <span>Profile Strength</span>
-                <span>{profileService.calculateCompletion(profile, !!avatarUrl)}%</span>
-              </div>
-              <div className="js-completion-bar">
-                <div className="js-completion-fill" style={{ width: `${profileService.calculateCompletion(profile, !!avatarUrl)}%` }} />
-              </div>
-            </div>
-          </div>
-
-          <nav className="js-side-nav">
-            <Link to="/my-matches" className="js-nav-item">
-              <span className="js-nav-label">Matches</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/dashboard" className="js-nav-item active">
-              <span className="js-nav-label">Activity</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/search" className="js-nav-item">
-              <span className="js-nav-label">Search</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/inbox" className="js-nav-item">
-              <span className="js-nav-label">Messenger</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/upgrade" className="js-nav-item upgrade">
-              <span className="js-nav-label">Upgrade</span>
-              <span className="js-nav-badge">54% Off</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-          </nav>
-
+        <Sidebar>
           <div className="js-verification-card">
             <Shield size={24} className="js-shield-icon" />
             <h4>Trust & Safety</h4>
             <p>Verified profiles receive 3x more interests.</p>
             <Link to="/verify" className="js-btn-verify">Get Verified</Link>
           </div>
-        </aside>
+        </Sidebar>
 
         {/* MIDDLE CONTENT */}
         <div className="js-content-area">
@@ -199,6 +170,35 @@ export default function DashboardPage() {
                   ))
                 ) : (
                   <p className="js-empty-text">No recommendations yet. Try adjusting your preferences.</p>
+                )
+              )}
+            </div>
+          </section>
+
+          {/* Community Matches Section */}
+          <section className="js-dashboard-section community-section">
+            <div className="js-section-header">
+              <div className="js-title-row">
+                <Users size={20} className="purple" />
+                <h2>From Your Community: {profile.caste || profile.religion}</h2>
+              </div>
+              <Link to={`/search?caste=${profile.caste}`} className="js-view-all">View More</Link>
+            </div>
+            
+            <div className="js-community-grid">
+              {loading ? <Spinner /> : (
+                communityMatches.length > 0 ? (
+                  communityMatches.slice(0, 4).map(p => (
+                    <div key={p.user_id} className="js-community-card" onClick={() => navigate(`/profile/${p.user_id}`)}>
+                      <Avatar src={null} name={p.name} size="lg" />
+                      <div className="js-comm-info">
+                        <span className="js-comm-name">{p.name.split(' ')[0]}</span>
+                        <span className="js-comm-detail">{p.city || 'Location N/A'}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="js-empty-text">Invite more members from your community to join!</p>
                 )
               )}
             </div>
@@ -264,51 +264,64 @@ export default function DashboardPage() {
             <Bell size={20} color="#d97706" />
             <p><strong>Pro Tip:</strong> Profiles with at least 3 photos receive 5x more responses!</p>
           </div>
+
+          {/* Browse by Community Widget */}
+          <div className="js-community-widget">
+            <h3>Browse by Community</h3>
+            <div className="js-comm-tags">
+              {profile.religion && SUB_COMMUNITIES[profile.religion]?.slice(0, 8).map(c => (
+                <Link 
+                  key={c} 
+                  to={`/search?caste=${c}`} 
+                  className="js-comm-tag"
+                >
+                  {c}
+                </Link>
+              ))}
+              <Link to="/search" className="js-comm-tag more">View All Communities</Link>
+            </div>
+          </div>
         </aside>
       </main>
 
+      {showEditModal && (
+        <RegistrationWizard 
+          isEditMode={true} 
+          initialStep={parseInt(searchParams.get('step')) || 1}
+          onClose={() => navigate('/dashboard')} 
+        />
+      )}
+
+      <Footer />
+
       <style dangerouslySetInnerHTML={{ __html: `
-        .js-dashboard-wrapper {
+        .js-dashboard-wrapper, .my-matches-page, .search-page, .inbox-page {
           min-height: 100vh;
           background: #f1f2f5;
           padding-bottom: 50px;
         }
 
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
         .js-main-grid {
           display: grid;
-          grid-template-columns: 240px 1fr 280px;
+          grid-template-columns: 280px 1fr 280px;
           gap: 20px;
           margin-top: 20px;
           align-items: flex-start;
         }
 
-        /* Shared Components Styles (same as MyMatchesPage) */
-        .js-left-sidebar { display: flex; flex-direction: column; gap: 20px; }
-        .js-profile-brief {
-          background: #fff; border-radius: 8px; padding: 20px;
-          display: flex; flex-direction: column; align-items: center; text-align: center;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .js-brief-avatar { margin-bottom: 12px; }
-        .js-brief-info h3 { font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
-        .js-brief-info p { font-size: 12px; color: #64748b; }
-        .js-edit-link { color: #D63447; font-weight: 700; text-decoration: none; margin-left: 4px; }
-
-        .js-side-nav {
-          background: #fff; border-radius: 8px; overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .js-nav-item {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 14px 20px; text-decoration: none; color: #475569;
-          font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;
-          transition: background 0.2s;
-        }
-        .js-nav-item:hover { background: #f8fafc; }
-        .js-nav-item.active { color: #D63447; border-left: 3px solid #D63447; background: #fff1f2; }
-        .js-nav-badge { background: #10b981; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
-        .js-nav-arrow { color: #cbd5e1; font-size: 18px; }
-
+        /* Verification Card (Still unique to sidebar) */
         .js-verification-card {
           background: #fff; border-radius: 8px; padding: 20px;
           text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -336,6 +349,36 @@ export default function DashboardPage() {
         
         .js-matches-stack { display: flex; flex-direction: column; gap: 0; }
         .js-empty-text { color: #94a3b8; font-size: 14px; text-align: center; padding: 40px 0; }
+
+        /* Community Section Styles */
+        .js-community-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+          gap: 15px;
+          margin-top: 10px;
+        }
+        .js-community-card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 15px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .js-community-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          border-color: #cbd5e1;
+          background: #fff;
+        }
+        .js-comm-info { text-align: center; }
+        .js-comm-name { display: block; font-size: 14px; font-weight: 700; color: #1e293b; }
+        .js-comm-detail { display: block; font-size: 11px; color: #64748b; margin-top: 2px; }
+        .purple { color: #9333ea; }
 
         /* Right Sidebar */
         .js-right-sidebar { display: flex; flex-direction: column; gap: 20px; }
@@ -370,6 +413,46 @@ export default function DashboardPage() {
           display: flex; gap: 12px; border: 1px solid #fde68a;
         }
         .js-tip-card p { font-size: 13px; color: #92400e; line-height: 1.5; }
+
+        .js-community-widget {
+          background: #fff;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .js-community-widget h3 {
+          font-size: 14px;
+          font-weight: 700;
+          color: #1e293b;
+          margin-bottom: 15px;
+        }
+        .js-comm-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .js-comm-tag {
+          font-size: 12px;
+          background: #f1f5f9;
+          color: #475569;
+          padding: 6px 12px;
+          border-radius: 20px;
+          text-decoration: none;
+          font-weight: 500;
+          transition: all 0.2s;
+        }
+        .js-comm-tag:hover {
+          background: #e2e8f0;
+          color: #D63447;
+        }
+        .js-comm-tag.more {
+          background: transparent;
+          color: #D63447;
+          border: 1px dashed #D63447;
+        }
+        .js-comm-tag.more:hover {
+          background: #fff5f5;
+        }
 
         /* Refinements */
         .js-completion-wrapper { width: 100%; margin-top: 15px; }

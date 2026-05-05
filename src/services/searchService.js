@@ -79,6 +79,8 @@ export const searchService = {
     if (education) query = query.ilike('education', `%${education}%`);
     if (city) query = query.ilike('city', `%${city}%`);
     if (marital_status) query = query.eq('marital_status', marital_status);
+    if (filters.name) query = query.ilike('name', `%${filters.name}%`);
+    if (filters.profile_id) query = query.eq('user_id', filters.profile_id);
 
     const { data, error, count } = await query;
     if (error) throw error;

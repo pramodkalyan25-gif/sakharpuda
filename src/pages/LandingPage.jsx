@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import TopNav from '../components/ui/TopNav';
+import Footer from '../components/ui/Footer';
 import {
   ChevronDown,
   Search,
@@ -424,62 +426,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER SECTION */}
-      <footer className="main-footer" aria-label="Main Footer">
-        <div className="container">
-          <div className="footer-intro">
-            <img src="/images/logo.png" alt="SakharPuda Matrimony" className="footer-logo" />
-            <h2 className="footer-about-title">India's First Truly Community-Specific Matrimony Site</h2>
-            <p>
-              SakharPuda.com is India's first truly community-specific matrimony platform. 
-              Built by a Maharashtrian, for Maharashtrians, we understand that finding the right partner 
-              involves deep cultural and community alignment. SakharPuda adapts to your identity, 
-              creating a dedicated space for your specific religion and caste. 
-              Whether you are looking for a deeper connection within your community or a professional 
-              match-making service, SakharPuda is here to make your journey easier.
-            </p>
-            <p className="footer-note">
-              Please note: SakharPuda is only meant for users with a bonafide intent to enter into a matrimonial alliance
-              and is not meant for users interested in dating only. SakharPuda platform should not be used to post any obscene material.
-            </p>
-          </div>
-
-          <div className="footer-links-grid">
-            <div className="footer-col">
-              <h4>Direct Access</h4>
-              <nav aria-label="Direct access links">
-                <Link to="/login">Member Login</Link>
-                <Link to="/register">Register Free</Link>
-                <Link to="/search">Partner Search</Link>
-              </nav>
-            </div>
-            
-            <div className="footer-col">
-              <h4>Support</h4>
-              <nav aria-label="Support links">
-                <Link to="/contact">Contact us</Link>
-                <Link to="/help">Help Center / FAQ</Link>
-                <Link to="/fraud-alert">Safety Tips</Link>
-                <Link to="/grievances">Grievances</Link>
-              </nav>
-            </div>
-
-            <div className="footer-col">
-              <h4>Legal</h4>
-              <nav aria-label="Legal links">
-                <Link to="/about">About Us</Link>
-                <Link to="/terms">Terms of Use</Link>
-                <Link to="/privacy">Privacy Policy</Link>
-                <Link to="/fraud-alert">Fraud Alert</Link>
-              </nav>
-            </div>
-          </div>
-
-          <div className="footer-bottom">
-            <p>&copy; 2024 SakharPuda.com - Built by a Maharashtrian, For Maharashtrians.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       <style dangerouslySetInnerHTML={{
         __html: `

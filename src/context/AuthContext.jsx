@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
+import { photoService } from '../services/photoService';
 
 const AuthContext = createContext(null);
 
@@ -10,20 +11,33 @@ export function AuthProvider({ children }) {
   const [profile, setProfile]     = useState(null);
   const [session, setSession]     = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [isAdmin, setIsAdmin]     = useState(false);
+   const [isAdmin, setIsAdmin]     = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   const loadProfile = useCallback(async (userId) => {
     try {
       const exists = await profileService.profileExists(userId);
       if (exists) {
-        const p = await profileService.getOwnProfile(userId);
-        setProfile(p);
-        return true;
+        const [p, photo] = await Promise.all([
+          profileService.getOwnProfile(userId),
+          photoService.getPrimaryPhoto(userId).catch(() => null)
+        ]);
+        setProfile(p || null);
+        if (photo?.signed_url) setAvatarUrl(photo.signed_url);
+        else setAvatarUrl(null);
+        return !!p;
       }
       setProfile(null);
+      setAvatarUrl(null);
       return false;
-    } catch {
+    } catch (err) {
+      console.error('[AuthContext] Error loading profile:', err.message);
+      // If it's a database schema error, show a toast so the user knows
+      if (err.message?.includes('column') || err.message?.includes('schema')) {
+        toast.error('Database Error: Please ensure you have run the required SQL migrations.');
+      }
       setProfile(null);
+      setAvatarUrl(null);
       return false;
     }
   }, []);
@@ -70,12 +84,14 @@ export function AuthProvider({ children }) {
     setSession(null);
     setProfile(null);
     setIsAdmin(false);
+    setAvatarUrl(null);
   }, []);
 
   const value = {
     user,
     session,
     profile,
+    avatarUrl,
     loading,
     isAdmin,
     isAuthenticated: !!user,

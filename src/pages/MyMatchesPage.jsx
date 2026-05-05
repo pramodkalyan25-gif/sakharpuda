@@ -5,7 +5,7 @@ import TopNav from '../components/ui/TopNav';
 import ProfileCard from '../components/profile/ProfileCard';
 import Spinner from '../components/ui/Spinner';
 import Avatar from '../components/ui/Avatar';
-import { interestService } from '../services/interestService';
+import { searchService } from '../services/searchService';
 import { 
   Users, 
   Search, 
@@ -20,23 +20,37 @@ import {
   Phone,
   Search as SearchIcon
 } from 'lucide-react';
+import Sidebar from '../components/ui/Sidebar';
+import Footer from '../components/ui/Footer';
 
 export default function MyMatchesPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState('All');
 
   useEffect(() => {
-    if (user?.id) {
-      interestService.getMutualConnections(user.id)
-        .then(setMatches)
-        .finally(() => setLoading(false));
-    }
-  }, [user?.id]);
+    const fetchMatches = async () => {
+      setLoading(true);
+      try {
+        // Fetch all registered profiles without any filters
+        const result = await searchService.searchProfiles({ 
+          limit: 20 
+        }, user?.id);
+        
+        setMatches(result.profiles);
+      } catch (err) {
+        console.error("Error fetching matches:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filters = ['Filters', 'Verified', 'Just Joined', 'Nearby'];
+    if (user?.id) {
+      fetchMatches();
+    }
+  }, [user?.id, profile?.gender]);
+
 
   return (
     <div className="js-dashboard-wrapper">
@@ -44,62 +58,17 @@ export default function MyMatchesPage() {
       
       <main className="js-main-grid container">
         {/* LEFT SIDEBAR */}
-        <aside className="js-left-sidebar">
-          <div className="js-profile-brief">
-            <div className="js-brief-avatar">
-              <Avatar src={null} name={profile?.name} size="lg" />
-            </div>
-            <div className="js-brief-info">
-              <h3>Hi {profile?.name?.split(' ')[0]}!</h3>
-              <p>{profile?.profile_id || profile?.user_id?.substring(0, 8)} <Link to="/create-profile" className="js-edit-link">Edit Profile</Link></p>
-            </div>
-          </div>
-
-          <nav className="js-side-nav">
-            <Link to="/my-matches" className="js-nav-item active">
-              <span className="js-nav-label">Matches</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/dashboard" className="js-nav-item">
-              <span className="js-nav-label">Activity</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/search" className="js-nav-item">
-              <span className="js-nav-label">Search</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/inbox" className="js-nav-item">
-              <span className="js-nav-label">Messenger</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-            <Link to="/upgrade" className="js-nav-item upgrade">
-              <span className="js-nav-label">Upgrade</span>
-              <span className="js-nav-badge">54% Off</span>
-              <span className="js-nav-arrow">›</span>
-            </Link>
-          </nav>
-        </aside>
+        <Sidebar />
 
         {/* MIDDLE CONTENT */}
         <div className="js-content-area">
-          <div className="js-filter-bar">
-            <button className="js-filter-btn main">
-              <Filter size={14} /> <span>Filters</span>
-            </button>
-            {filters.slice(1).map(f => (
-              <button key={f} className="js-filter-btn">
-                {f}
-              </button>
-            ))}
-          </div>
-
           {loading ? (
             <div className="js-loader"><Spinner size="lg" /></div>
           ) : (
             <div className="js-matches-list">
               {matches.length > 0 ? (
-                matches.map((item) => (
-                  <ProfileCard key={item.id} profile={item.profiles} />
+                matches.map((p) => (
+                  <ProfileCard key={p.user_id} profile={p} />
                 ))
               ) : (
                 <div className="js-empty-state">
@@ -151,6 +120,8 @@ export default function MyMatchesPage() {
         </aside>
       </main>
 
+      <Footer />
+
       <style dangerouslySetInnerHTML={{ __html: `
         .js-dashboard-wrapper {
           min-height: 100vh;
@@ -158,9 +129,15 @@ export default function MyMatchesPage() {
           padding-bottom: 50px;
         }
 
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
         .js-main-grid {
           display: grid;
-          grid-template-columns: 240px 1fr 280px;
+          grid-template-columns: 280px 1fr 280px;
           gap: 20px;
           margin-top: 20px;
           align-items: flex-start;

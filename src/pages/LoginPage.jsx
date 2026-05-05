@@ -9,7 +9,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname || '/my-matches';
 
   const [mode, setMode] = useState('password'); // 'password' | 'otp_request' | 'otp_verify'
   const [email, setEmail] = useState('');
@@ -18,10 +18,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect only when auth loading is done AND profile is fully fetched
+  // Redirect when auth loading is done
   useEffect(() => {
-    if (!authLoading && user && profile) {
-      navigate(from, { replace: true });
+    if (!authLoading && user) {
+      if (profile) {
+        // User has a profile, go to dashboard or intended page
+        navigate(from, { replace: true });
+      } else {
+        // No profile found, redirect to creation wizard
+        navigate('/create-profile', { replace: true });
+      }
     }
   }, [authLoading, user, profile, navigate, from]);
 
