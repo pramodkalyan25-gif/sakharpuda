@@ -118,7 +118,7 @@ export default function LoginPage() {
       <header className="login-header">
         <div className="login-header-content">
           <Link to="/" className="login-brand">
-            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
+            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="header-logo-img" />
           </Link>
           <Link to="/" className="home-link">Home</Link>
         </div>
@@ -274,11 +274,12 @@ export default function LoginPage() {
 
         .login-header {
           background: #fff;
-          border-bottom: 1px solid #e0e0e0;
-          padding: 12px 0;
+          border-bottom: 1px solid #ddd;
+          padding: 8px 0;
           position: sticky;
           top: 0;
-          z-index: 100;
+          z-index: 1000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .login-header-content {
@@ -290,18 +291,19 @@ export default function LoginPage() {
         }
 
         .home-link {
-          color: #D63447;
+          color: #D9475C;
           text-decoration: none;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
           transition: all 0.2s;
-          padding: 8px 20px;
-          border: 1px solid #D63447;
-          border-radius: 8px;
+          padding: 6px 16px;
+          border: 1.5px solid #D9475C;
+          border-radius: 4px;
         }
 
         .home-link:hover {
-          background: #fff5f5;
+          background: #D9475C;
+          color: #fff;
           transform: translateY(-1px);
         }
 
@@ -312,6 +314,12 @@ export default function LoginPage() {
         }
 
         .brand-pink { color: #D63447; }
+
+        .header-logo-img {
+          height: 28px;
+          width: auto;
+          display: block;
+        }
 
         .login-nav {
           display: flex;
@@ -504,8 +512,15 @@ export default function LoginPage() {
         }
 
         @media (max-width: 640px) {
+          .login-header-content { padding: 0 20px; }
           .login-card { padding: 30px 20px; }
           .footer-links { gap: 20px; }
+          .header-logo-img { height: 26px; }
+          .home-link { padding: 5px 12px; font-size: 12px; }
+        }
+
+        @media (max-width: 480px) {
+          .login-header-content { padding: 0 12px; }
         }
       `}} />
     </div>

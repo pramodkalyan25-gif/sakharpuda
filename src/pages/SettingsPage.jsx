@@ -53,12 +53,13 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (passwords.new !== passwords.confirm) {
-      toast.error('Passwords do not match');
+    const isPassValid = passwords.new.length >= 8 && /[A-Z]/.test(passwords.new) && /[0-9]/.test(passwords.new);
+    if (!isPassValid) {
+      toast.error('Please fulfill all password requirements');
       return;
     }
-    if (passwords.new.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    if (passwords.new !== passwords.confirm) {
+      toast.error('Passwords do not match');
       return;
     }
     setLoading(true);
@@ -237,23 +238,52 @@ export default function SettingsPage() {
                       <h3>Change Password</h3>
                       <div className="js-input-group">
                         <label>New Password</label>
-                        <input 
-                          type="password" 
-                          placeholder="Min 8 characters" 
-                          value={passwords.new}
-                          onChange={(e) => setPasswords({...passwords, new: e.target.value})}
-                          required
-                        />
+                        <div style={{ position: 'relative' }}>
+                          <input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="Min 8 characters" 
+                            value={passwords.new}
+                            onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                            required
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                          >
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
                       </div>
                       <div className="js-input-group">
                         <label>Confirm New Password</label>
                         <input 
-                          type="password" 
+                          type={showPassword ? "text" : "password"} 
                           placeholder="Repeat new password" 
                           value={passwords.confirm}
                           onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
                           required
                         />
+                      </div>
+
+                      <div className="js-password-requirements" style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>Security Checklist:</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          <p style={{ fontSize: '11px', color: passwords.new.length >= 8 ? '#15803d' : '#64748b' }}>
+                            {passwords.new.length >= 8 ? '✅' : '○'} At least 8 characters
+                          </p>
+                          <p style={{ fontSize: '11px', color: /[A-Z]/.test(passwords.new) ? '#15803d' : '#64748b' }}>
+                            {/[A-Z]/.test(passwords.new) ? '✅' : '○'} At least one uppercase letter
+                          </p>
+                          <p style={{ fontSize: '11px', color: /[0-9]/.test(passwords.new) ? '#15803d' : '#64748b' }}>
+                            {/[0-9]/.test(passwords.new) ? '✅' : '○'} At least one number
+                          </p>
+                          {passwords.confirm && (
+                            <p style={{ fontSize: '11px', color: passwords.new === passwords.confirm ? '#15803d' : '#dc2626' }}>
+                              {passwords.new === passwords.confirm ? '✅' : '○'} Passwords match
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <button type="submit" className="js-btn-primary" disabled={loading}>
                         {loading ? 'Updating...' : 'Update Password'}

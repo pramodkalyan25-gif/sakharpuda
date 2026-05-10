@@ -91,6 +91,21 @@ export const authService = {
   },
 
   /**
+   * Send OTP to email for signup (Creates account if not exists)
+   * @param {string} email
+   */
+  async sendSignupOTP(email) {
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+      },
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
    * Verify OTP for login (type: 'email')
    * @param {string} email
    * @param {string} token - 6-digit OTP

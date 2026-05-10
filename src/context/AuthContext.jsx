@@ -49,10 +49,19 @@ export function AuthProvider({ children }) {
       setSession(s);
       setUser(s?.user ?? null);
       setIsAdmin(authService.isAdmin(s?.user));
+      
       if (s?.user) {
         await loadProfile(s.user.id);
       }
-      setLoading(false);
+
+      // If we have a hash or search params with auth info, don't set loading=false yet.
+      // Let onAuthStateChange handle the incoming session to avoid UI flicker.
+      const hasAuthParams = window.location.hash.includes('access_token=') || 
+                            window.location.search.includes('code=');
+      
+      if (!hasAuthParams || s) {
+        setLoading(false);
+      }
     });
 
     // Listen for auth state changes (fires on login/logout)

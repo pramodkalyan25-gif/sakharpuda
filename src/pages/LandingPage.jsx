@@ -88,7 +88,7 @@ export default function LandingPage() {
     <div className="landing-wrapper">
       {/* PROFESSIONAL HEADER */}
       <header className="main-header">
-        <nav className="container header-content" aria-label="Primary Navigation">
+        <nav className="header-content" aria-label="Primary Navigation">
           <Link to="/" className="brand">
             <h1 className="visually-hidden">SakharPuda - Premium Matrimony Services | Find Your Life Partner</h1>
             <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="logo-img" />

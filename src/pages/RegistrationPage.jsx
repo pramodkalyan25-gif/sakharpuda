@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ShieldCheck, Search, User, Trash2, Star, Check, X, Globe, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Search, User, Trash2, Star, Check, X, Globe, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
@@ -104,9 +104,36 @@ export default function RegistrationPage() {
     email: '',
     mobile: '',
     password: '',
+    confirmPassword: '',
+    emailOTP: '',
     photos: [], // Array of { file, preview }
     profilePhotoIndex: 0
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showEmailVerifiedPopup, setShowEmailVerifiedPopup] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [otpExpiry, setOtpExpiry] = useState(0); // seconds left for OTP validity (10 mins = 600s)
+
+  useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setInterval(() => setResendTimer(prev => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendTimer]);
+
+  useEffect(() => {
+    let timer;
+    if (otpExpiry > 0) {
+      timer = setInterval(() => setOtpExpiry(prev => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [otpExpiry]);
 
   // Track custom "Other" values for all dropdowns
   const [customValues, setCustomValues] = useState({
@@ -121,8 +148,28 @@ export default function RegistrationPage() {
     income: ''
   });
 
+  const toTitleCase = (str) => {
+    if (!str) return '';
+    return str.replace(
+      /\w\S*/g,
+      (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    );
+  };
+
   const updateForm = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    let finalValue = value;
+
+    // Auto title case for names and college
+    if (['firstName', 'middleName', 'lastName', 'college'].includes(field)) {
+      finalValue = toTitleCase(value);
+    }
+
+    // Numeric only for mobile and DOB and OTP
+    if (['mobile', 'dobDay', 'dobMonth', 'dobYear', 'emailOTP'].includes(field)) {
+      finalValue = value.replace(/\D/g, '');
+    }
+
+    setFormData(prev => ({ ...prev, [field]: finalValue }));
     // Clear error for this field when user starts typing
     if (errors[field]) {
       setErrors(prev => {
@@ -134,7 +181,8 @@ export default function RegistrationPage() {
   };
 
   const updateCustomValue = (field, value) => {
-    setCustomValues(prev => ({ ...prev, [field]: value }));
+    const finalValue = toTitleCase(value);
+    setCustomValues(prev => ({ ...prev, [field]: finalValue }));
   };
 
   const handleNext = () => {
@@ -171,25 +219,12 @@ export default function RegistrationPage() {
       let activeUserId = user?.id;
 
       if (!isEditMode) {
-        // 0. Check if mobile already exists
-        let mobileExists = false;
-        try {
-          mobileExists = await authService.checkMobileExists(finalData.mobile);
-        } catch (checkErr) {
-          throw new Error(`Database Error: ${checkErr.message || 'Connection failed'}`);
-        }
+        // 0. The user is already logged in via OTP verification (Step 10)
+        // We just need to set their password now
+        activeUserId = (await authService.getUser())?.id;
+        if (!activeUserId) throw new Error('Session not found. Please verify your email again.');
 
-        if (mobileExists) {
-          throw new Error('This mobile number is already registered. Please use a different number or login.');
-        }
-
-        // 1. Create Supabase auth user
-        const authData = await authService.signupWithPassword(
-          finalData.email.trim(),
-          finalData.password
-        );
-        activeUserId = authData.user?.id;
-        if (!activeUserId) throw new Error('Account creation failed. Please try again.');
+        await authService.changePassword(finalData.password);
       }
 
       // 2. Build DOB string
@@ -266,6 +301,86 @@ export default function RegistrationPage() {
     }
   };
 
+  const handleVerifyEmail = async () => {
+    const isEmailValid = validateEmail(formData.email);
+    const isMobileValid = validateMobile(formData.mobile);
+
+    if (!isEmailValid || !isMobileValid) {
+      toast.error('Please enter a valid mobile number and email first.');
+      return;
+    }
+
+    setIsVerifyingEmail(true);
+    try {
+      // 1. Check Mobile & Email simultaneously
+      const [mobileExists, emailExists] = await Promise.all([
+        authService.checkMobileExists(formData.mobile),
+        authService.checkEmailExists(formData.email)
+      ]);
+
+      if (mobileExists && emailExists) {
+        toast.error('Both Mobile Number and Email ID are already registered. Please login.');
+        setIsVerifyingEmail(false);
+        return;
+      }
+      if (mobileExists) {
+        toast.error('This Mobile Number is already registered.');
+        setIsVerifyingEmail(false);
+        return;
+      }
+      if (emailExists) {
+        toast.error('This Email ID is already registered.');
+        setIsVerifyingEmail(false);
+        return;
+      }
+
+      // 3. Unique! Send REAL OTP via Supabase
+      await authService.sendSignupOTP(formData.email);
+      toast.success(`Verification code sent to ${formData.email}`);
+      setEmailVerificationSent(true);
+      setResendTimer(60); // Allow resend after 1 minute
+      setOtpExpiry(600); // OTP valid for 10 minutes
+    } catch (err) {
+      toast.error(err.message || 'Verification failed');
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (resendTimer > 0) return;
+    setIsVerifyingEmail(true);
+    try {
+      await authService.sendSignupOTP(formData.email);
+      toast.success(`New verification code sent to ${formData.email}`);
+      setResendTimer(60);
+      setOtpExpiry(600); // Reset 10 min expiry from latest OTP
+      setFormData(prev => ({ ...prev, emailOTP: '' }));
+    } catch (err) {
+      toast.error(err.message || 'Resend failed');
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (otpExpiry <= 0) {
+      toast.error('OTP has expired. Please request a new one.');
+      return;
+    }
+    setIsVerifyingEmail(true);
+    try {
+      await authService.verifyLoginOTP(formData.email, formData.emailOTP);
+      setIsEmailVerified(true);
+      setShowEmailVerifiedPopup(true);
+      setOtpExpiry(0); // Clear timer on success
+    } catch (err) {
+      toast.error('Invalid or expired OTP. Please try again.');
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -325,8 +440,10 @@ export default function RegistrationPage() {
       case 9: return formData.photos.length > 0;
       case 10: {
         const pass = formData.password;
+        const confirmPass = formData.confirmPassword;
         const isPassValid = pass.length >= 8 && /[A-Z]/.test(pass) && /[0-9]/.test(pass);
-        return validateEmail(formData.email) && validateMobile(formData.mobile) && isPassValid;
+        const matches = pass === confirmPass;
+        return validateEmail(formData.email) && validateMobile(formData.mobile) && isPassValid && matches && (isEditMode || isEmailVerified);
       }
       default: return true;
     }
@@ -700,6 +817,11 @@ export default function RegistrationPage() {
           {formData.photos.map((photo, index) => (
             <div key={index} className="photo-item-card">
               <img src={photo.preview} alt="Upload" className="photo-item-img" />
+              {formData.profilePhotoIndex === index && (
+                <div className="profile-star-badge" title="Profile Photo">
+                  <Star size={14} fill="#FFD700" color="#FFD700" />
+                </div>
+              )}
               <div className="photo-actions-overlay">
                 <button className="photo-action-text-btn" onClick={() => setAsProfilePhoto(index)}>
                   {formData.profilePhotoIndex === index ? <span>Profile Photo</span> : <span>Set as profile</span>}
@@ -741,28 +863,15 @@ export default function RegistrationPage() {
     </div>
   );
 
-  // Step 10: Account Details (Email & Mobile with Validation)
   const renderStep10 = () => {
     const isEmailValid = !formData.email || validateEmail(formData.email);
     const isMobileValid = !formData.mobile || validateMobile(formData.mobile);
-    const canSubmit = formData.email && formData.mobile && isEmailValid && isMobileValid;
 
     return (
       <div className="step-content animate-slide-in">
         <h2 className="step-title">Last step! Contact details</h2>
         <p className="step-subtitle">Verify your account to start matching.</p>
 
-        <div className="form-group">
-          <label className="input-label">Email ID</label>
-          <input
-            type="email"
-            className={`text-input ${!isEmailValid ? 'input-error' : ''}`}
-            placeholder="Enter Email Address"
-            value={formData.email}
-            onChange={(e) => updateForm('email', e.target.value)}
-          />
-          {!isEmailValid && <span className="error-text">Please enter a valid email address</span>}
-        </div>
         <div className="form-group">
           <label className="input-label">Mobile Number</label>
           <div className="phone-input-group">
@@ -773,6 +882,7 @@ export default function RegistrationPage() {
               placeholder="Enter Mobile Number"
               value={formData.mobile}
               onChange={(e) => updateForm('mobile', e.target.value)}
+              disabled={isEmailVerified}
               maxLength={10}
             />
           </div>
@@ -780,31 +890,166 @@ export default function RegistrationPage() {
         </div>
 
         <div className="form-group">
+          <label className="input-label">Email ID</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="email"
+              className={`text-input ${!isEmailValid ? 'input-error' : ''}`}
+              placeholder="Enter Email Address"
+              value={formData.email}
+              onChange={(e) => updateForm('email', e.target.value)}
+              disabled={isEmailVerified}
+            />
+            {isEmailVerified && (
+              <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#2f855a', fontWeight: 'bold', fontSize: '12px' }}>
+                VERIFIED ✅
+              </span>
+            )}
+          </div>
+          {!isEmailValid && <span className="error-text">Please enter a valid email address</span>}
+        </div>
+
+        {!isEmailVerified && (
+          <div className="form-group">
+            {!emailVerificationSent ? (
+              <button 
+                type="button" 
+                className="secondary-btn full-width"
+                onClick={handleVerifyEmail}
+                disabled={isVerifyingEmail || !formData.email || !formData.mobile || !isEmailValid || !isMobileValid}
+              >
+                {isVerifyingEmail ? 'Checking...' : 'Verify Email'}
+              </button>
+            ) : (
+              <div className="animate-fade-in">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="input-label" style={{ marginBottom: 0 }}>Enter OTP sent to email</label>
+                  {otpExpiry > 0 && (
+                    <span style={{ fontSize: '12px', color: '#D9475C', fontWeight: 'bold' }}>
+                      Expires in: {Math.floor(otpExpiry / 60)}:{String(otpExpiry % 60).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="text"
+                    className="text-input"
+                    placeholder="6-digit OTP"
+                    value={formData.emailOTP}
+                    onChange={(e) => updateForm('emailOTP', e.target.value)}
+                    maxLength={6}
+                  />
+                  <button 
+                    type="button" 
+                    className="primary-btn" 
+                    onClick={handleVerifyOTP}
+                    disabled={formData.emailOTP.length < 6 || isVerifyingEmail || otpExpiry <= 0}
+                  >
+                    {isVerifyingEmail ? 'Wait...' : 'Verify'}
+                  </button>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
+                  <button 
+                    type="button" 
+                    className="text-btn" 
+                    onClick={handleResendOTP}
+                    disabled={resendTimer > 0 || isVerifyingEmail}
+                    style={{ fontSize: '13px', color: resendTimer > 0 ? '#cbd5e0' : '#D9475C', fontWeight: '600', background: 'none', border: 'none', cursor: resendTimer > 0 ? 'default' : 'pointer', padding: 0 }}
+                  >
+                    {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+                  </button>
+                  {otpExpiry <= 0 && <span style={{ fontSize: '13px', color: '#E53E3E' }}>OTP Expired!</span>}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="form-group">
           <label className="input-label">Create Password</label>
-          <input
-            type="password"
-            className="text-input"
-            placeholder="e.g : Sakhar@1234"
-            autoComplete="new-password"
-            value={formData.password}
-            onChange={(e) => updateForm('password', e.target.value)}
-          />
-          <div className="password-requirements mt-2">
-            <p className={`req-item ${formData.password.length >= 8 ? 'valid' : ''}`}>
-              {formData.password.length >= 8 ? '✅' : '○'} At least 8 characters
-            </p>
-            <p className={`req-item ${/[A-Z]/.test(formData.password) ? 'valid' : ''}`}>
-              {/[A-Z]/.test(formData.password) ? '✅' : '○'} At least one uppercase letter
-            </p>
-            <p className={`req-item ${/[0-9]/.test(formData.password) ? 'valid' : ''}`}>
-              {/[0-9]/.test(formData.password) ? '✅' : '○'} At least one number
-            </p>
+          <div className="password-input-wrapper" style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              className="text-input"
+              placeholder="e.g : Sakhar@1234"
+              autoComplete="new-password"
+              value={formData.password}
+              onChange={(e) => updateForm('password', e.target.value)}
+            />
+            <button 
+              type="button" 
+              className="password-toggle-btn" 
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: '#718096',
+                cursor: 'pointer'
+              }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
         </div>
 
-        <div className="security-badge">
+        <div className="form-group">
+          <label className="input-label">Confirm Password</label>
+          <div className="password-input-wrapper" style={{ position: 'relative' }}>
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              className={`text-input ${formData.confirmPassword && formData.password !== formData.confirmPassword ? 'input-error' : ''}`}
+              placeholder="Re-enter your password"
+              value={formData.confirmPassword}
+              onChange={(e) => updateForm('confirmPassword', e.target.value)}
+            />
+            <button 
+              type="button" 
+              className="password-toggle-btn" 
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: '#718096',
+                cursor: 'pointer'
+              }}
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+            <span className="error-text">Passwords do not match</span>
+          )}
+          {formData.confirmPassword && formData.password === formData.confirmPassword && (
+            <span className="success-text-small">✅ Passwords match</span>
+          )}
+        </div>
+
+        <div className="password-requirements mt-6">
+          <p className={`req-item ${formData.password.length >= 8 ? 'valid' : ''}`}>
+            {formData.password.length >= 8 ? '✅' : '○'} At least 8 characters
+          </p>
+          <p className={`req-item ${/[A-Z]/.test(formData.password) ? 'valid' : ''}`}>
+            {/[A-Z]/.test(formData.password) ? '✅' : '○'} At least one uppercase letter
+          </p>
+          <p className={`req-item ${/[0-9]/.test(formData.password) ? 'valid' : ''}`}>
+            {/[0-9]/.test(formData.password) ? '✅' : '○'} At least one number
+          </p>
+          {formData.confirmPassword && formData.password === formData.confirmPassword && (
+            <p className="req-item valid">✅ Passwords match</p>
+          )}
+        </div>
+
+        <div className="security-badge mt-4">
           <ShieldCheck size={16} className="text-green" />
-          <span>100% Privacy Guaranteed</span>
+          <span>Your information is safe & secure with SakharPuda.com</span>
         </div>
 
         <button
@@ -843,6 +1088,10 @@ export default function RegistrationPage() {
         <div className="register-card">
           <button className="card-back-btn" onClick={handleBack} title="Go Back">
             <ArrowLeft size={20} />
+          </button>
+
+          <button className="card-close-btn" onClick={() => navigate('/')} title="Close & Go Home">
+            <X size={20} />
           </button>
 
           <div className="step-icon-container">
@@ -888,6 +1137,25 @@ export default function RegistrationPage() {
             <p className="success-redirect">Redirecting to login in a few seconds...</p>
             <button className="success-btn" onClick={() => navigate('/login', { replace: true })}>
               Go to Login Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* EMAIL VERIFIED POPUP */}
+      {showEmailVerifiedPopup && (
+        <div className="success-overlay" style={{ zIndex: 2000 }}>
+          <div className="success-card animate-scale-in">
+            <div className="success-checkmark">
+              <svg viewBox="0 0 52 52" className="checkmark-svg">
+                <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              </svg>
+            </div>
+            <h2 className="success-title">Email Verified!</h2>
+            <p className="success-subtitle">Your contact details are verified and unique. Please proceed to set your password.</p>
+            <button className="success-btn" onClick={() => setShowEmailVerifiedPopup(false)}>
+              Continue to Password
             </button>
           </div>
         </div>
@@ -952,26 +1220,30 @@ export default function RegistrationPage() {
           flex-direction: column;
           position: relative;
         }
-        .card-back-btn {
+        .card-back-btn, .card-close-btn {
           position: absolute;
           top: 20px;
-          left: 20px;
-          background: #f7fafc;
-          border: none;
-          color: #4a5568;
           width: 36px;
           height: 36px;
           border-radius: 50%;
+          background: #f7fafc;
+          border: 1px solid #edf2f7;
           display: flex;
           align-items: center;
           justify-content: center;
+          color: #4A5568;
           cursor: pointer;
           transition: all 0.2s;
-          z-index: 20;
+          z-index: 100;
         }
-        .card-back-btn:hover {
+        .card-back-btn { left: 20px; }
+        .card-close-btn { right: 20px; }
+
+        .card-back-btn:hover, .card-close-btn:hover {
           background: #edf2f7;
           color: #D9475C;
+          border-color: #D9475C;
+          transform: translateY(-1px);
         }
         .step-icon-container {
           display: flex;
@@ -1020,6 +1292,12 @@ export default function RegistrationPage() {
         .phone-input-group { display: flex; gap: 10px; }
         .country-code { padding: 14px 16px; border: 1px solid #cbd5e0; border-radius: 10px; background: #f7fafc; color: #4a5568; display: flex; align-items: center; }
         .dob-grid { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px; }
+        .success-text-small {
+          color: #2f855a;
+          font-size: 12px;
+          margin-top: 4px;
+          display: block;
+        }
         .chip-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .chip-btn {
           padding: 10px 18px; background: #fff; border: 1px solid #cbd5e0; border-radius: 30px;
@@ -1070,6 +1348,21 @@ export default function RegistrationPage() {
         }
         .photo-item-card:hover .photo-actions-overlay {
           opacity: 1;
+        }
+        .profile-star-badge {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          background: rgba(255, 255, 255, 0.9);
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 15;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          border: 1px solid #FFD700;
         }
         .photo-action-text-btn {
           background: none;
@@ -1152,16 +1445,46 @@ export default function RegistrationPage() {
 
         .security-badge { display: flex; align-items: center; gap: 8px; padding: 10px; background: #f0fff4; border-radius: 8px; }
         .security-badge span { font-size: 12px; color: #2f855a; }
-        .primary-btn {
-          background: #D9475C; color: white; border: none; padding: 16px; border-radius: 30px;
-          font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        .primary-btn, .secondary-btn {
+          padding: 14px 24px;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 15px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border: none;
         }
-        .primary-btn:disabled {
-          background: #e2e8f0 !important;
-          color: #a0aec0 !important;
+        .primary-btn {
+          background: #D9475C;
+          color: #fff;
+        }
+        .primary-btn:hover:not(:disabled) {
+          background: #c53e52;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(217, 71, 92, 0.2);
+        }
+        .secondary-btn {
+          background: #fff;
+          color: #D9475C;
+          border: 2px solid #D9475C;
+        }
+        .secondary-btn:hover:not(:disabled) {
+          background: #D9475C;
+          color: #fff;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(217, 71, 92, 0.1);
+        }
+        .primary-btn:disabled, .secondary-btn:disabled {
+          background: #edf2f7;
+          color: #a0aec0;
+          border-color: #edf2f7;
           cursor: not-allowed;
-          box-shadow: none !important;
-          transform: none !important;
+          transform: none;
+          box-shadow: none;
         }
         .input-error {
           border-color: #D63447 !important;

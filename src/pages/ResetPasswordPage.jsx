@@ -17,8 +17,10 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
+    const isPassValid = password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password);
+    
+    if (!isPassValid) {
+      toast.error('Please fulfill all password requirements');
       return;
     }
 
@@ -61,6 +63,37 @@ export default function ResetPasswordPage() {
     );
   }
 
+  if (isSuccess) {
+    return (
+      <div className="reset-page-wrapper">
+        <header className="login-header">
+          <div className="login-header-content">
+            <Link to="/" className="login-brand">
+              <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="header-logo-img" />
+            </Link>
+            <Link to="/" className="home-link">Home</Link>
+          </div>
+        </header>
+        <main className="reset-main">
+          <div className="reset-card">
+            <div className="success-icon-container">
+              <div className="success-circle">
+                <Check size={40} color="#fff" />
+              </div>
+            </div>
+            <h1 className="reset-title">Password Updated!</h1>
+            <p className="reset-subtitle">Your password has been changed successfully. You can now log in with your new credentials.</p>
+            <div className="reset-footer" style={{ border: 'none', marginTop: '30px' }}>
+              <Link to="/login" className="btn btn-primary btn-full btn-lg">
+                Go to Login
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (!session) {
     return (
       <div className="reset-page-wrapper">
@@ -89,42 +122,13 @@ export default function ResetPasswordPage() {
     );
   }
 
-  if (isSuccess) {
-    return (
-      <div className="reset-page-wrapper">
-        <header className="login-header">
-          <div className="login-header-content">
-            <Link to="/" className="login-brand">
-              <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
-            </Link>
-          </div>
-        </header>
-        <main className="reset-main">
-          <div className="reset-card">
-            <div className="success-icon-container">
-              <div className="success-circle">
-                <Check size={40} color="#fff" />
-              </div>
-            </div>
-            <h1 className="reset-title">Password Updated!</h1>
-            <p className="reset-subtitle">Your password has been changed successfully. You can now log in with your new credentials.</p>
-            <div className="reset-footer" style={{ border: 'none', marginTop: '30px' }}>
-              <Link to="/login" className="btn btn-primary btn-full btn-lg">
-                Go to Login
-              </Link>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="reset-page-wrapper">
       <header className="login-header">
         <div className="login-header-content">
           <Link to="/" className="login-brand">
-            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
+            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="header-logo-img" />
           </Link>
           <Link to="/" className="home-link">Home</Link>
         </div>
@@ -141,45 +145,70 @@ export default function ResetPasswordPage() {
           </div>
 
           <form className="reset-form" onSubmit={handleSubmit}>
-            <div className="input-group">
-              <label htmlFor="password">New Password</label>
-              <div className="input-with-icon">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="At least 6 characters"
-                  className="input-field"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+              <div className="form-group">
+                <label className="input-label">New Password</label>
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="text-input"
+                    placeholder="Enter new password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="input-group">
-              <label htmlFor="confirm-password">Confirm Password</label>
-              <input
-                id="confirm-password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Repeat new password"
-                className="input-field"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
+              <div className="form-group">
+                <label className="input-label">Confirm New Password</label>
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="text-input"
+                    placeholder="Repeat new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
 
-            <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-              {loading ? "Updating..." : "Update Password"}
-            </button>
+              <div className="password-requirements" style={{ marginBottom: '25px', padding: '15px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <p className="req-title" style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '10px' }}>Password Requirements:</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ fontSize: '12px', color: password.length >= 8 ? '#2f855a' : '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {password.length >= 8 ? <Check size={14} /> : '○'} At least 8 characters
+                  </p>
+                  <p style={{ fontSize: '12px', color: /[A-Z]/.test(password) ? '#2f855a' : '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/[A-Z]/.test(password) ? <Check size={14} /> : '○'} At least one uppercase letter
+                  </p>
+                  <p style={{ fontSize: '12px', color: /[0-9]/.test(password) ? '#2f855a' : '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/[0-9]/.test(password) ? <Check size={14} /> : '○'} At least one number
+                  </p>
+                  {confirmPassword && (
+                    <p style={{ fontSize: '12px', color: password === confirmPassword ? '#2f855a' : '#D63447', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {password === confirmPassword ? <Check size={14} /> : '○'} Passwords match
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                {loading ? "Updating..." : "Update Password"}
+              </button>
           </form>
 
           <div className="reset-footer">
@@ -229,8 +258,12 @@ export default function ResetPasswordPage() {
 
         .login-header {
           background: #fff;
-          border-bottom: 1px solid #f1f5f9;
-          padding: 15px 0;
+          border-bottom: 1px solid #ddd;
+          padding: 8px 0;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .login-header-content {
@@ -242,19 +275,26 @@ export default function ResetPasswordPage() {
         }
 
         .home-link {
-          color: #D63447;
+          color: #D9475C;
           text-decoration: none;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
           transition: all 0.2s;
-          padding: 8px 20px;
-          border: 1px solid #D63447;
-          border-radius: 8px;
+          padding: 6px 16px;
+          border: 1.5px solid #D9475C;
+          border-radius: 4px;
         }
 
         .home-link:hover {
-          background: #fff5f5;
+          background: #D9475C;
+          color: #fff;
           transform: translateY(-1px);
+        }
+
+        .header-logo-img {
+          height: 28px;
+          width: auto;
+          display: block;
         }
 
         .reset-main {
@@ -458,7 +498,14 @@ export default function ResetPasswordPage() {
         }
 
         @media (max-width: 640px) {
+          .login-header-content { padding: 0 20px; }
           .footer-links { gap: 20px; }
+          .header-logo-img { height: 26px; }
+          .home-link { padding: 5px 12px; font-size: 12px; }
+        }
+
+        @media (max-width: 480px) {
+          .login-header-content { padding: 0 12px; }
         }
       `}} />
     </div>

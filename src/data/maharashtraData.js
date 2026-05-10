@@ -210,11 +210,16 @@ export const COMPREHENSIVE_EDUCATION = {
 
 export const HEIGHTS_CM = (() => {
   const list = [];
+  const seenLabels = new Set();
   for (let cm = 134; cm <= 210; cm++) {
     const totalInches = cm / 2.54;
     const ft = Math.floor(totalInches / 12);
     const inch = Math.round(totalInches % 12);
-    list.push({ value: cm, label: `${ft}ft ${inch}in - ${cm}cm` });
+    const label = `${ft}ft ${inch}in`;
+    if (!seenLabels.has(label)) {
+      list.push({ value: cm, label: `${label} - ${cm}cm` });
+      seenLabels.add(label);
+    }
   }
   return list;
 })();
