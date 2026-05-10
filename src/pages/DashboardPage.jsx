@@ -174,8 +174,6 @@ export default function DashboardPage() {
         />
       )}
 
-      <Footer />
-
       <style dangerouslySetInnerHTML={{
         __html: `
         /* Section Headers */

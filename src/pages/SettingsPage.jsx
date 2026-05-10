@@ -4,7 +4,8 @@ import {
   Settings, 
   Lock, 
   Bell, 
-  Eye, 
+  Eye,
+  EyeOff,
   ChevronRight, 
   Smartphone,
   Mail,
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form States
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
@@ -107,7 +109,7 @@ export default function SettingsPage() {
     <div className="js-dashboard-wrapper">
       <TopNav />
       
-      <main className="js-main-grid container">
+      <main className="js-main-grid js-layout-container">
         <Sidebar />
 
         <div className="js-content-area">
@@ -332,38 +334,107 @@ export default function SettingsPage() {
       </main>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .js-dashboard-wrapper { min-height: 100vh; background: #f1f2f5; padding-bottom: 50px; }
-        .js-main-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; margin-top: 20px; align-items: flex-start; }
+        .js-dashboard-wrapper { min-height: 100vh; background: #f1f2f5; padding-bottom: 80px; }
+        .js-main-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; align-items: flex-start; }
+
+        @media (min-width: 768px) {
+          .js-main-grid { grid-template-columns: 240px 1fr; gap: 20px; margin-top: 20px; padding-bottom: 40px; }
+        }
 
         .js-settings-card {
           background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .js-settings-header { padding: 30px; border-bottom: 1px solid #f1f5f9; }
-        .js-settings-header h1 { font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
+        .js-settings-header { padding: 20px 16px; border-bottom: 1px solid #f1f5f9; }
+        .js-settings-header h1 { font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
         .js-settings-header p { color: #64748b; font-size: 14px; }
 
-        .js-settings-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 500px; }
-        .js-settings-nav { background: #fcfcfd; border-right: 1px solid #f1f5f9; padding: 20px 10px; }
-        .js-settings-nav-item {
-          display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 15px;
-          border: none; background: none; color: #64748b; font-size: 14px; font-weight: 600;
-          border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: left;
+        @media (min-width: 768px) {
+          .js-settings-header { padding: 30px; }
+          .js-settings-header h1 { font-size: 24px; margin-bottom: 8px; }
         }
+
+        /* Settings layout - stacked on mobile, side-by-side on tablet+ */
+        .js-settings-layout { display: flex; flex-direction: column; min-height: auto; }
+
+        @media (min-width: 640px) {
+          .js-settings-layout { display: grid; grid-template-columns: 200px 1fr; min-height: 500px; }
+        }
+
+        @media (min-width: 1024px) {
+          .js-settings-layout { grid-template-columns: 240px 1fr; }
+        }
+
+        /* Mobile: nav becomes horizontal scrollable tab row */
+        .js-settings-nav {
+          background: #fcfcfd;
+          border-bottom: 1px solid #f1f5f9;
+          padding: 8px;
+          display: flex;
+          overflow-x: auto;
+          gap: 4px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .js-settings-nav::-webkit-scrollbar { display: none; }
+
+        @media (min-width: 640px) {
+          .js-settings-nav {
+            border-bottom: none;
+            border-right: 1px solid #f1f5f9;
+            flex-direction: column;
+            overflow-x: visible;
+            padding: 16px 8px;
+            gap: 0;
+          }
+        }
+
+        .js-settings-nav-item {
+          display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+          border: none; background: none; color: #64748b;
+          font-size: 13px; font-weight: 600; border-radius: 8px;
+          cursor: pointer; transition: all 0.2s; text-align: left;
+          white-space: nowrap; flex-shrink: 0; font-family: inherit;
+        }
+
+        @media (min-width: 640px) {
+          .js-settings-nav-item { width: 100%; white-space: normal; flex-shrink: 1; padding: 12px 15px; font-size: 14px; }
+        }
+
         .js-settings-nav-item:hover { background: #f1f5f9; color: #1e293b; }
-        .js-settings-nav-item.active { background: #fff; color: #D63447; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .js-settings-nav-item.active { background: #fff1f2; color: #D63447; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .js-settings-nav-item .js-chevron { margin-left: auto; opacity: 0; transition: opacity 0.2s; }
         .js-settings-nav-item.active .js-chevron { opacity: 1; }
 
-        .js-settings-content { padding: 40px; }
-        .js-settings-form { max-width: 600px; }
-        .js-form-section { margin-bottom: 40px; }
-        .js-form-section h3 { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
+        /* Hide chevron on small screens */
+        @media (max-width: 639px) {
+          .js-settings-nav-item .js-chevron { display: none; }
+        }
 
-        .js-input-group { margin-bottom: 20px; }
+        .js-settings-content { padding: 20px 16px; }
+
+        @media (min-width: 768px) {
+          .js-settings-content { padding: 40px; }
+        }
+
+        .js-settings-form { max-width: 100%; }
+
+        @media (min-width: 640px) {
+          .js-settings-form { max-width: 600px; }
+        }
+
+        .js-form-section { margin-bottom: 32px; }
+        .js-form-section h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }
+
+        @media (min-width: 768px) {
+          .js-form-section { margin-bottom: 40px; }
+          .js-form-section h3 { font-size: 16px; margin-bottom: 20px; }
+        }
+
+        .js-input-group { margin-bottom: 16px; }
         .js-input-group label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; }
         .js-input-group input { 
           width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px;
-          font-size: 14px; color: #1e293b; background: #f8fafc;
+          font-size: 14px; color: #1e293b; background: #f8fafc; font-family: inherit;
         }
         .js-input-group input:focus { outline: none; border-color: #D63447; background: #fff; }
         .js-input-hint { font-size: 11px; color: #94a3b8; margin-top: 6px; display: block; }
@@ -376,57 +447,54 @@ export default function SettingsPage() {
         }
 
         .js-status-box {
-          background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;
-          display: flex; justify-content: space-between; align-items: center;
+          background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;
+          display: flex; justify-content: space-between; align-items: center; gap: 12px;
+          flex-wrap: wrap;
         }
         .js-status-text strong { display: block; font-size: 14px; color: #1e293b; margin-bottom: 4px; }
         .js-status-text span { font-size: 12px; color: #64748b; }
 
         .js-btn-primary {
-          background: #D63447; color: #fff; border: none; padding: 12px 30px;
-          border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s;
+          background: #D63447; color: #fff; border: none; padding: 12px 24px;
+          border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;
+          transition: all 0.2s; font-family: inherit;
         }
         .js-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .js-btn-primary.btn-sm { padding: 8px 20px; font-size: 13px; }
+        .js-btn-primary.btn-sm { padding: 8px 16px; font-size: 13px; }
         
         .js-btn-outline {
           background: #fff; border: 1px solid #e2e8f0; color: #475569; padding: 8px 20px;
           border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+          font-family: inherit;
         }
 
         .js-radio-group { display: flex; flex-direction: column; gap: 12px; }
         .js-radio-item {
-          display: flex; gap: 15px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer;
-          transition: all 0.2s;
+          display: flex; gap: 12px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px;
+          cursor: pointer; transition: all 0.2s; align-items: flex-start;
         }
         .js-radio-item:hover { border-color: #D63447; background: #fff1f2; }
         .js-radio-text strong { display: block; font-size: 14px; color: #1e293b; margin-bottom: 2px; }
         .js-radio-text span { font-size: 12px; color: #64748b; }
 
         .js-toggle-list { display: flex; flex-direction: column; gap: 20px; }
-        .js-toggle-item { display: flex; justify-content: space-between; align-items: center; }
+        .js-toggle-item { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         .js-toggle-item.disabled { opacity: 0.7; }
         .js-toggle-text strong { display: block; font-size: 14px; color: #1e293b; margin-bottom: 2px; }
         .js-toggle-text span { font-size: 12px; color: #64748b; }
         .js-enabled-label { color: #10b981; font-size: 12px; font-weight: 700; }
         .js-section-hint { font-size: 13px; color: #64748b; margin-bottom: 20px; }
 
-        .js-danger-zone { border-top: 1px solid #fee2e2; padding-top: 30px; margin-top: 20px; }
+        .js-danger-zone { border-top: 1px solid #fee2e2; padding-top: 24px; margin-top: 16px; }
         .js-danger-zone h3 { color: #dc2626; }
-        .js-danger-zone p { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+        .js-danger-zone p { font-size: 13px; color: #64748b; margin-bottom: 16px; }
         .js-btn-danger {
           display: flex; align-items: center; gap: 8px; background: #fff;
           border: 1px solid #fee2e2; color: #dc2626; padding: 10px 20px;
-          border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+          border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+          transition: all 0.2s; font-family: inherit;
         }
         .js-btn-danger:hover { background: #dc2626; color: #fff; }
-
-        @media (max-width: 1024px) {
-          .js-settings-layout { grid-template-columns: 1fr; }
-          .js-settings-nav { display: flex; overflow-x: auto; padding: 15px; gap: 10px; }
-          .js-settings-nav-item { white-space: nowrap; width: auto; }
-          .js-settings-nav-item .js-chevron { display: none; }
-        }
       `}} />
     </div>
   );

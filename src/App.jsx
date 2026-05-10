@@ -30,6 +30,7 @@ import ContactPage from './pages/ContactPage';
 import HelpPage from './pages/HelpPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChatBot from './components/ui/ChatBot';
+import MobileBottomNav from './components/ui/MobileBottomNav';
 
 export default function App() {
   const [isOffline, setIsOffline] = useState(!window.navigator.onLine);
@@ -127,6 +128,7 @@ export default function App() {
             }}
           />
           <ChatBot />
+          <MobileBottomNav />
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

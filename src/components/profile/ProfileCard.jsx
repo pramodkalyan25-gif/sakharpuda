@@ -328,9 +328,17 @@ export default function ProfileCard({ profile, onInterestSent }) {
           color: #D63447;
         }
 
-        @media (max-width: 500px) {
+        @media (max-width: 600px) {
           .js-card-body { flex-direction: column; }
-          .js-photo-container { width: 100%; height: 300px; }
+          .js-photo-container { width: 100%; height: 220px; }
+          .js-info-container { padding: 14px; }
+          .js-name-row h3 { font-size: 17px; }
+          .js-primary-detail { font-size: 13px; }
+        }
+
+        @media (max-width: 400px) {
+          .js-action-btn span { display: none; }
+          .js-action-btn { padding: 12px 8px; }
         }
       `}} />
     </div>

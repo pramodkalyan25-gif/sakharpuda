@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import Spinner from '../components/ui/Spinner';
 import PhotoGallery from '../components/profile/PhotoGallery';
+import TopNav from '../components/ui/TopNav';
 import { profileService } from '../services/profileService';
 import { interestService } from '../services/interestService';
 import { contactService } from '../services/contactService';
@@ -201,14 +202,16 @@ export default function ViewProfilePage() {
   ].filter((s) => s.value);
 
   return (
-    <div className="view-profile-page">
+    <div className="vp-page-wrapper">
+      <TopNav />
+      <div className="view-profile-page">
       <div className="profile-page-topbar">
         <Button variant="ghost" onClick={() => navigate(-1)}>← Back</Button>
         {isOwn && <Link to="/dashboard"><Button variant="outline" size="sm">Go to Dashboard</Button></Link>}
       </div>
 
       {isOwn && (
-        <div style={{ background: 'rgba(96,165,250,0.1)', color: 'var(--clr-info)', padding: '12px', textAlign: 'center', fontWeight: '600', marginBottom: '30px', borderRadius: 'var(--radius)', border: '1px solid rgba(96,165,250,0.2)' }}>
+        <div style={{ background: 'rgba(96,165,250,0.1)', color: 'var(--clr-info)', padding: '12px', textAlign: 'center', fontWeight: '600', marginBottom: '20px', borderRadius: 'var(--radius)', border: '1px solid rgba(96,165,250,0.2)', fontSize: '14px' }}>
           👁️ This is how your profile looks to other members.
         </div>
       )}
@@ -312,6 +315,12 @@ export default function ViewProfilePage() {
           </div>
         </main>
       </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .vp-page-wrapper { min-height: 100vh; background: #f1f2f5; padding-bottom: 70px; }
+        @media (min-width: 768px) { .vp-page-wrapper { padding-bottom: 40px; } }
+      `}} />
     </div>
   );
 }

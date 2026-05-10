@@ -124,47 +124,60 @@ export default function InterestsPage() {
       <style dangerouslySetInnerHTML={{
         __html: `
         .interests-page { min-height: 100vh; background: #f8fafc; }
-        .interests-main { padding: 40px 20px; max-width: 900px; margin: 0 auto; }
         
-        .interests-header { margin-bottom: 30px; }
-        .header-title { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .header-title h1 { font-size: 28px; font-weight: 800; color: #1e293b; }
-        .header-icon { color: #C9956C; width: 32px; height: 32px; }
-        .subtitle { color: #64748b; font-size: 15px; }
+        .interests-header { margin-bottom: 20px; }
+        .header-title { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .header-title h1 { font-size: 22px; font-weight: 800; color: #1e293b; }
+        .header-icon { color: #C9956C; width: 28px; height: 28px; }
+        .subtitle { color: #64748b; font-size: 14px; }
 
-        .loading-center { padding: 100px 0; text-align: center; }
-
-        .sent-list { display: flex; flex-direction: column; gap: 16px; }
-        .sent-item-card {
-          background: #fff; border-radius: 16px; padding: 20px;
-          display: flex; justify-content: space-between; align-items: center;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7;
+        @media (min-width: 768px) {
+          .interests-header { margin-bottom: 30px; }
+          .header-title { margin-bottom: 8px; }
+          .header-title h1 { font-size: 28px; }
+          .header-icon { width: 32px; height: 32px; }
         }
 
-        .sent-user-info { display: flex; gap: 16px; align-items: center; }
-        .user-meta h3 { font-size: 17px; font-weight: 800; color: #1e293b; margin-bottom: 2px; }
-        .user-meta p { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+        .loading-center { padding: 80px 0; text-align: center; }
+
+        .sent-list { display: flex; flex-direction: column; gap: 12px; }
+        .sent-item-card {
+          background: #fff; border-radius: 14px; padding: 16px;
+          display: flex; flex-direction: column; gap: 12px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7;
+        }
+
+        @media (min-width: 480px) {
+          .sent-item-card {
+            flex-direction: row; justify-content: space-between; align-items: center;
+            padding: 18px 20px; gap: 0;
+          }
+        }
+
+        .sent-user-info { display: flex; gap: 14px; align-items: center; }
+        .user-meta h3 { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 2px; }
+        .user-meta p { font-size: 13px; color: #64748b; margin-bottom: 5px; }
         .time-ago { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8; }
 
         .status-pill {
-          display: flex; align-items: center; gap: 6px;
-          padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
         }
         .status-pill.pending { background: #fef3c7; color: #d97706; }
         .status-pill.accepted { background: #dcfce7; color: #15803d; }
         .status-pill.rejected { background: #fee2e2; color: #dc2626; }
 
         .empty-state-card {
-          padding: 80px 20px; text-align: center; background: #fff;
-          border-radius: 24px; border: 1px dashed #cbd5e0; margin-top: 20px;
+          padding: 60px 20px; text-align: center; background: #fff;
+          border-radius: 20px; border: 1px dashed #cbd5e0; margin-top: 20px;
         }
         .empty-icon-box {
-          width: 80px; height: 80px; background: #fffbeb; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+          width: 70px; height: 70px; background: #fffbeb; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
           color: #C9956C;
         }
-        .empty-state-card h2 { font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
-        .empty-state-card p { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+        .empty-state-card h2 { font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
+        .empty-state-card p { font-size: 14px; color: #64748b; margin-bottom: 20px; }
       `}} />
       <Footer />
     </div>

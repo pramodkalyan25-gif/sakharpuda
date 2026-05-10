@@ -162,51 +162,73 @@ export default function InboxPage() {
         /* Inbox Card */
         .js-inbox-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .js-inbox-header { border-bottom: 1px solid #f1f5f9; }
-        .js-inbox-title { display: flex; align-items: center; gap: 10px; padding: 20px; }
-        .js-inbox-title h2 { font-size: 18px; font-weight: 800; color: #1e293b; }
+        .js-inbox-title { display: flex; align-items: center; gap: 10px; padding: 16px; }
+        .js-inbox-title h2 { font-size: 16px; font-weight: 800; color: #1e293b; }
         .js-icon-red { color: #D63447; }
         
-        .js-inbox-tabs { display: flex; padding: 0 20px; }
+        @media (min-width: 768px) {
+          .js-inbox-title { padding: 20px; }
+          .js-inbox-title h2 { font-size: 18px; }
+        }
+        
+        .js-inbox-tabs { display: flex; padding: 0 16px; overflow-x: auto; }
         .js-tab {
-          padding: 12px 20px; border: none; background: none; font-size: 13px;
+          padding: 10px 16px; border: none; background: none; font-size: 13px;
           font-weight: 700; color: #64748b; cursor: pointer; position: relative;
+          white-space: nowrap; font-family: inherit;
         }
         .js-tab.active { color: #D63447; }
-        .js-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #D63447; }
+        .js-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #D63447; border-radius: 2px; }
         .js-count { background: #D63447; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 6px; }
 
         .js-interest-list { display: flex; flex-direction: column; }
         .js-interest-row {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 20px; border-bottom: 1px solid #f8fafc; transition: background 0.2s;
+          display: flex; flex-direction: column; gap: 12px;
+          padding: 16px; border-bottom: 1px solid #f8fafc; transition: background 0.2s;
         }
         .js-interest-row:hover { background: #fcfcfd; }
-        .js-user-info { display: flex; gap: 15px; align-items: center; }
+
+        @media (min-width: 480px) {
+          .js-interest-row { flex-direction: row; justify-content: space-between; align-items: center; gap: 0; }
+          .js-interest-row { padding: 20px; }
+        }
+
+        .js-user-info { display: flex; gap: 12px; align-items: center; }
         .js-meta h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
         .js-meta p { font-size: 12px; color: #64748b; }
         .js-time { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #94a3b8; margin-top: 4px; }
 
         .js-actions { display: flex; gap: 8px; }
+
+        /* On mobile, action buttons go full width */
+        @media (max-width: 479px) {
+          .js-actions { flex-direction: row; }
+          .js-btn-accept { flex: 1; justify-content: center; }
+        }
+
         .js-btn-accept {
-          background: #D63447; color: #fff; border: none; padding: 8px 16px;
-          border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;
+          background: #D63447; color: #fff; border: none; padding: 10px 16px;
+          border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+          display: flex; align-items: center; gap: 6px; font-family: inherit;
         }
         .js-btn-decline {
-          background: #f1f5f9; color: #64748b; border: none; padding: 8px;
-          border-radius: 8px; cursor: pointer;
+          background: #f1f5f9; color: #64748b; border: none; padding: 8px 12px;
+          border-radius: 8px; cursor: pointer; font-family: inherit;
         }
         .js-accepted-badge { display: flex; align-items: center; gap: 6px; color: #10b981; font-size: 12px; font-weight: 700; }
 
-        .js-empty-inbox { padding: 80px 40px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .js-empty-inbox { padding: 60px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .js-icon-muted { color: #cbd5e1; }
         .js-empty-inbox h3 { font-size: 18px; font-weight: 800; color: #64748b; }
         .js-empty-inbox p { font-size: 14px; color: #94a3b8; }
         .js-discover-btn {
           margin-top: 15px; background: #D63447; color: #fff; border: none;
           padding: 10px 24px; border-radius: 20px; font-weight: 700; cursor: pointer;
+          font-family: inherit;
         }
       `}} />
       <Footer />
     </div>
   );
 }
+
