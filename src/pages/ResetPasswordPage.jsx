@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
-import { Eye, EyeOff, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Lock, ArrowLeft, Loader2, Check } from 'lucide-react';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -12,6 +12,7 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,18 +33,11 @@ export default function ResetPasswordPage() {
       await authService.changePassword(password);
       console.log('[ResetPassword] Password updated successfully.');
       
-      toast.success('Password updated successfully! Redirecting to login...');
+      setIsSuccess(true);
+      toast.success('Password updated successfully!');
       
-      // Important: Wait a bit for the toast and then logout
-      setTimeout(async () => {
-        try {
-          await authService.logout();
-          navigate('/login', { replace: true });
-        } catch (logoutErr) {
-          console.error('[ResetPassword] Post-update logout failed:', logoutErr);
-          navigate('/login', { replace: true });
-        }
-      }, 1500);
+      // Perform logout in background so session is cleared
+      authService.logout().catch(err => console.error('Logout failed:', err));
     } catch (err) {
       console.error('[ResetPassword] Update failed:', err);
       const errorMsg = err.message || 'Failed to update password';
@@ -95,6 +89,36 @@ export default function ResetPasswordPage() {
     );
   }
 
+  if (isSuccess) {
+    return (
+      <div className="reset-page-wrapper">
+        <header className="login-header">
+          <div className="login-header-content">
+            <Link to="/" className="login-brand">
+              <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
+            </Link>
+          </div>
+        </header>
+        <main className="reset-main">
+          <div className="reset-card">
+            <div className="success-icon-container">
+              <div className="success-circle">
+                <Check size={40} color="#fff" />
+              </div>
+            </div>
+            <h1 className="reset-title">Password Updated!</h1>
+            <p className="reset-subtitle">Your password has been changed successfully. You can now log in with your new credentials.</p>
+            <div className="reset-footer" style={{ border: 'none', marginTop: '30px' }}>
+              <Link to="/login" className="btn btn-primary btn-full btn-lg">
+                Go to Login
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="reset-page-wrapper">
       <header className="login-header">
@@ -102,6 +126,7 @@ export default function ResetPasswordPage() {
           <Link to="/" className="login-brand">
             <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
           </Link>
+          <Link to="/" className="home-link">Home</Link>
         </div>
       </header>
 
@@ -185,6 +210,7 @@ export default function ResetPasswordPage() {
           background-color: #fff;
           display: flex;
           flex-direction: column;
+          font-family: 'Cabin', sans-serif;
         }
 
         .reset-page-wrapper.center-content {
@@ -211,8 +237,24 @@ export default function ResetPasswordPage() {
           max-width: 100% !important;
           padding: 0 40px;
           display: flex;
-          justify-content: flex-start;
+          justify-content: space-between;
           align-items: center;
+        }
+
+        .home-link {
+          color: #D63447;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 700;
+          transition: all 0.2s;
+          padding: 8px 20px;
+          border: 1px solid #D63447;
+          border-radius: 8px;
+        }
+
+        .home-link:hover {
+          background: #fff5f5;
+          transform: translateY(-1px);
         }
 
         .reset-main {
@@ -220,7 +262,7 @@ export default function ResetPasswordPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 60px 20px;
+          padding: 50px 20px 60px;
         }
 
         .reset-card {
@@ -251,6 +293,29 @@ export default function ResetPasswordPage() {
           font-weight: 800;
           color: #1e293b;
           margin-bottom: 8px;
+        }
+
+        .success-icon-container {
+          margin-bottom: 30px;
+          display: flex;
+          justify-content: center;
+        }
+
+        .success-circle {
+          width: 80px;
+          height: 80px;
+          background: #10b981;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+        }
+
+        @keyframes scaleIn {
+          from { transform: scale(0); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
 
         .reset-subtitle {
@@ -356,7 +421,7 @@ export default function ResetPasswordPage() {
         }
 
         .simple-footer {
-          padding: 60px 0 40px;
+          padding: 30px 0 40px;
           border-top: 1px solid #f1f5f9;
           text-align: center;
         }
@@ -393,7 +458,7 @@ export default function ResetPasswordPage() {
         }
 
         @media (max-width: 640px) {
-          .footer-links { gap: 15px; flex-direction: column; }
+          .footer-links { gap: 20px; }
         }
       `}} />
     </div>

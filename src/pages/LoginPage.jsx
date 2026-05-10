@@ -120,6 +120,7 @@ export default function LoginPage() {
           <Link to="/" className="login-brand">
             <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
           </Link>
+          <Link to="/" className="home-link">Home</Link>
         </div>
       </header>
 
@@ -127,8 +128,11 @@ export default function LoginPage() {
       <main className="login-main">
         <div className="login-card">
           <h1 className="login-title">
-            {mode === 'password' ? 'Login to SakharPuda' :
-              mode === 'otp_request' ? 'Login with OTP' : 'Enter OTP'}
+            {mode === 'password' ? (
+              <span className="title-with-logo">
+                Login to <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="title-logo" />
+              </span>
+            ) : mode === 'otp_request' ? 'Login with OTP' : 'Enter OTP'}
           </h1>
 
           {/* ============ PASSWORD MODE ============ */}
@@ -265,6 +269,7 @@ export default function LoginPage() {
           background-color: #fff;
           display: flex;
           flex-direction: column;
+          font-family: 'Cabin', sans-serif;
         }
 
         .login-header {
@@ -280,8 +285,24 @@ export default function LoginPage() {
           max-width: 100% !important;
           padding: 0 40px;
           display: flex;
-          justify-content: flex-start;
+          justify-content: space-between;
           align-items: center;
+        }
+
+        .home-link {
+          color: #D63447;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 700;
+          transition: all 0.2s;
+          padding: 8px 20px;
+          border: 1px solid #D63447;
+          border-radius: 8px;
+        }
+
+        .home-link:hover {
+          background: #fff5f5;
+          transform: translateY(-1px);
         }
 
         .login-brand {
@@ -326,9 +347,11 @@ export default function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 60px 20px;
+          padding: 50px 20px 60px;
           background: #fff;
         }
+
+
 
         .login-card {
           background: #fff;
@@ -344,6 +367,20 @@ export default function LoginPage() {
           color: #333;
           margin-bottom: 24px;
           text-align: center;
+        }
+
+        .title-with-logo {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .title-logo {
+          height: 22px;
+          width: auto;
+          vertical-align: middle;
         }
 
         .login-hint {
@@ -434,9 +471,9 @@ export default function LoginPage() {
         }
 
         .simple-footer {
-          padding: 60px 0 40px;
+          padding: 30px 0 40px;
           border-top: 1px solid #f1f5f9;
-          margin-top: 40px;
+          margin-top: 20px;
           text-align: center;
           background: #fff;
         }
@@ -468,7 +505,7 @@ export default function LoginPage() {
 
         @media (max-width: 640px) {
           .login-card { padding: 30px 20px; }
-          .footer-links { gap: 15px; flex-direction: column; }
+          .footer-links { gap: 20px; }
         }
       `}} />
     </div>
