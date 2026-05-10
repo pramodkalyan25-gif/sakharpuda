@@ -4,15 +4,25 @@ import { ChevronLeft } from 'lucide-react';
 export default function PrivacyPage() {
   return (
     <div className="legal-page-container">
-      <header className="legal-header">
-        <div className="container">
-          <Link to="/" className="back-link">
-            <ChevronLeft size={20} /> Back to Home
-          </Link>
-          <h1>Privacy Policy</h1>
-          <p className="last-updated">Last Updated: April 24, 2026</p>
-        </div>
-      </header>
+      <div className="sticky-wrapper">
+        <header className="sticky-legal-header">
+          <div className="container">
+            <div className="legal-nav-content">
+              <Link to="/"><img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="legal-logo-small" /></Link>
+              <Link to="/" className="back-link-nav">
+                <ChevronLeft size={18} /> Back to Home
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <header className="legal-header">
+          <div className="container">
+            <h1>Privacy Policy</h1>
+            <p className="last-updated">Last Updated: April 24, 2026</p>
+          </div>
+        </header>
+      </div>
 
       <main className="legal-content">
         <div className="container card">
@@ -94,15 +104,29 @@ export default function PrivacyPage() {
           <section className="legal-section">
             <h2>9. Contact Us</h2>
             <p>
-              If you have any questions or concerns about our Privacy Policy, please contact us at <span className="highlight">sakharpuda@zohomail.com</span> or <span className="highlight">pramodkalyan25@gmail.com</span>.
+              If you have any questions or concerns about our Privacy Policy, please contact us at <span className="highlight">sakharpuda@zohomail.in</span> or call us at <span className="highlight">+91 91589 98226</span>.
             </p>
           </section>
         </div>
       </main>
 
+      <footer className="simple-footer">
+        <div className="container">
+          <nav className="footer-links">
+            <Link to="/login">Member Login</Link>
+            <Link to="/register">Register Here</Link>
+            <Link to="/contact">Contact Us</Link>
+            <Link to="/help">Help Center/FAQ</Link>
+          </nav>
+          <div className="footer-copyright">
+            &copy; 2024 SakharPuda.com. All rights reserved.
+          </div>
+        </div>
+      </footer>
+
       <style dangerouslySetInnerHTML={{ __html: `
         .legal-page-container {
-          background: #f8f9fa;
+          background: #fff;
           min-height: 100vh;
           font-family: 'Figtree', sans-serif;
           color: #2d3748;
@@ -110,29 +134,68 @@ export default function PrivacyPage() {
         }
 
         .legal-header {
-          background: #1e1e3a;
-          color: #fff;
-          padding: 60px 0;
+          background: #fff;
+          color: #1e293b;
+          padding: 25px 0;
           text-align: center;
+          position: relative;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .legal-header .container {
+          position: relative;
+          z-index: 2;
         }
 
         .legal-header h1 {
-          font-size: 36px;
-          margin: 20px 0 10px;
+          font-size: 28px;
+          margin: 0;
+          font-weight: 800;
+          letter-spacing: -0.5px;
+          color: #1e293b;
         }
 
-        .back-link {
-          color: #c9956c;
+        .sticky-wrapper {
+          position: relative;
+          z-index: 10;
+        }
+
+        .sticky-legal-header {
+          background: #fff;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 10px 0;
+        }
+
+        .sticky-legal-header .container {
+          max-width: 100% !important;
+          padding: 0 40px;
+        }
+
+        .legal-nav-content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
+
+        .legal-logo-small {
+          height: 22px;
+          display: block;
+        }
+
+        .back-link-nav {
+          color: #718096;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
           gap: 5px;
           font-weight: 600;
+          font-size: 14px;
           transition: color 0.2s;
         }
 
-        .back-link:hover {
-          color: #fff;
+        .back-link-nav:hover {
+          color: #D63447;
         }
 
         .last-updated {
@@ -145,10 +208,7 @@ export default function PrivacyPage() {
         }
 
         .legal-content .container.card {
-          background: #fff;
           padding: 40px;
-          border-radius: 16px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.05);
           max-width: 900px;
           margin: 0 auto;
         }
@@ -186,6 +246,42 @@ export default function PrivacyPage() {
           max-width: 1200px;
           margin: 0 auto;
           padding: 0 20px;
+        }
+
+        .simple-footer {
+          padding: 60px 0 40px;
+          border-top: 1px solid #f1f5f9;
+          margin-top: 40px;
+          text-align: center;
+        }
+
+        .footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 30px;
+          margin-bottom: 25px;
+          flex-wrap: wrap;
+        }
+
+        .footer-links a {
+          color: #64748b;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 600;
+          transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+          color: #D63447;
+        }
+
+        .footer-copyright {
+          font-size: 13px;
+          color: #94a3b8;
+        }
+
+        @media (max-width: 640px) {
+          .footer-links { gap: 15px; flex-direction: column; }
         }
       `}} />
     </div>

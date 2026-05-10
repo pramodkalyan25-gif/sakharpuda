@@ -5,40 +5,42 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './router/ProtectedRoute';
 import AdminRoute from './router/AdminRoute';
 import ErrorBoundary from './components/ui/ErrorBoundary';
-import ScrollToTop  from './components/ui/ScrollToTop';
+import ScrollToTop from './components/ui/ScrollToTop';
 
-import LandingPage       from './pages/LandingPage';
-import LoginPage         from './pages/LoginPage';
-import RegistrationPage  from './pages/RegistrationPage';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegistrationPage from './pages/RegistrationPage';
 import CreateProfilePage from './pages/CreateProfilePage';
-import DashboardPage     from './pages/DashboardPage';
-import SearchPage        from './pages/SearchPage';
-import ViewProfilePage   from './pages/ViewProfilePage';
-import AdminPage         from './pages/AdminPage';
-import InboxPage         from './pages/InboxPage';
-import InterestsPage     from './pages/InterestsPage';
-import MyMatchesPage     from './pages/MyMatchesPage';
-import SettingsPage      from './pages/SettingsPage';
+import DashboardPage from './pages/DashboardPage';
+import SearchPage from './pages/SearchPage';
+import ViewProfilePage from './pages/ViewProfilePage';
+import AdminPage from './pages/AdminPage';
+import InboxPage from './pages/InboxPage';
+import InterestsPage from './pages/InterestsPage';
+import MyMatchesPage from './pages/MyMatchesPage';
+import SettingsPage from './pages/SettingsPage';
 
 // Legal & Info Pages
-import TermsPage         from './pages/TermsPage';
-import PrivacyPage       from './pages/PrivacyPage';
-import FraudAlertPage    from './pages/FraudAlertPage';
-import GrievancePage     from './pages/GrievancePage';
-import AboutPage         from './pages/AboutPage';
-import ContactPage       from './pages/ContactPage';
-import HelpPage          from './pages/HelpPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import SafetyCenterPage from './pages/SafetyCenterPage';
+import GrievancePage from './pages/GrievancePage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import HelpPage from './pages/HelpPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ChatBot from './components/ui/ChatBot';
 
 export default function App() {
   const [isOffline, setIsOffline] = useState(!window.navigator.onLine);
 
   useEffect(() => {
-    const handleOnline  = () => setIsOffline(false);
+    const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
-    window.addEventListener('online',  handleOnline);
+    window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
-      window.removeEventListener('online',  handleOnline);
+      window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
@@ -59,19 +61,21 @@ export default function App() {
           )}
           <Routes>
             {/* Public routes */}
-            <Route path="/"         element={<LandingPage />} />
-            <Route path="/login"    element={<LoginPage />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegistrationPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Legal & Info Routes */}
-            <Route path="/terms"       element={<TermsPage />} />
-            <Route path="/privacy"     element={<PrivacyPage />} />
-            <Route path="/fraud-alert" element={<FraudAlertPage />} />
-            <Route path="/grievances"  element={<GrievancePage />} />
-            <Route path="/about"       element={<AboutPage />} />
-            <Route path="/contact"     element={<ContactPage />} />
-            <Route path="/help"        element={<HelpPage />} />
-            <Route path="/faq"         element={<HelpPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/safety-center" element={<SafetyCenterPage />} />
+            <Route path="/fraud-alert" element={<Navigate to="/safety-center" replace />} />
+            <Route path="/grievances" element={<GrievancePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/faq" element={<HelpPage />} />
 
             {/* Protected routes */}
             <Route path="/create-profile" element={
@@ -119,9 +123,10 @@ export default function App() {
                 fontFamily: 'Outfit, sans-serif',
               },
               success: { iconTheme: { primary: '#C9956C', secondary: '#1e1e3a' } },
-              error:   { iconTheme: { primary: '#ff6b6b', secondary: '#1e1e3a' } },
+              error: { iconTheme: { primary: '#ff6b6b', secondary: '#1e1e3a' } },
             }}
           />
+          <ChatBot />
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

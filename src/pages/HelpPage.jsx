@@ -102,17 +102,17 @@ export default function HelpPage() {
         {
           id: 'free-registration',
           q: 'Is SakharPuda.com free?',
-          a: "Yes, registration, profile creation, and basic matchmaking (sending interests) are free. Some advanced features like viewing direct contact details are reserved for verified premium members."
+          a: "Yes, SakharPuda.com is completely free for all users! You can create your profile, upload photos, search for matches, and send interests without any charges. We currently do not have any paid membership plans."
         },
         {
           id: 'premium-benefits',
           q: 'What is the "Admin Verified" badge?',
-          a: "The 'Admin Verified' badge is awarded to profiles that have been manually checked by our team for authenticity. Verified members often get more trust and higher response rates."
+          a: "The 'Admin Verified' badge is awarded to profiles that have been manually checked by our team for authenticity. This service is also provided for free to help build trust within our community."
         },
         {
           id: 'contact-details',
           q: 'How can I see a member\'s phone number?',
-          a: "For privacy, phone numbers are not shown publicly. You can request to view a member's contact details once you are 'Connected' (mutual interest). This request may require admin approval to ensure safety."
+          a: "For privacy, phone numbers are not shown publicly. You can request to view a member's contact details once you have a mutual interest (Connected). This ensures that contact information is only shared with those you are interested in."
         }
       ]
     },
@@ -123,7 +123,7 @@ export default function HelpPage() {
         {
           id: 'site-safety',
           q: 'How does SakharPuda ensure my safety?',
-          a: "We use mobile OTP verification for all users and offer a manual 'Admin Verification' process. Additionally, you can report any suspicious profile directly to our support team at care@sakharpuda.com."
+          a: "We use mobile OTP verification for all users and offer a manual 'Admin Verification' process. Additionally, you can report any suspicious profile directly to our support team at sakharpuda@zohomail.in."
         },
         {
           id: 'privacy-controls-deep',
@@ -133,7 +133,7 @@ export default function HelpPage() {
         {
           id: 'reporting',
           q: 'What should I do if I find a fake profile?',
-          a: "Safety is our priority. Please report any fake or offensive profiles by emailing care@sakharpuda.com with the Profile ID. Our team will investigate and take action within 24 hours."
+          a: "Safety is our priority. Please report any fake or offensive profiles by emailing sakharpuda@zohomail.in with the Profile ID. Our team will investigate and take action within 24 hours."
         }
       ]
     }
@@ -155,46 +155,54 @@ export default function HelpPage() {
 
   return (
     <div className="js-help-wrapper">
-      {isAuthenticated ? <TopNav /> : (
-        <header className="js-simple-header">
-          <div className="container">
-            <Link to="/" className="js-back-home">
-              <ChevronLeft size={20} /> Back to Home
-            </Link>
-          </div>
-        </header>
-      )}
+      <div className="js-sticky-header-group">
+        {isAuthenticated ? <TopNav /> : (
+          <header className="js-simple-header">
+            <div className="container">
+              <div className="js-legal-nav">
+                <Link to="/"><img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="js-legal-logo" /></Link>
+                <Link to="/" className="js-back-home">
+                  <ChevronLeft size={16} /> Back to Home
+                </Link>
+              </div>
+            </div>
+          </header>
+        )}
+        
+        {!isAuthenticated && (
+          <section className="js-help-hero">
+            <div className="container">
+              <h2>Help Center</h2>
+              <p>Your guide to finding the perfect match on SakharPuda.com</p>
+              
+              <div className="js-search-wrapper">
+                <Search size={20} className="js-search-icon" />
+                <input 
+                  type="text" 
+                  placeholder="Search for questions (e.g. 'delete', 'photos', 'contact')..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
       
       <main className={`js-help-container ${!isAuthenticated ? 'full-width' : ''}`}>
-        <section className="js-help-hero">
-          <div className="container">
-            <h1>Help Center</h1>
-            <p>Your guide to finding the perfect match on SakharPuda.com</p>
-            
-            <div className="js-search-bar">
-              <Search size={20} />
-              <input 
-                type="text" 
-                placeholder="Search for questions (e.g. 'delete', 'photos', 'contact')..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="js-faq-section container">
-          <div className="js-faq-grid">
-            <div className="js-faq-list">
-              {filteredFaqs.map((cat, idx) => (
-                <div key={idx} className="js-faq-category">
-                  <div className="js-cat-header">
-                    {cat.icon}
-                    <h2>{cat.category}</h2>
-                  </div>
-                  <div className="js-cat-questions">
-                    {cat.questions.map(q => (
-                      <div key={q.id} className={`js-faq-item ${openFaq === q.id ? 'active' : ''}`}>
+        <div className="container">
+          <div className="js-help-content-grid">
+            <section className="js-faq-section">
+              <div className="js-faq-list">
+                {filteredFaqs.map((cat, idx) => (
+                  <div key={idx} className="js-faq-category">
+                    <div className="js-cat-header">
+                      {cat.icon}
+                      <h2>{cat.category}</h2>
+                    </div>
+                    <div className="js-cat-questions">
+                      {cat.questions.map(q => (
+                        <div key={q.id} className={`js-faq-item ${openFaq === q.id ? 'active' : ''}`}>
                         <button className="js-faq-question" onClick={() => toggleFaq(q.id)}>
                           <span>{q.q}</span>
                           {openFaq === q.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -216,7 +224,8 @@ export default function HelpPage() {
                   <p>Try searching with different keywords or contact our care team below.</p>
                 </div>
               )}
-            </div>
+              </div>
+            </section>
 
             <aside className="js-help-sidebar">
               <div className="js-contact-card">
@@ -224,18 +233,18 @@ export default function HelpPage() {
                 <p>Our SakharPuda Care team is available to assist you.</p>
                 
                 <div className="js-contact-links">
-                  <a href="mailto:care@sakharpuda.com" className="js-contact-link">
+                  <a href="mailto:sakharpuda@zohomail.in" className="js-contact-link">
                     <Mail size={18} />
                     <div className="js-link-text">
                       <strong>Email Us</strong>
-                      <span>care@sakharpuda.com</span>
+                      <span>sakharpuda@zohomail.in</span>
                     </div>
                   </a>
-                  <a href="tel:+911234567890" className="js-contact-link">
+                  <a href="tel:+919158998226" className="js-contact-link">
                     <Smartphone size={18} />
                     <div className="js-link-text">
                       <strong>Call Us</strong>
-                      <span>+91 123 456 7890</span>
+                      <span>+91 91589 98226</span>
                     </div>
                   </a>
                 </div>
@@ -250,49 +259,97 @@ export default function HelpPage() {
                 <HelpCircle size={24} className="purple" />
                 <h4>Safety & Trust</h4>
                 <p>Learn how we verify profiles and keep our community safe.</p>
-                <button className="js-btn-link" onClick={() => navigate('/fraud-alert')}>Read Safety Tips</button>
+                <button className="js-btn-link" onClick={() => navigate('/safety-center')}>Visit Safety Center</button>
               </div>
             </aside>
           </div>
-        </section>
+        </div>
       </main>
 
-      {!isAuthenticated && (
-        <footer className="js-help-footer">
-          <div className="container">
-            <p>&copy; 2024 SakharPuda.com. All rights reserved.</p>
+      <footer className="simple-footer">
+        <div className="container">
+          <nav className="footer-links">
+            <Link to="/login">Member Login</Link>
+            <Link to="/register">Register Here</Link>
+            <Link to="/contact">Contact Us</Link>
+            <Link to="/help">Help Center/FAQ</Link>
+          </nav>
+          <div className="footer-copyright">
+            &copy; 2024 SakharPuda.com. All rights reserved.
           </div>
-        </footer>
-      )}
+        </div>
+      </footer>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .js-help-wrapper { min-height: 100vh; background: #f8fafc; }
+        .js-help-wrapper { min-height: 100vh; background: #fff; }
         .js-help-container { padding-bottom: 80px; }
         .js-help-container.full-width { padding-top: 0; }
 
-        .js-simple-header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 15px 0; }
+        .js-sticky-header-group {
+          position: relative;
+          z-index: 10;
+        }
+
+        .js-simple-header { 
+          background: #fff; 
+          border-bottom: 1px solid #e2e8f0; 
+          padding: 10px 0;
+        }
+        .js-simple-header .container {
+          max-width: 100% !important;
+          padding: 0 40px;
+        }
+        .js-legal-nav {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
+        .js-legal-logo {
+          height: 22px;
+          display: block;
+        }
         .js-back-home { display: flex; align-items: center; gap: 8px; color: #64748b; text-decoration: none; font-weight: 600; font-size: 14px; }
         .js-back-home:hover { color: #D63447; }
 
         .js-help-hero {
-          background: #D63447;
-          color: #fff;
-          padding: 80px 0;
+          background: #fff;
+          color: #1e293b;
+          padding: 25px 0;
           text-align: center;
-          margin-bottom: 40px;
+          position: relative;
+          border-bottom: 1px solid #e2e8f0;
         }
-        .js-help-hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 15px; }
-        .js-help-hero p { font-size: 18px; opacity: 0.9; margin-bottom: 40px; }
 
-        .js-search-bar {
+        .js-help-hero .container {
+          position: relative;
+          z-index: 2;
+        }
+
+        .js-help-hero h2 {
+          font-size: 28px;
+          margin-bottom: 8px;
+          font-weight: 800;
+          letter-spacing: -0.5px;
+          color: #1e293b;
+        }
+
+        .js-help-hero p {
+          font-size: 15px;
+          opacity: 0.7;
+          margin-bottom: 20px;
+          color: #64748b;
+        }
+
+        .js-search-wrapper {
           max-width: 600px;
           margin: 0 auto;
-          background: #fff;
+          background: #f1f5f9;
           border-radius: 12px;
           display: flex;
           align-items: center;
           padding: 0 20px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+          border: 1px solid #e2e8f0;
           color: #64748b;
         }
         .js-search-bar input {
@@ -360,10 +417,7 @@ export default function HelpPage() {
 
         .js-help-sidebar { display: flex; flex-direction: column; gap: 25px; position: sticky; top: 100px; }
         .js-contact-card {
-          background: #fff;
-          border-radius: 16px;
           padding: 30px;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .js-contact-card h3 { font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 10px; }
         .js-contact-card p { font-size: 14px; color: #64748b; margin-bottom: 25px; }
@@ -389,7 +443,6 @@ export default function HelpPage() {
         .js-support-hours strong { color: #475569; display: block; margin-bottom: 4px; }
 
         .js-safety-card {
-          background: #fdf2ff;
           border: 1px solid #f5d0fe;
           border-radius: 16px;
           padding: 25px;
@@ -404,12 +457,43 @@ export default function HelpPage() {
           font-weight: 700; font-size: 13px; cursor: pointer; width: fit-content;
         }
 
-        .js-help-footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 30px 0; text-align: center; }
-        .js-help-footer p { font-size: 14px; color: #94a3b8; }
+        .simple-footer {
+          padding: 60px 0 40px;
+          border-top: 1px solid #f1f5f9;
+          margin-top: 40px;
+          text-align: center;
+          background: #fff;
+        }
+
+        .footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 30px;
+          margin-bottom: 25px;
+          flex-wrap: wrap;
+        }
+
+        .footer-links a {
+          color: #64748b;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 600;
+          transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+          color: #D63447;
+        }
+
+        .footer-copyright {
+          font-size: 13px;
+          color: #94a3b8;
+        }
 
         @media (max-width: 968px) {
           .js-faq-grid { grid-template-columns: 1fr; }
           .js-help-sidebar { position: static; }
+          .footer-links { gap: 15px; flex-direction: column; }
         }
       `}} />
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
@@ -9,7 +10,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading: authLoading } = useAuth();
-  const from = location.state?.from?.pathname || '/my-matches';
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const [mode, setMode] = useState('password'); // 'password' | 'otp_request' | 'otp_verify'
   const [email, setEmail] = useState('');
@@ -113,22 +114,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page-wrapper onboarding-bg">
-      {/* HEADER - Matches Jeevansathi Screenshot */}
+    <div className="login-page-wrapper">
       <header className="login-header">
         <div className="login-header-content">
           <Link to="/" className="login-brand">
-            <img src="/images/logo.png" alt="SakharPuda" style={{ height: '30px' }} />
+            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
           </Link>
-          <nav className="login-nav">
-            <div className="nav-item">Browse Profiles By <span className="arrow">▼</span></div>
-            <div className="nav-item">Search <span className="arrow">▼</span></div>
-            <div className="nav-item">Help</div>
-            <div className="nav-actions">
-              <Link to="/login" className="nav-link active">Login</Link>
-              <Link to="/register" className="btn btn-primary btn-sm">Register for Free</Link>
-            </div>
-          </nav>
         </div>
       </header>
 
@@ -168,7 +159,7 @@ export default function LoginPage() {
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
 
@@ -245,16 +236,30 @@ export default function LoginPage() {
           )}
 
           <div className="login-footer">
-            New to SakharPuda? <Link to="/register" className="register-link">Register Now</Link>
+            New to SakharPuda? <Link to="/register" className="register-link">Register Here</Link>
           </div>
         </div>
       </main>
+
+      <footer className="simple-footer">
+        <div className="container">
+          <nav className="footer-links">
+            <Link to="/login">Member Login</Link>
+            <Link to="/register">Register Here</Link>
+            <Link to="/contact">Contact Us</Link>
+            <Link to="/help">Help Center/FAQ</Link>
+          </nav>
+          <div className="footer-copyright">
+            &copy; 2024 SakharPuda.com. All rights reserved.
+          </div>
+        </div>
+      </footer>
 
       <style dangerouslySetInnerHTML={{
         __html: `
         .login-page-wrapper {
           min-height: 100vh;
-          background-color: #fdf5f6;
+          background-color: #fff;
           display: flex;
           flex-direction: column;
         }
@@ -269,12 +274,11 @@ export default function LoginPage() {
         }
 
         .login-header-content {
-          max-width: 1200px;
-          margin: 0 auto;
+          max-width: 100% !important;
+          padding: 0 40px;
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-start;
           align-items: center;
-          padding: 0 20px;
         }
 
         .login-brand {
@@ -319,8 +323,8 @@ export default function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 40px 20px;
-          background: #fdf5f6;
+          padding: 60px 20px;
+          background: #fff;
         }
 
         .login-card {
@@ -329,7 +333,6 @@ export default function LoginPage() {
           max-width: 450px;
           padding: 40px;
           border-radius: 8px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.05);
         }
 
         .login-title {
@@ -416,9 +419,48 @@ export default function LoginPage() {
           text-decoration: none;
         }
 
-        @media (max-width: 768px) {
-          .login-nav { display: none; }
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .simple-footer {
+          padding: 60px 0 40px;
+          border-top: 1px solid #f1f5f9;
+          margin-top: 40px;
+          text-align: center;
+          background: #fff;
+        }
+
+        .footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 30px;
+          margin-bottom: 25px;
+          flex-wrap: wrap;
+        }
+
+        .footer-links a {
+          color: #64748b;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 600;
+          transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+          color: #D63447;
+        }
+
+        .footer-copyright {
+          font-size: 13px;
+          color: #94a3b8;
+        }
+
+        @media (max-width: 640px) {
           .login-card { padding: 30px 20px; }
+          .footer-links { gap: 15px; flex-direction: column; }
         }
       `}} />
     </div>

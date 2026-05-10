@@ -681,12 +681,7 @@
 /* ============================================================
    SEARCH PAGE
    ============================================================ */
-.search-page {
-  padding: 40px;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 100vh;
-}
+
 
 .search-topbar {
   display: flex;

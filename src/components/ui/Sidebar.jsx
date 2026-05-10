@@ -24,7 +24,7 @@ export default function Sidebar({ children }) {
           <h3 className="js-profile-name">{profile?.name || 'Guest User'}</h3>
           
           <div className="js-brand-tag">
-            <img src="/images/logo.png" alt="SakharPuda" className="js-brand-logo-small" />
+            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="js-brand-logo-small" />
           </div>
 
           <div className="js-profile-id-box">
@@ -58,6 +58,9 @@ export default function Sidebar({ children }) {
           gap: 16px;
           width: 280px;
           flex-shrink: 0;
+          position: sticky;
+          top: 90px;
+          height: fit-content;
         }
 
         /* Profile Card Styles */
@@ -143,12 +146,12 @@ export default function Sidebar({ children }) {
 
         /* Upgrade Box */
         .js-upgrade-box {
-          background: #fff8f1;
+          background: #fff5f5;
           border-radius: 16px;
           padding: 20px;
           position: relative;
           overflow: hidden;
-          border: 1px solid #ffedd5;
+          border: 1px solid #fee2e2;
         }
         .js-upgrade-content {
           position: relative;
@@ -164,7 +167,7 @@ export default function Sidebar({ children }) {
         }
         .js-upgrade-btn-small {
           display: inline-block;
-          background: #ea580c;
+          background: #D63447;
           color: #fff;
           padding: 8px 20px;
           border-radius: 20px;
@@ -173,7 +176,7 @@ export default function Sidebar({ children }) {
           text-decoration: none;
           transition: background 0.2s;
         }
-        .js-upgrade-btn-small:hover { background: #c2410c; }
+        .js-upgrade-btn-small:hover { background: #b91c1c; }
 
         .js-crown-icon {
           position: absolute;

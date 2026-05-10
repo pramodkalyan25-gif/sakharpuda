@@ -270,7 +270,7 @@ export default function CreateProfilePage() {
                   background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8,
                   padding: '14px 18px', marginTop: 30, fontSize: 13, color: '#666', lineHeight: 1.6
                 }}>
-                  <strong style={{ color: '#ef6c00' }}>ℹ</strong> ManglaSutra is built for genuine match-seekers. Any falsification, commercial use or marriage bureaus is strictly prohibited & may be reported to law enforcement.
+                  <strong style={{ color: '#ef6c00' }}>ℹ</strong> SakharPuda is built for genuine match-seekers. Any falsification, commercial use or marriage bureaus is strictly prohibited & may be reported to law enforcement.
                 </div>
               </div>
               <button className="wizard-continue" disabled={!data.profile_for} onClick={next}>Continue</button>

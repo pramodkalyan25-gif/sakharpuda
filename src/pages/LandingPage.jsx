@@ -90,32 +90,37 @@ export default function LandingPage() {
       <header className="main-header">
         <nav className="container header-content" aria-label="Primary Navigation">
           <Link to="/" className="brand">
-            <img src="/images/logo.png" alt="SakharPuda Matrimony" className="logo-img" />
+            <h1 className="visually-hidden">SakharPuda - Premium Matrimony Services | Find Your Life Partner</h1>
+            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="logo-img" />
           </Link>
           <div className="header-actions">
             <div className="header-action-group desktop-only">
               <span className="action-label">New to SakharPuda?</span>
               <Link to="/register" className="register-header-btn">Register Here</Link>
             </div>
+
             <div className="header-action-divider desktop-only"></div>
+
             <div className="header-action-group">
               <span className="action-label desktop-only">Already a member?</span>
               <Link to="/login" className="login-link">Login</Link>
             </div>
+
             <div className="help-dropdown-container">
-              <button className="help-trigger" aria-haspopup="true" aria-expanded="false">
+              <button className="help-trigger">
                 Help <ChevronDown size={14} />
               </button>
-              <div className="help-dropdown-menu" role="menu">
-                <div className="help-item header">Customer Support</div>
-                <a href="mailto:sakharpuda@zohomail.com" className="help-item" role="menuitem">
-                  sakharpuda@zohomail.com
+              <div className="help-dropdown-menu">
+                <div className="help-header-label">Customer Support</div>
+                <div className="help-divider"></div>
+                <a href="mailto:sakharpuda@zohomail.in" className="help-item email">
+                  sakharpuda@zohomail.in
                 </a>
-                <Link to="/about" className="help-item" role="menuitem">About Us</Link>
-                <Link to="/contact" className="help-item" role="menuitem">Contact Us</Link>
-                <Link to="/fraud-alert" className="help-item" role="menuitem">Safety Tips</Link>
-                <Link to="/help" className="help-item" role="menuitem">Help Center / FAQ</Link>
-                <Link to="/grievances" className="help-item" role="menuitem">Grievances</Link>
+                <Link to="/about" className="help-item">About Us</Link>
+                <Link to="/contact" className="help-item">Contact Us</Link>
+                <Link to="/fraud-alert" className="help-item">Safety Tips</Link>
+                <Link to="/help" className="help-item">Help Center / FAQ</Link>
+                <Link to="/grievances" className="help-item">Grievances</Link>
               </div>
             </div>
           </div>
@@ -127,8 +132,8 @@ export default function LandingPage() {
         <div className="container hero-content-rel">
           {/* Mobile: Simple CTA with tagline + button (Jeevansathi style) */}
           <div className="hero-mobile-cta mobile-only">
-            <h2 className="hero-mobile-tagline">Built by a Maharashtrian, For Maharashtrians</h2>
-            <p className="hero-mobile-subtitle">Because we truly understand our community, culture & values</p>
+            <h2 className="hero-mobile-tagline">Find Your Perfect Life Partner</h2>
+            <p className="hero-mobile-subtitle">The most trusted and secure premium matrimony platform</p>
             <button className="hero-mobile-register-btn" onClick={() => navigate('/register')}>Register Here</button>
             <p className="reg-terms-tiny" style={{ marginTop: '10px', color: 'rgba(255,255,255,0.8)' }}>
               By clicking on 'Register Here', you confirm that you accept the
@@ -142,8 +147,8 @@ export default function LandingPage() {
       <section className="trust-section-overlap">
         <div className="container">
           <div className="trust-tagline-container">
-            <h2 className="tagline-main">Built by a Maharashtrian, For Maharashtrians</h2>
-            <p className="tagline-sub">Because we truly understand our community, culture & values</p>
+            <h2 className="tagline-main">Find Your Perfect Life Partner</h2>
+            <p className="tagline-sub">The most trusted and secure premium matrimony platform</p>
           </div>
           <div className="trust-card-main">
             {/* TRUST SECTION */}
@@ -208,9 +213,9 @@ export default function LandingPage() {
               <div className="usp-content-wrapper">
                 <div className="usp-text-side">
                   <div className="usp-point-block active">
-                    <h2 className="section-title">Your <span className="pink">Community</span>, Your App</h2>
+                    <h2 className="section-title">Your <span className="pink">Perfect Match</span>, Your App</h2>
                     <p className="section-desc">
-                      Experience a revolutionary way to find your life partner. SakharPuda adapts to your identity, creating a dedicated space for your specific religion and caste.
+                      Experience a revolutionary way to find your life partner. SakharPuda adapts to your preferences, creating a dedicated space for your search.
                     </p>
                     <div className="active-bar"></div>
                   </div>
@@ -219,8 +224,8 @@ export default function LandingPage() {
                     <div className="usp-point-item">
                       <div className="usp-point-number">01</div>
                       <div className="usp-point-text">
-                        <h4>Identity-Driven Transformation</h4>
-                        <p>Once you login, the entire app transforms. Your dashboard and search results are filtered to match your community automatically.</p>
+                        <h4>Preference-Driven Transformation</h4>
+                        <p>Once you login, the entire app transforms. Your dashboard and search results are filtered to match your preferences automatically.</p>
                       </div>
                     </div>
 
@@ -228,15 +233,15 @@ export default function LandingPage() {
                       <div className="usp-point-number">02</div>
                       <div className="usp-point-text">
                         <h4>100% Relevant Matches</h4>
-                        <p>Eliminate the clutter of irrelevant profiles. See only those who share your heritage, traditions, and core values.</p>
+                        <p>Eliminate the clutter of irrelevant profiles. See only those who share your lifestyle, interests, and core values.</p>
                       </div>
                     </div>
 
                     <div className="usp-point-item">
                       <div className="usp-point-number">03</div>
                       <div className="usp-point-text">
-                        <h4>Privacy within a Walled Garden</h4>
-                        <p>Enjoy the security of a niche community app with the power of a global platform. Total privacy for your community members.</p>
+                        <h4>Privacy within a Secure Environment</h4>
+                        <p>Enjoy the security of a private platform with the power of modern matchmaking. Total privacy for all our members.</p>
                       </div>
                     </div>
                   </div>
@@ -249,7 +254,7 @@ export default function LandingPage() {
                         <img src="/images/exclusive/Gemini_Generated_Image_e9s2bwe9s2bwe9s2.png" alt="Identity-Driven Transformation" />
                         <div className="floating-badge top-right animate-pop">
                           <span className="badge-icon red"><User size={14} /></span>
-                          <span>Same Community Member</span>
+                          <span>Highly Compatible Match</span>
                         </div>
                       </div>
 
@@ -342,38 +347,23 @@ export default function LandingPage() {
 
             {/* MEMBERSHIP SECTION */}
             <div className="membership-inner-section" id="membership-section">
-              <span className="banner-label" style={{ textAlign: 'center', display: 'block', marginBottom: '8px' }}>UPGRADE YOUR ACCOUNT</span>
-              <h2 className="section-title"><span className="pink">Membership</span> Plans</h2>
+              <span className="banner-label" style={{ textAlign: 'center', display: 'block', marginBottom: '8px' }}>ENJOY ALL FEATURES</span>
+              <h2 className="section-title">SakharPuda is <span className="pink">Free for Now!</span></h2>
 
-              <div className="pricing-wrapper">
-                <div className="price-card free-card">
-                  <h3>Free</h3>
-                  <ul className="benefits-list">
-                    <li className="included">Browse Profiles</li>
-                    <li className="included">Shortlist & Send Interest</li>
-                    <li className="included">Message & chat with unlimited users</li>
-                    <li className="excluded">Get up to 3x more matches daily</li>
-                    <li className="excluded">Unlock access to advanced search</li>
-                    <li className="excluded">View contact details</li>
-                    <li className="excluded">Make unlimited voice and video calls</li>
-                    <li className="excluded">Get 3 free Spotlights</li>
+              <div className="pricing-wrapper" style={{ justifyContent: 'center' }}>
+                <div className="price-card free-card" style={{ maxWidth: '600px', width: '100%' }}>
+                  <h3>100% Free Membership</h3>
+                  <ul className="benefits-list" style={{ columns: 2, gap: '40px' }}>
+                    <li className="included">Browse All Profiles</li>
+                    <li className="included">Shortlist & Send Interests</li>
+                    <li className="included">Unlimited Messages & Chat</li>
+                    <li className="included">View All Contact Details</li>
+                    <li className="included">Advanced Search Filters</li>
+                    <li className="included">Unlimited Voice & Video Calls</li>
+                    <li className="included">Manual Admin Verification</li>
+                    <li className="included">Profile Privacy Controls</li>
                   </ul>
-                  <button className="register-free-btn" onClick={() => navigate('/register')}>Register Here</button>
-                </div>
-
-                <div className="price-card paid-card">
-                  <h3>Paid</h3>
-                  <ul className="benefits-list">
-                    <li className="included">Browse Profiles</li>
-                    <li className="included">Shortlist & Send Interest</li>
-                    <li className="included">Message & chat with unlimited users</li>
-                    <li className="included">Get up to 3x more matches daily</li>
-                    <li className="included">Unlock access to advanced search</li>
-                    <li className="included">View contact details</li>
-                    <li className="included">Make unlimited voice and video calls</li>
-                    <li className="included">Get 3 free Spotlights</li>
-                  </ul>
-                  <button className="browse-plans-btn">Browse Membership Plans</button>
+                  <button className="register-free-btn" onClick={() => navigate('/register')}>Register for Free Now</button>
                 </div>
               </div>
             </div>
@@ -450,7 +440,7 @@ export default function LandingPage() {
           max-width: 1400px;
         }
 
-        .container {
+        .landing-wrapper .container {
           max-width: 1100px;
           margin: 0 auto;
           padding: 0 20px;
@@ -459,7 +449,7 @@ export default function LandingPage() {
         .pink { color: #D9475C; } /* Precise Jeevansathi Red */
 
         .main-header {
-          background: #f0f2f5;
+          background: #ffffff;
           padding: 8px 0;
           border-bottom: 1px solid #ddd;
           position: sticky;
@@ -472,9 +462,10 @@ export default function LandingPage() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          max-width: 1400px; /* Wider for full spread */
-          margin: 0 auto;
-          padding: 0 60px; /* Space from left/right */
+          max-width: 100% !important; /* Force full width regardless of .container */
+          margin: 0;
+          padding: 0 40px;
+          width: 100%;
         }
 
         .logo-img {
@@ -502,11 +493,11 @@ export default function LandingPage() {
         .header-action-group {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 15px;
         }
 
         .action-label {
-          font-size: 13px;
+          font-size: 12px;
           color: #718096;
           font-weight: 500;
         }
@@ -514,10 +505,10 @@ export default function LandingPage() {
         .register-header-btn {
           background: #D9475C;
           color: #fff;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
           text-decoration: none;
-          padding: 7px 18px;
+          padding: 6px 16px;
           border: none;
           border-radius: 4px;
           transition: all 0.2s;
@@ -534,17 +525,17 @@ export default function LandingPage() {
 
         .header-action-divider {
           width: 1px;
-          height: 24px;
+          height: 20px;
           background: #cbd5e0;
-          margin: 0 20px;
+          margin: 0 15px;
         }
 
         .login-link {
           color: #D9475C;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
           text-decoration: none;
-          padding: 6px 14px;
+          padding: 6px 16px;
           border: 1.5px solid #D9475C;
           border-radius: 4px;
           transition: all 0.2s;
@@ -561,24 +552,28 @@ export default function LandingPage() {
           position: relative;
           margin-left: 20px;
           display: inline-block;
+          z-index: 1001;
         }
 
         .help-trigger {
           background: none;
           border: none;
-          color: #4A5568;
+          color: #D9475C !important; /* Brand red for guaranteed visibility */
           font-size: 14px;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 4px;
-          padding: 5px 0;
-          transition: color 0.2s;
+          padding: 8px 0;
+          transition: all 0.2s;
+          opacity: 1 !important;
+          visibility: visible !important;
         }
 
         .help-trigger:hover {
-          color: #D9475C;
+          color: #B82E3F !important; /* Darker red on hover */
+          opacity: 0.8;
         }
 
         .help-dropdown-menu {
@@ -587,23 +582,23 @@ export default function LandingPage() {
           top: 100%;
           right: 0;
           background: #fff;
-          min-width: 220px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-          border-radius: 8px;
-          padding: 8px 0;
+          min-width: 180px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+          border-radius: 6px;
+          padding: 10px 0;
           z-index: 1001;
           border: 1px solid #eee;
-          margin-top: 5px; /* Reduced gap */
+          margin-top: 5px;
         }
 
         /* Bridge the hover gap */
         .help-dropdown-menu::before {
           content: '';
           position: absolute;
-          top: -15px;
+          top: -25px;
           left: 0;
           width: 100%;
-          height: 15px;
+          height: 25px;
           background: transparent;
         }
 
@@ -611,14 +606,28 @@ export default function LandingPage() {
           display: block;
         }
 
+        .help-header-label {
+          padding: 5px 20px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #1A202C;
+          text-transform: none;
+        }
+
+        .help-divider {
+          height: 1px;
+          background: #eee;
+          margin: 5px 0;
+        }
+
         .help-item {
           display: block;
-          padding: 10px 20px;
+          padding: 8px 20px;
           color: #4A5568;
           text-decoration: none;
-          font-size: 13px;
-          transition: background 0.2s;
-          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          transition: all 0.2s;
         }
 
         .help-item:hover {
@@ -626,12 +635,9 @@ export default function LandingPage() {
           color: #D9475C;
         }
 
-        .help-item.header {
-          font-weight: 700;
-          color: #1A202C;
-          border-bottom: 1px solid #eee;
+        .help-item.email {
+          color: #4A5568;
           margin-bottom: 5px;
-          cursor: default;
         }
 
         .help-item.header:hover {

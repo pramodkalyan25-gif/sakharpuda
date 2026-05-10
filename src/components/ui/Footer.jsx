@@ -5,15 +5,14 @@ export default function Footer() {
     <footer className="main-footer" aria-label="Main Footer">
       <div className="container">
         <div className="footer-intro">
-          <img src="/images/logo.png" alt="SakharPuda Matrimony" className="footer-logo" />
-          <h2 className="footer-about-title">India's First Truly Community-Specific Matrimony Site</h2>
+          <img src="/images/sakharpuda-logo.png" alt="SakharPuda Matrimony" className="footer-logo" />
+          <h2 className="footer-about-title">India's Premium Matrimony Platform</h2>
           <p>
-            SakharPuda.com is India's first truly community-specific matrimony platform. 
-            Built by a Maharashtrian, for Maharashtrians, we understand that finding the right partner 
-            involves deep cultural and community alignment. SakharPuda adapts to your identity, 
-            creating a dedicated space for your specific religion and caste. 
-            Whether you are looking for a deeper connection within your community or a professional 
-            match-making service, SakharPuda is here to make your journey easier.
+            SakharPuda.com is a premium matrimony platform designed for modern match-seekers. 
+            We understand that finding the right partner involves deep alignment of values, lifestyle, and 
+            expectations. SakharPuda adapts to your preferences, creating a dedicated space for your search. 
+            Whether you are looking for a soulmate or a professional match-making service, 
+            SakharPuda is here to make your journey easier.
           </p>
           <p className="footer-note">
             Please note: SakharPuda is only meant for users with a bonafide intent to enter into a matrimonial alliance
@@ -26,7 +25,7 @@ export default function Footer() {
             <h4>Direct Access</h4>
             <nav aria-label="Direct access links">
               <Link to="/login" target="_blank">Member Login</Link>
-              <Link to="/register" target="_blank">Register Free</Link>
+              <Link to="/register" target="_blank">Register Here</Link>
               <Link to="/search" target="_blank">Partner Search</Link>
             </nav>
           </div>
@@ -36,7 +35,7 @@ export default function Footer() {
             <nav aria-label="Support links">
               <Link to="/contact" target="_blank">Contact us</Link>
               <Link to="/help" target="_blank">Help Center / FAQ</Link>
-              <Link to="/fraud-alert" target="_blank">Safety Tips</Link>
+              <Link to="/safety-center" target="_blank">Safety Center</Link>
               <Link to="/grievances" target="_blank">Grievances</Link>
             </nav>
           </div>
@@ -47,13 +46,13 @@ export default function Footer() {
               <Link to="/about" target="_blank">About Us</Link>
               <Link to="/terms" target="_blank">Terms of Use</Link>
               <Link to="/privacy" target="_blank">Privacy Policy</Link>
-              <Link to="/fraud-alert" target="_blank">Fraud Alert</Link>
+              <Link to="/safety-center" target="_blank">Safety Center</Link>
             </nav>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; 2024 SakharPuda.com - Built by a Maharashtrian, For Maharashtrians.</p>
+          <p>&copy; 2024 SakharPuda.com - Premium Matrimony Services.</p>
         </div>
       </div>
 
@@ -80,7 +79,7 @@ export default function Footer() {
         }
 
         .footer-logo {
-          height: 24px;
+          height: 28px;
           margin-bottom: 20px;
           opacity: 0.8;
         }

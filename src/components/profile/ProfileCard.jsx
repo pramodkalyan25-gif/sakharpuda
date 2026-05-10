@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { 
-  Heart, 
-  Star, 
-  X, 
-  MessageCircle, 
-  CheckCircle, 
-  Briefcase, 
-  GraduationCap, 
-  MapPin, 
-  Image as ImageIcon 
+import {
+  Heart,
+  Star,
+  X,
+  MessageCircle,
+  CheckCircle,
+  Briefcase,
+  GraduationCap,
+  MapPin,
+  Image as ImageIcon
 } from 'lucide-react';
 import { photoService } from '../../services/photoService';
 import { interestService } from '../../services/interestService';
@@ -63,7 +63,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
     if (!user?.id || !profile?.user_id || isOwnProfile) return;
     interestService.getInterestStatus(user.id, profile.user_id)
       .then(setInterestStatus)
-      .catch(() => {});
+      .catch(() => { });
   }, [user?.id, profile?.user_id, isOwnProfile]);
 
   const handleSendInterest = async (e) => {
@@ -123,7 +123,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
             <p className="js-primary-detail">
               {profile.height ? `${Math.floor(profile.height / 30.48)}ft ${Math.round((profile.height % 30.48) / 2.54)}in` : 'N/A'} • {profile.city || 'Location N/A'} • {profile.caste || 'Caste N/A'}
             </p>
-            
+
             <div className="js-detail-item">
               <Briefcase size={14} className="js-detail-icon" />
               <span>{profile.profession || 'Profession N/A'} • {profile.salary || 'No Income'}</span>
@@ -140,8 +140,8 @@ export default function ProfileCard({ profile, onInterestSent }) {
       {/* BOTTOM: ACTION BAR */}
       {!isOwnProfile && (
         <div className="js-action-footer" onClick={(e) => e.stopPropagation()}>
-          <button 
-            className={`js-action-btn interest ${interestStatus ? 'active' : ''}`} 
+          <button
+            className={`js-action-btn interest ${interestStatus ? 'active' : ''}`}
             onClick={handleSendInterest}
             disabled={sending || interestStatus}
           >
@@ -151,17 +151,17 @@ export default function ProfileCard({ profile, onInterestSent }) {
               <><Heart size={18} /> <span>Interest</span></>
             )}
           </button>
-          
+
           <button className="js-action-btn">
             <Star size={18} />
             <span>Shortlist</span>
           </button>
-          
+
           <button className="js-action-btn">
             <X size={18} />
             <span>Ignore</span>
           </button>
-          
+
           <button className="js-action-btn" onClick={() => navigate('/inbox')}>
             <MessageCircle size={18} />
             <span>Chat</span>
@@ -169,7 +169,8 @@ export default function ProfileCard({ profile, onInterestSent }) {
         </div>
       )}
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .js-premium-card {
           background: #fff;
           border-radius: 12px;
@@ -178,7 +179,7 @@ export default function ProfileCard({ profile, onInterestSent }) {
           transition: transform 0.2s, box-shadow 0.2s;
           cursor: pointer;
           margin-bottom: 20px;
-          max-width: 700px;
+          width: 100%;
         }
         .js-premium-card:hover {
           box-shadow: 0 10px 25px rgba(0,0,0,0.06);

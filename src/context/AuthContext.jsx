@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
@@ -7,6 +8,7 @@ import { photoService } from '../services/photoService';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [user, setUser]           = useState(null);
   const [profile, setProfile]     = useState(null);
   const [session, setSession]     = useState(null);
@@ -56,6 +58,10 @@ export function AuthProvider({ children }) {
 
     // Listen for auth state changes (fires on login/logout)
     const subscription = authService.onAuthStateChange((event, newSession) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password');
+      }
+      
       setSession(newSession);
       setUser(newSession?.user ?? null);
       setIsAdmin(authService.isAdmin(newSession?.user));

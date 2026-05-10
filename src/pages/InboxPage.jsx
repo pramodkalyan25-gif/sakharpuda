@@ -7,22 +7,20 @@ import Avatar from '../components/ui/Avatar';
 import Spinner from '../components/ui/Spinner';
 import { interestService } from '../services/interestService';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  MessageSquare, 
-  Heart, 
-  Check, 
-  X, 
-  Clock, 
-  ShieldCheck, 
-  Users, 
-  Phone, 
-  Video, 
+import {
+  MessageSquare,
+  Heart,
+  Check,
+  X,
+  Clock,
+  Users,
   CheckCircle,
-  Search as SearchIcon
+  Lock
 } from 'lucide-react';
 import Sidebar from '../components/ui/Sidebar';
-import Footer from '../components/ui/Footer';
 import { toast } from 'react-hot-toast';
+import RightSidebar from '../components/ui/RightSidebar';
+import Footer from '../components/ui/Footer';
 
 export default function InboxPage() {
   const navigate = useNavigate();
@@ -52,12 +50,41 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="js-dashboard-wrapper">
+    <div className="js-dashboard-wrapper inbox-page">
       <TopNav />
-      
-      <main className="js-main-grid container">
+
+      <main className="js-main-grid js-layout-container">
         {/* LEFT SIDEBAR */}
-        <Sidebar />
+        <Sidebar>
+          <div className="js-community-trust-wrapper">
+            <span className="js-trust-label">COMMUNITY & TRUST</span>
+            <div className="js-trust-cards-stack">
+              <div className="js-trust-card">
+                <div className="js-trust-icon green">
+                  <CheckCircle size={22} />
+                </div>
+                <h5>Verified profiles</h5>
+                <p>We verify phone & email of every member</p>
+              </div>
+
+              <div className="js-trust-card">
+                <div className="js-trust-icon purple">
+                  <Users size={22} />
+                </div>
+                <h5>Community first</h5>
+                <p>Premium matchmaking for serious match-seekers</p>
+              </div>
+
+              <div className="js-trust-card">
+                <div className="js-trust-icon orange">
+                  <Lock size={22} />
+                </div>
+                <h5>Privacy protected</h5>
+                <p>Contact details hidden until you connect</p>
+              </div>
+            </div>
+          </div>
+        </Sidebar>
 
         {/* MIDDLE CONTENT: MESSENGER */}
         <div className="js-content-area">
@@ -93,7 +120,7 @@ export default function InboxPage() {
                           <span className="js-time"><Clock size={12} /> {formatDistanceToNow(new Date(item.created_at))} ago</span>
                         </div>
                       </div>
-                      
+
                       <div className="js-actions">
                         {filter === 'pending' && (
                           <>
@@ -127,70 +154,11 @@ export default function InboxPage() {
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <aside className="js-right-sidebar">
-          <div className="js-premium-nudge">
-            <h3>You are <span className="red">missing</span> out on the premium benefits!</h3>
-            <div className="js-benefit-list">
-              <div className="js-benefit-item">
-                <div className="js-benefit-icon purple"><Users size={16} /></div>
-                <p>Get upto 3x more profile views</p>
-              </div>
-              <div className="js-benefit-item">
-                <div className="js-benefit-icon orange">
-                  <div className="js-icon-stack">
-                    <Phone size={10} />
-                    <Video size={10} />
-                  </div>
-                </div>
-                <p>Unlimited voice & video calls</p>
-              </div>
-              <div className="js-benefit-item">
-                <div className="js-benefit-icon green"><CheckCircle size={16} /></div>
-                <p>Get access to contact details</p>
-              </div>
-            </div>
-            <div className="js-promo-footer">
-              <button className="js-upgrade-btn" onClick={() => navigate('/upgrade')}>
-                Upgrade now <span>→</span>
-              </button>
-            </div>
-          </div>
-        </aside>
+        <RightSidebar profile={profile} />
       </main>
 
-      <Footer />
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .js-dashboard-wrapper { min-height: 100vh; background: #f1f2f5; padding-bottom: 50px; }
-        
-        .container {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 20px;
-        }
-        .js-main-grid { display: grid; grid-template-columns: 280px 1fr 280px; gap: 20px; margin-top: 20px; align-items: flex-start; }
-
-        /* Sidebar styles (Shared) */
-        .js-left-sidebar { display: flex; flex-direction: column; gap: 20px; }
-        .js-profile-brief {
-          background: #fff; border-radius: 8px; padding: 20px;
-          display: flex; flex-direction: column; align-items: center; text-align: center;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .js-brief-avatar { margin-bottom: 12px; }
-        .js-brief-info h3 { font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
-        .js-brief-info p { font-size: 12px; color: #64748b; }
-        .js-edit-link { color: #D63447; font-weight: 700; text-decoration: none; margin-left: 4px; }
-
-        .js-side-nav { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .js-nav-item {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 14px 20px; text-decoration: none; color: #475569;
-          font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;
-        }
-        .js-nav-item:hover { background: #f8fafc; }
-        .js-nav-item.active { color: #D63447; border-left: 3px solid #D63447; background: #fff1f2; }
-
+      <style dangerouslySetInnerHTML={{
+        __html: `
         /* Inbox Card */
         .js-inbox-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .js-inbox-header { border-bottom: 1px solid #f1f5f9; }
@@ -237,39 +205,8 @@ export default function InboxPage() {
           margin-top: 15px; background: #D63447; color: #fff; border: none;
           padding: 10px 24px; border-radius: 20px; font-weight: 700; cursor: pointer;
         }
-
-        /* Right Sidebar nudge */
-        .js-right-sidebar { display: flex; flex-direction: column; gap: 20px; }
-        .js-premium-nudge {
-          background: #fff; border-radius: 12px; padding: 24px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .js-premium-nudge h3 { font-size: 15px; font-weight: 700; color: #1e293b; line-height: 1.4; margin-bottom: 20px; text-align: center; }
-        .js-premium-nudge .red { color: #D63447; }
-        .js-benefit-list { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
-        .js-benefit-item { display: flex; align-items: center; gap: 12px; }
-        .js-benefit-icon {
-          width: 32px; height: 32px; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-        .js-benefit-icon.purple { background: #f3e8ff; color: #9333ea; }
-        .js-benefit-icon.orange { background: #fff7ed; color: #ea580c; }
-        .js-benefit-icon.green { background: #f0fdf4; color: #16a34a; }
-        .js-upgrade-btn {
-          width: 100%; background: #D63447; color: #fff; border: none;
-          padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-
-        @media (max-width: 1024px) {
-          .js-main-grid { grid-template-columns: 200px 1fr; }
-          .js-right-sidebar { display: none; }
-        }
-        @media (max-width: 768px) {
-          .js-main-grid { grid-template-columns: 1fr; }
-          .js-left-sidebar { display: none; }
-        }
       `}} />
+      <Footer />
     </div>
   );
 }

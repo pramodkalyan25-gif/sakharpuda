@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useInterests } from '../hooks/useInterests';
 import TopNav from '../components/ui/TopNav';
 import Avatar from '../components/ui/Avatar';
 import Spinner from '../components/ui/Spinner';
 import Button from '../components/ui/Button';
 import { interestService } from '../services/interestService';
 import { formatDistanceToNow } from 'date-fns';
-import { Star, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Star, Clock, CheckCircle2, XCircle, CheckCircle, Users, Lock } from 'lucide-react';
+import Sidebar from '../components/ui/Sidebar';
+import RightSidebar from '../components/ui/RightSidebar';
+import Footer from '../components/ui/Footer';
 
 export default function InterestsPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [sent, setSent] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,66 +25,104 @@ export default function InterestsPage() {
   }, [user?.id]);
 
   return (
-    <div className="interests-page">
+    <div className="js-dashboard-wrapper interests-page">
       <TopNav />
-      
-      <main className="container interests-main">
-        <header className="interests-header">
-          <div className="header-title">
-            <Star className="header-icon" />
-            <h1>Sent Interests</h1>
-          </div>
-          <p className="subtitle">Track the status of interests you've sent to other members.</p>
-        </header>
 
-        {loading ? (
-          <div className="loading-center"><Spinner size="lg" /></div>
-        ) : sent.length > 0 ? (
-          <div className="sent-list">
-            {sent.map((item) => (
-              <div key={item.id} className="sent-item-card">
-                <div className="sent-user-info">
-                  <Avatar src={null} name={item.profiles?.name} size="lg" />
-                  <div className="user-meta">
-                    <h3>{item.profiles?.name}</h3>
-                    <p>{item.profiles?.city} • {item.profiles?.caste}</p>
-                    <span className="time-ago"><Clock size={12} /> Sent {formatDistanceToNow(new Date(item.created_at))} ago</span>
-                  </div>
+      <main className="js-layout-container js-main-grid">
+        <Sidebar>
+          <div className="js-community-trust-wrapper">
+            <span className="js-trust-label">COMMUNITY & TRUST</span>
+            <div className="js-trust-cards-stack">
+              <div className="js-trust-card">
+                <div className="js-trust-icon green">
+                  <CheckCircle size={22} />
                 </div>
-                
-                <div className="sent-status">
-                  {item.status === 'pending' && (
-                    <div className="status-pill pending">
-                      <Clock size={14} /> <span>Awaiting Response</span>
-                    </div>
-                  )}
-                  {item.status === 'accepted' && (
-                    <div className="status-pill accepted">
-                      <CheckCircle2 size={14} /> <span>Accepted</span>
-                    </div>
-                  )}
-                  {item.status === 'rejected' && (
-                    <div className="status-pill rejected">
-                      <XCircle size={14} /> <span>Declined</span>
-                    </div>
-                  )}
-                </div>
+                <h5>Verified profiles</h5>
+                <p>We verify phone & email of every member</p>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state-card">
-            <div className="empty-icon-box">
-              <Star size={40} />
+
+              <div className="js-trust-card">
+                <div className="js-trust-icon purple">
+                  <Users size={22} />
+                </div>
+                <h5>Community first</h5>
+                <p>Premium matchmaking for serious match-seekers</p>
+              </div>
+
+              <div className="js-trust-card">
+                <div className="js-trust-icon orange">
+                  <Lock size={22} />
+                </div>
+                <h5>Privacy protected</h5>
+                <p>Contact details hidden until you connect</p>
+              </div>
             </div>
-            <h2>You haven't sent any interests yet</h2>
-            <p>Start searching and express interest in profiles that match your preferences.</p>
-            <Button onClick={() => window.location.href = '/search'}>Explore Profiles</Button>
           </div>
-        )}
+        </Sidebar>
+
+        <div className="js-content-area">
+          <section className="js-dashboard-section">
+            <header className="interests-header">
+              <div className="header-title">
+                <Star className="header-icon" />
+                <h1>Sent Interests</h1>
+              </div>
+              <p className="subtitle">Track the status of interests you've sent to other members.</p>
+            </header>
+
+            {loading ? (
+              <div className="loading-center"><Spinner size="lg" /></div>
+            ) : sent.length > 0 ? (
+              <div className="sent-list">
+                {sent.map((item) => (
+                  <div key={item.id} className="sent-item-card">
+                    <div className="sent-user-info">
+                      <Avatar src={null} name={item.profiles?.name} size="lg" />
+                      <div className="user-meta">
+                        <h3>{item.profiles?.name}</h3>
+                        <p>{item.profiles?.city} • {item.profiles?.caste}</p>
+                        <span className="time-ago"><Clock size={12} /> Sent {formatDistanceToNow(new Date(item.created_at))} ago</span>
+                      </div>
+                    </div>
+
+                    <div className="sent-status">
+                      {item.status === 'pending' && (
+                        <div className="status-pill pending">
+                          <Clock size={14} /> <span>Awaiting Response</span>
+                        </div>
+                      )}
+                      {item.status === 'accepted' && (
+                        <div className="status-pill accepted">
+                          <CheckCircle2 size={14} /> <span>Accepted</span>
+                        </div>
+                      )}
+                      {item.status === 'rejected' && (
+                        <div className="status-pill rejected">
+                          <XCircle size={14} /> <span>Declined</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state-card">
+                <div className="empty-icon-box">
+                  <Star size={40} />
+                </div>
+                <h2>You haven't sent any interests yet</h2>
+                <p>Start searching and express interest in profiles that match your preferences.</p>
+                <Button onClick={() => window.location.href = '/search'}>Explore Profiles</Button>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <RightSidebar profile={profile} />
       </main>
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .interests-page { min-height: 100vh; background: #f8fafc; }
         .interests-main { padding: 40px 20px; max-width: 900px; margin: 0 auto; }
         
@@ -126,6 +166,7 @@ export default function InterestsPage() {
         .empty-state-card h2 { font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
         .empty-state-card p { font-size: 14px; color: #64748b; margin-bottom: 24px; }
       `}} />
+      <Footer />
     </div>
   );
 }

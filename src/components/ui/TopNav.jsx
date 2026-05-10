@@ -21,11 +21,11 @@ export default function TopNav() {
 
   return (
     <nav className="js-header-wrapper">
-      <div className="js-header-container container">
+      <div className="js-header-container js-layout-container">
         {/* LEFT: LOGO */}
         <div className="js-header-left">
           <Link to="/dashboard" className="js-header-logo">
-            <img src="/images/logo.png" alt="SakharPuda" />
+            <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="logo-img" />
           </Link>
         </div>
 
@@ -59,10 +59,10 @@ export default function TopNav() {
             </button>
             <div className="js-help-menu">
               <div className="js-help-header">Customer Support</div>
-              <a href="mailto:care@sakharpuda.com" className="js-help-item">care@sakharpuda.com</a>
+              <a href="mailto:sakharpuda@zohomail.in" className="js-help-item">sakharpuda@zohomail.in</a>
               <Link to="/about" className="js-help-item">About Us</Link>
               <Link to="/contact" className="js-help-item">Contact Us</Link>
-              <Link to="/fraud-alert" className="js-help-item">Safety Tips</Link>
+              <Link to="/safety-center" className="js-help-item">Safety Center</Link>
               <Link to="/help" className="js-help-item">Help Center / FAQ</Link>
               <Link to="/grievances" className="js-help-item">Grievances</Link>
             </div>
@@ -83,7 +83,7 @@ export default function TopNav() {
                 <div className="js-dropdown-profile-header">
                   <h3 className="js-dropdown-name">{profile?.name}</h3>
                   <div className="js-dropdown-brand">
-                    <img src="/images/logo.png" alt="SakharPuda" className="js-dropdown-logo-img" />
+                    <img src="/images/sakharpuda-logo.png" alt="SakharPuda" className="js-dropdown-logo-img" />
                   </div>
                   <div className="js-dropdown-id-row">
                     <span className="js-dropdown-id-val">{profile?.profile_id || 'ID Pending'}</span>
@@ -121,7 +121,7 @@ export default function TopNav() {
                   {moreOpen && (
                     <div className="js-dropdown-sub-menu">
                       <Link to="/privacy" target="_blank" className="js-dropdown-sub-item">Privacy policy</Link>
-                      <Link to="/fraud-alert" target="_blank" className="js-dropdown-sub-item">Safe matrimony</Link>
+                      <Link to="/safety-center" target="_blank" className="js-dropdown-sub-item">Safety Center</Link>
                     </div>
                   )}
                 </div>
@@ -164,7 +164,7 @@ export default function TopNav() {
 
         .js-header-logo {
           position: relative;
-          left: -230px; /* Adjust this to move logo independently */
+          left: -290px; /* Adjust this to move logo independently */
         }
 
         .js-header-logo img {
@@ -176,7 +176,7 @@ export default function TopNav() {
           display: flex;
           gap: 40px;
           flex: 0 0 auto;
-          justify-content: center;
+          justify-content:   center;
           position: relative;
           left: 0; /* Adjust this to move middle section independently */
         }
@@ -199,13 +199,10 @@ export default function TopNav() {
         .js-nav-link:hover svg, .js-nav-link.active svg { color: #D63447; }
 
         .js-header-actions {
-          flex: 1;
           display: flex;
           align-items: center;
           justify-content: flex-end;
           gap: 20px;
-          position: relative;
-          right: -240px; /* Adjust this to move actions independently */
         }
 
         /* Help Dropdown */
