@@ -28,13 +28,31 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
+      console.log('[ResetPassword] Attempting password update...');
       await authService.changePassword(password);
+      console.log('[ResetPassword] Password updated successfully.');
+      
       toast.success('Password updated successfully! Redirecting to login...');
-      // Logout after password change to force a clean login with the new credentials
-      await authService.logout();
-      setTimeout(() => navigate('/login'), 2000);
+      
+      // Important: Wait a bit for the toast and then logout
+      setTimeout(async () => {
+        try {
+          await authService.logout();
+          navigate('/login', { replace: true });
+        } catch (logoutErr) {
+          console.error('[ResetPassword] Post-update logout failed:', logoutErr);
+          navigate('/login', { replace: true });
+        }
+      }, 1500);
     } catch (err) {
-      toast.error(err.message || 'Failed to update password');
+      console.error('[ResetPassword] Update failed:', err);
+      const errorMsg = err.message || 'Failed to update password';
+      
+      if (errorMsg.toLowerCase().includes('auth') || errorMsg.toLowerCase().includes('session')) {
+        toast.error('Authentication Error: Your reset link may have expired. Please request a new one.', { duration: 5000 });
+      } else {
+        toast.error(errorMsg);
+      }
     } finally {
       setLoading(false);
     }

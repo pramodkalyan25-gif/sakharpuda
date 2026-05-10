@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(null); // null | 'login' | 'otp' | 'reset'
   const [showPassword, setShowPassword] = useState(false);
 
   // Redirect when auth loading is done
@@ -40,19 +40,19 @@ export default function LoginPage() {
       toast.error('Please enter both email and password.');
       return;
     }
-    setLoading(true);
     try {
       const emailExists = await authService.checkEmailExists(email.trim());
       if (!emailExists) {
         throw new Error(`User does not have an account with email "${email.trim()}"`);
       }
+      setLoadingAction('login');
       await authService.loginWithPassword(email.trim(), password);
       toast.success('Welcome back! Loading your dashboard...');
       // navigate() is handled by the useEffect above once profile loads
     } catch (err) {
       toast.error(err.message || 'Invalid email or password.');
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   };
 
@@ -62,19 +62,19 @@ export default function LoginPage() {
       toast.error('Please enter your email.');
       return;
     }
-    setLoading(true);
     try {
       const emailExists = await authService.checkEmailExists(email.trim());
       if (!emailExists) {
         throw new Error(`User does not have an account with email "${email.trim()}"`);
       }
+      setLoadingAction('otp');
       await authService.sendLoginOTP(email.trim());
       setMode('otp_verify');
       toast.success('OTP sent to your email!');
     } catch (err) {
       toast.error(err.message || 'Failed to send OTP.');
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   };
 
@@ -84,7 +84,7 @@ export default function LoginPage() {
       toast.error('Please enter the 6-digit OTP');
       return;
     }
-    setLoading(true);
+    setLoadingAction('otp');
     try {
       await authService.verifyLoginOTP(email.trim(), otp);
       toast.success('Welcome back! Loading your dashboard...');
@@ -92,7 +92,7 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(err.message || 'Invalid OTP.');
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   };
 
@@ -102,14 +102,14 @@ export default function LoginPage() {
       toast.error('Please enter your email address to reset password.');
       return;
     }
-    setLoading(true);
+    setLoadingAction('reset');
     try {
       await authService.resetPassword(email.trim());
       toast.success('Password reset link sent to your email!');
     } catch (err) {
       toast.error(err.message || 'Failed to send reset link.');
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   };
 
@@ -164,18 +164,21 @@ export default function LoginPage() {
               </div>
 
               <div className="login-links">
-                <a href="#" onClick={handleForgotPassword} className="forgot-link">Forgot/Set a new Password</a>
+                <a href="#" onClick={handleForgotPassword} className={`forgot-link ${loadingAction === 'reset' ? 'processing' : ''}`}>
+                  {loadingAction === 'reset' ? 'Sending Link...' : 'Forgot/Set a new Password'}
+                </a>
               </div>
 
               <div className="login-actions">
-                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-                  {loading ? "Logging in..." : "Login with Password"}
+                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loadingAction}>
+                  {loadingAction === 'login' ? "Logging in..." : "Login with Password"}
                 </button>
 
                 <button
                   type="button"
                   className="btn btn-outline btn-full btn-lg"
                   onClick={() => setMode('otp_request')}
+                  disabled={loadingAction}
                 >
                   Login with OTP
                 </button>
@@ -199,8 +202,8 @@ export default function LoginPage() {
                 />
               </div>
               <div className="login-actions">
-                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-                  {loading ? "Sending..." : "Send Login OTP"}
+                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loadingAction}>
+                  {loadingAction === 'otp' ? "Sending..." : "Send Login OTP"}
                 </button>
                 <button
                   type="button"
@@ -221,8 +224,8 @@ export default function LoginPage() {
                 <OTPInput value={otp} onChange={setOtp} length={6} disabled={loading} />
               </div>
               <div className="login-actions">
-                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading || otp.length < 6}>
-                  {loading ? "Verifying..." : "Verify & Login"}
+                <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loadingAction || otp.length < 6}>
+                  {loadingAction === 'otp' ? "Verifying..." : "Verify & Login"}
                 </button>
                 <button
                   type="button"
@@ -390,6 +393,11 @@ export default function LoginPage() {
           font-size: 13px;
           color: #D63447;
           font-weight: 600;
+        }
+
+        .forgot-link.processing {
+          opacity: 0.7;
+          pointer-events: none;
         }
 
         .login-actions {
