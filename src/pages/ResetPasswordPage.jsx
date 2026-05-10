@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
-import { Eye, EyeOff, Lock, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { Eye, EyeOff, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { session, loading: authLoading } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +39,43 @@ export default function ResetPasswordPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="reset-page-wrapper center-content">
+        <Loader2 className="animate-spin" size={48} color="#D63447" />
+        <p style={{ marginTop: '20px', fontWeight: '600', color: '#64748b' }}>Verifying security session...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="reset-page-wrapper">
+        <header className="login-header">
+          <div className="login-header-content">
+            <Link to="/" className="login-brand">
+              <img src="/images/sakharpuda-logo.png" alt="SakharPuda" style={{ height: '28px' }} />
+            </Link>
+          </div>
+        </header>
+        <main className="reset-main">
+          <div className="reset-card">
+            <div className="icon-circle" style={{ background: '#fef2f2' }}>
+              <Lock size={24} color="#ef4444" />
+            </div>
+            <h1 className="reset-title">Invalid Session</h1>
+            <p className="reset-subtitle">Your password reset link may be expired or invalid. Please request a new one.</p>
+            <div className="reset-footer" style={{ border: 'none', marginTop: '20px' }}>
+              <Link to="/login" className="btn btn-primary btn-full">
+                Back to Login
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="reset-page-wrapper">
@@ -128,6 +167,20 @@ export default function ResetPasswordPage() {
           background-color: #fff;
           display: flex;
           flex-direction: column;
+        }
+
+        .reset-page-wrapper.center-content {
+          align-items: center;
+          justify-content: center;
+        }
+
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
         .login-header {

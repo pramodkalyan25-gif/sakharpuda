@@ -1,11 +1,10 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
 import { photoService } from '../services/photoService';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './AuthContextInstance';
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
@@ -108,4 +107,3 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-export { AuthContext };
