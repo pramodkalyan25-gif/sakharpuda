@@ -20,10 +20,10 @@ export const interestService = {
       throw new Error('You cannot send interest to yourself.');
     }
 
-    // Client-side guard: mobile verification is required for sending interests
-    if (!senderProfile?.mobile_verified) {
-      throw new Error('PHONE_UNVERIFIED: Please verify your mobile number before sending interest.');
-    }
+    // Client-side guard: temporarily disabled as there is no verification mechanism yet
+    // if (!senderProfile?.mobile_verified) {
+    //   throw new Error('PHONE_UNVERIFIED: Please verify your mobile number before sending interest.');
+    // }
 
     // Client-side daily limit check (DB trigger is the hard enforcement)
     const today = new Date().toDateString();
@@ -189,33 +189,62 @@ export const interestService = {
   },
 
   /**
-   * Block a user (women can block profiles from viewing theirs)
-   * @param {string} interestId - The interest record to block
+   * Block a user by targetId (handles if no interest exists)
    */
-  async blockUser(interestId) {
-    const { data, error } = await supabase
+  async blockUserById(userId, targetId) {
+    const { data: interest } = await supabase
       .from('interests')
-      .update({ is_blocked: true })
-      .eq('id', interestId)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+      .select('id')
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${targetId}),and(sender_id.eq.${targetId},receiver_id.eq.${userId})`)
+      .maybeSingle();
+
+    if (interest) {
+      const { data, error } = await supabase.from('interests').update({ is_blocked: true }).eq('id', interest.id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('interests').insert({ sender_id: userId, receiver_id: targetId, status: 'rejected', is_blocked: true }).select().single();
+      if (error) throw error;
+      return data;
+    }
   },
 
   /**
-   * Report an interest/user as spam/inappropriate
-   * @param {string} interestId
+   * Unblock a user by targetId
    */
-  async reportUser(interestId) {
-    const { data, error } = await supabase
+  async unblockUserById(userId, targetId) {
+    const { data: interest } = await supabase
       .from('interests')
-      .update({ is_reported: true })
-      .eq('id', interestId)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+      .select('id')
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${targetId}),and(sender_id.eq.${targetId},receiver_id.eq.${userId})`)
+      .maybeSingle();
+
+    if (interest) {
+      const { data, error } = await supabase.from('interests').update({ is_blocked: false }).eq('id', interest.id).select().single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
+  /**
+   * Report a user by targetId (handles if no interest exists)
+   */
+  async reportUserById(userId, targetId) {
+    const { data: interest } = await supabase
+      .from('interests')
+      .select('id')
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${targetId}),and(sender_id.eq.${targetId},receiver_id.eq.${userId})`)
+      .maybeSingle();
+
+    if (interest) {
+      const { data, error } = await supabase.from('interests').update({ is_reported: true }).eq('id', interest.id).select().single();
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await supabase.from('interests').insert({ sender_id: userId, receiver_id: targetId, status: 'rejected', is_reported: true }).select().single();
+      if (error) throw error;
+      return data;
+    }
   },
 
   /**
@@ -242,4 +271,22 @@ export const interestService = {
       .eq('id', interestId);
     if (error) throw error;
   },
+
+  /**
+   * Get total count of pending interests received by a user
+   */
+  async getPendingCount(userId) {
+    const { count, error } = await supabase
+      .from('interests')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', userId)
+      .eq('status', 'pending')
+      .eq('is_blocked', false);
+    
+    if (error) {
+      console.warn('getPendingCount error:', error);
+      return 0;
+    }
+    return count || 0;
+  }
 };

@@ -24,11 +24,13 @@ export function AuthProvider({ children }) {
           photoService.getPrimaryPhoto(userId).catch(() => null)
         ]);
         setProfile(p || null);
+        setIsAdmin(p?.is_admin || false);
         if (photo?.signed_url) setAvatarUrl(photo.signed_url);
         else setAvatarUrl(null);
         return !!p;
       }
       setProfile(null);
+      setIsAdmin(false);
       setAvatarUrl(null);
       return false;
     } catch (err) {
@@ -48,7 +50,7 @@ export function AuthProvider({ children }) {
     authService.getSession().then(async (s) => {
       setSession(s);
       setUser(s?.user ?? null);
-      setIsAdmin(authService.isAdmin(s?.user));
+      // Admin status will be set by loadProfile if user exists
       
       if (s?.user) {
         await loadProfile(s.user.id);
@@ -72,7 +74,7 @@ export function AuthProvider({ children }) {
       
       setSession(newSession);
       setUser(newSession?.user ?? null);
-      setIsAdmin(authService.isAdmin(newSession?.user));
+      // Admin status will be set by loadProfile if user exists
 
       if (newSession?.user) {
         // Set loading=true BEFORE the async profile fetch so ProtectedRoute

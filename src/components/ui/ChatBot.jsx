@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessagesSquare, X, Send, ChevronRight, RefreshCw, User, Bot, Phone, Mail } from 'lucide-react';
+import { MessagesSquare, X, Send, ChevronRight, RefreshCw, User, Bot, Phone, Mail, SendHorizontal } from 'lucide-react';
 import { RiCustomerService2Fill } from 'react-icons/ri';
+import { aiService } from '../../services/aiService';
 import './ChatBot.css';
 
 const chatFlow = {
@@ -32,7 +33,7 @@ const chatFlow = {
     options: [{ label: "Back to Profile Help", value: "cat_profile" }, { label: "Main Menu", value: "start" }]
   },
   q_photo_importance: {
-    message: "Not mandatory, but profiles with photos get 10x more interest! You can upload up to 20 photos via your Sidebar.",
+    message: "Not mandatory, but profiles with photos get 10x more interest! You can upload a maximum of 3 photos (1 primary and 2 additional) via your Sidebar.",
     options: [{ label: "Back to Profile Help", value: "cat_profile" }, { label: "Main Menu", value: "start" }]
   },
   q_edit_details: {
@@ -161,6 +162,7 @@ const ChatBot = () => {
     { type: 'bot', text: chatFlow.start.message, options: chatFlow.start.options }
   ]);
   const [isTyping, setIsTyping] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -190,6 +192,41 @@ const ChatBot = () => {
       }
       setIsTyping(false);
     }, 600);
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+
+    const userText = inputValue.trim();
+    setInputValue('');
+    
+    // Add user message to chat
+    const userMsg = { type: 'user', text: userText };
+    setMessages(prev => [...prev, userMsg]);
+
+    // Show typing indicator
+    setIsTyping(true);
+
+    try {
+      // Call the AI service
+      const botResponse = await aiService.getChatResponse(userText);
+
+      setMessages(prev => [...prev, {
+        type: 'bot',
+        text: botResponse,
+        options: [{ label: "Main Menu", value: "start" }]
+      }]);
+    } catch (error) {
+      console.error("ChatBot Error:", error);
+      setMessages(prev => [...prev, {
+        type: 'bot',
+        text: "I'm experiencing high traffic right now and can't use my AI brain. Please select a category below for help:",
+        options: chatFlow.start.options
+      }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const resetChat = () => {
@@ -290,7 +327,21 @@ const ChatBot = () => {
           </div>
 
           <div className="chatbot-footer">
-            <p>Typically replies instantly • SakharPuda Care</p>
+            <form className="chat-input-form" onSubmit={handleSendMessage}>
+              <input
+                type="text"
+                placeholder="Ask me anything..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                disabled={isTyping}
+              />
+              <button type="submit" disabled={isTyping || !inputValue.trim()} aria-label="Send Message">
+                <SendHorizontal size={20} />
+              </button>
+            </form>
+            <div className="footer-copyright">
+              <p>Typically replies instantly • SakharPuda Care</p>
+            </div>
           </div>
         </div>
       )}

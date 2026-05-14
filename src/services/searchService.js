@@ -43,10 +43,23 @@ export const searchService = {
         profession, city, state, country, bio, marital_status,
         mobile_verified, photo_visibility, admin_verified, created_at
       `, { count: 'exact' })
-      .neq('profile_visibility', 'hidden');
+      .neq('profile_visibility', 'hidden')
+      .neq('is_admin', true);
 
     if (currentUserId) {
       query = query.neq('user_id', currentUserId);
+
+      // Exclude blocked profiles
+      const { data: blockedData } = await supabase
+        .from('interests')
+        .select('sender_id, receiver_id')
+        .eq('is_blocked', true)
+        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`);
+      
+      if (blockedData && blockedData.length > 0) {
+        const blockedIds = blockedData.map(b => b.sender_id === currentUserId ? b.receiver_id : b.sender_id);
+        query = query.not('user_id', 'in', `(${blockedIds.join(',')})`);
+      }
     }
 
     query = query.order('created_at', { ascending: false })
@@ -123,12 +136,25 @@ export const searchService = {
         profession, mobile_verified, photo_visibility, admin_verified, created_at
       `)
       .neq('profile_visibility', 'hidden')
+      .neq('is_admin', true)
       .neq('user_id', currentUserId)
       .order('created_at', { ascending: false })
       .limit(limit);
       
     if (oppositeGender) {
       query = query.eq('gender', oppositeGender.toLowerCase());
+    }
+
+    // Exclude blocked profiles
+    const { data: blockedData } = await supabase
+      .from('interests')
+      .select('sender_id, receiver_id')
+      .eq('is_blocked', true)
+      .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`);
+    
+    if (blockedData && blockedData.length > 0) {
+      const blockedIds = blockedData.map(b => b.sender_id === currentUserId ? b.receiver_id : b.sender_id);
+      query = query.not('user_id', 'in', `(${blockedIds.join(',')})`);
     }
 
     const { data, error } = await query;
@@ -148,12 +174,25 @@ export const searchService = {
       `)
       .eq('admin_verified', true)
       .neq('profile_visibility', 'hidden')
+      .neq('is_admin', true)
       .neq('user_id', currentUserId)
       .order('created_at', { ascending: false })
       .limit(limit);
       
     if (oppositeGender) {
       query = query.eq('gender', oppositeGender.toLowerCase());
+    }
+
+    // Exclude blocked profiles
+    const { data: blockedData } = await supabase
+      .from('interests')
+      .select('sender_id, receiver_id')
+      .eq('is_blocked', true)
+      .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`);
+    
+    if (blockedData && blockedData.length > 0) {
+      const blockedIds = blockedData.map(b => b.sender_id === currentUserId ? b.receiver_id : b.sender_id);
+      query = query.not('user_id', 'in', `(${blockedIds.join(',')})`);
     }
 
     const { data, error } = await query;

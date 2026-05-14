@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { photoService } from '../../services/photoService';
 import { interestService } from '../../services/interestService';
+import { shortlistService } from '../../services/shortlistService';
 import { useAuth } from '../../hooks/useAuth';
 import { differenceInYears, parseISO } from 'date-fns';
 
@@ -21,12 +22,14 @@ import { differenceInYears, parseISO } from 'date-fns';
  * ProfileCard — Premium card styled after Jeevansathi.com.
  * Shows photo, basic info, and a horizontal action bar.
  */
-export default function ProfileCard({ profile, onInterestSent }) {
+export default function ProfileCard({ profile, onInterestSent, onShortlistToggle }) {
   const navigate = useNavigate();
   const { user, profile: myProfile } = useAuth();
   const [photoUrl, setPhotoUrl] = useState(null);
   const [interestStatus, setInterestStatus] = useState(null);
+  const [isShortlisted, setIsShortlisted] = useState(profile.isShortlisted || false);
   const [sending, setSending] = useState(false);
+  const [shortlisting, setShortlisting] = useState(false);
 
   const age = profile?.dob
     ? differenceInYears(new Date(), parseISO(profile.dob))
@@ -34,12 +37,9 @@ export default function ProfileCard({ profile, onInterestSent }) {
 
   const isOwnProfile = user?.id === profile?.user_id;
 
+  // Allow everyone to see photos as per user request
   const canSeePhoto = () => {
-    if (isOwnProfile) return true;
-    if (profile?.photo_visibility === 'public') return true;
-    if (profile?.photo_visibility === 'members_only' && user) return true;
-    if (profile?.photo_visibility === 'after_mutual_interest' && interestStatus?.status === 'accepted') return true;
-    return false;
+    return true;
   };
 
   useEffect(() => {
@@ -86,86 +86,161 @@ export default function ProfileCard({ profile, onInterestSent }) {
     }
   };
 
+  const handleToggleShortlist = async (e) => {
+    e.stopPropagation();
+    if (!user?.id || !profile?.user_id) {
+      toast.error('Unable to shortlist at this time.');
+      console.warn('Missing user.id or profile.user_id', { userId: user?.id, targetId: profile?.user_id });
+      return;
+    }
+    setShortlisting(true);
+    try {
+      const status = await shortlistService.toggleShortlist(user.id, profile.user_id);
+      setIsShortlisted(status);
+      toast.success(status ? 'Added to shortlist' : 'Removed from shortlist');
+      onShortlistToggle?.(status);
+    } catch (err) {
+      console.error('Shortlist error:', err);
+      toast.error('Failed to update shortlist. Please ensure you have run the database migration.');
+    } finally {
+      setShortlisting(false);
+    }
+  };
+
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [allPhotos, setAllPhotos] = useState([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [photoCount, setPhotoCount] = useState(profile?.photo_count || 0);
+
+  useEffect(() => {
+    // If photo_count isn't in the profile prop, fetch it
+    if (profile?.user_id && !profile.photo_count) {
+      photoService.getUserPhotos(profile.user_id).then(photos => {
+        setPhotoCount(photos.length);
+        setAllPhotos(photos);
+      }).catch(() => {});
+    }
+  }, [profile?.user_id, profile?.photo_count]);
+
+  const handleOpenGallery = async (e) => {
+    e.stopPropagation();
+    if (!profile?.user_id) return;
+    
+    setShowPhotoModal(true);
+    if (allPhotos.length === 0) {
+      setLoadingPhotos(true);
+      try {
+        const photos = await photoService.getUserPhotos(profile.user_id);
+        setAllPhotos(photos);
+        setPhotoCount(photos.length);
+      } catch (err) {
+        toast.error('Failed to load photos');
+      } finally {
+        setLoadingPhotos(false);
+      }
+    }
+  };
+
   return (
     <div className="js-premium-card" onClick={() => navigate(`/profile/${profile?.user_id}`)}>
-      <div className="js-card-body">
-        {/* LEFT: PHOTO BOX */}
+      <div className="js-card-content">
+        {/* PHOTO BOX */}
         <div className="js-photo-container">
-          {canSeePhoto() ? (
-            <img src={photoUrl || '/images/default-avatar.png'} alt={profile?.name} className="js-profile-img" />
-          ) : (
-            <div className="js-photo-placeholder">
-              <ImageIcon size={32} strokeWidth={1} />
-              <span>Visible after connection</span>
-            </div>
-          )}
-          {profile?.photo_count > 1 && (
-            <div className="js-photo-counter">
-              <ImageIcon size={12} />
-              <span>{profile.photo_count}</span>
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT: INFO BOX */}
-        <div className="js-info-container">
-          <div className="js-info-top">
-            <span className="js-active-now">Active Today</span>
-            <div className="js-name-row">
-              <h3>{profile?.name}, {age}</h3>
-              <span className="js-profile-id-badge">{profile?.profile_id || profile?.user_id?.substring(0, 8).toUpperCase()}</span>
-              {profile?.admin_verified && <CheckCircle size={16} fill="#3b82f6" color="#fff" />}
-              {profile.is_top_profile && <span className="js-top-profile-badge">Top Profiles</span>}
-            </div>
+          <img src={photoUrl || '/images/default-avatar.png'} alt={profile?.name} className="js-profile-img" />
+          
+          {/* TOP RIGHT: PHOTO COUNTER ICON */}
+          <div className="js-top-right-overlay">
+            {photoCount > 0 && (
+              <div className="js-photo-badge" onClick={handleOpenGallery}>
+                <ImageIcon size={16} />
+                <span>{photoCount}</span>
+              </div>
+            )}
           </div>
 
-          <div className="js-profile-details">
-            <p className="js-primary-detail">
-              {profile.height ? `${Math.floor(profile.height / 30.48)}ft ${Math.round((profile.height % 30.48) / 2.54)}in` : 'N/A'} • {profile.city || 'Location N/A'} • {profile.caste || 'Caste N/A'}
-            </p>
-
-            <div className="js-detail-item">
-              <Briefcase size={14} className="js-detail-icon" />
-              <span>{profile.profession || 'Profession N/A'} • {profile.salary || 'No Income'}</span>
+          {/* BOTTOM CONTENT OVERLAY (Compressed to 1/3) */}
+          <div className="js-bottom-info-overlay">
+            <div className="js-name-row">
+              <h3>{profile?.name}, {age}</h3>
+              <span className="js-profile-id-badge">{profile?.profile_id || 'B262450'}</span>
+            </div>
+            
+            <div className="js-quick-details-grid">
+              <span>{profile?.height} • {profile?.location} • {profile?.caste}</span>
+              <span>{profile?.occupation} • {profile?.education} • {profile?.marital_status}</span>
             </div>
 
-            <div className="js-detail-item">
-              <GraduationCap size={14} className="js-detail-icon" />
-              <span>{profile.education || 'Education N/A'} • {profile.marital_status?.replace('_', ' ') || 'Never Married'}</span>
+            {/* MANAGED BY LINE */}
+            <div className="js-managed-by">
+              Profile managed by {profile?.profile_for || 'Self'}
             </div>
+
+            {/* ACTION BUTTONS OVERLAY */}
+            {!isOwnProfile && (
+              <div className="js-action-overlay">
+                <button 
+                  className={`js-circle-action ${interestStatus?.status === 'pending' ? 'sent' : ''}`}
+                  onClick={handleSendInterest}
+                  disabled={sending || interestStatus?.status === 'pending'}
+                >
+                  <div className="js-icon-circle">
+                    {interestStatus?.status === 'pending' ? (
+                      <CheckCircle size={22} fill="#D63447" color="#fff" />
+                    ) : (
+                      <Heart size={22} color="#fff" />
+                    )}
+                  </div>
+                  <span>{interestStatus?.status === 'pending' ? 'Interest Sent' : 'Interest'}</span>
+                </button>
+
+                <button 
+                  className={`js-circle-action ${isShortlisted ? 'active' : ''}`}
+                  onClick={handleToggleShortlist}
+                  disabled={shortlisting}
+                >
+                  <div className="js-icon-circle">
+                    <Star size={22} fill={isShortlisted ? "#fff" : "none"} color="#fff" />
+                  </div>
+                  <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
+                </button>
+
+                <button className="js-circle-action" onClick={(e) => { e.stopPropagation(); /* Ignore logic */ }}>
+                  <div className="js-icon-circle">
+                    <X size={22} color="#fff" />
+                  </div>
+                  <span>Ignore</span>
+                </button>
+
+                <button className="js-circle-action" onClick={(e) => { e.stopPropagation(); navigate(`/chat/${profile?.user_id}`); }}>
+                  <div className="js-icon-circle">
+                    <MessageCircle size={22} color="#fff" />
+                  </div>
+                  <span>Chat</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* BOTTOM: ACTION BAR */}
-      {!isOwnProfile && (
-        <div className="js-action-footer" onClick={(e) => e.stopPropagation()}>
-          <button
-            className={`js-action-btn interest ${interestStatus ? 'active' : ''}`}
-            onClick={handleSendInterest}
-            disabled={sending || interestStatus}
-          >
-            {interestStatus ? (
-              <><CheckCircle size={18} fill="#10b981" color="#fff" /> <span style={{ color: '#10b981' }}>Interest Sent</span></>
+      {/* PHOTO MODAL (WITH BLUR) */}
+      {showPhotoModal && (
+        <div className="js-photo-modal-overlay" onClick={(e) => { e.stopPropagation(); setShowPhotoModal(false); }}>
+          <div className="js-photo-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="js-modal-close" onClick={() => setShowPhotoModal(false)}><X size={28} /></button>
+            {loadingPhotos ? (
+              <div className="js-modal-loader">Loading photos...</div>
             ) : (
-              <><Heart size={18} /> <span>Interest</span></>
+              <div className="js-photo-vertical-container">
+                {allPhotos.map(p => (
+                  <div key={p.id} className="js-modal-card-wrap">
+                    <img src={p.signed_url} alt="Gallery" className="js-modal-vertical-img" />
+                  </div>
+                ))}
+                <div className="js-modal-hint">End of album</div>
+              </div>
             )}
-          </button>
-
-          <button className="js-action-btn">
-            <Star size={18} />
-            <span>Shortlist</span>
-          </button>
-
-          <button className="js-action-btn">
-            <X size={18} />
-            <span>Ignore</span>
-          </button>
-
-          <button className="js-action-btn" onClick={() => navigate('/inbox')}>
-            <MessageCircle size={18} />
-            <span>Chat</span>
-          </button>
+          </div>
         </div>
       )}
 
@@ -173,172 +248,248 @@ export default function ProfileCard({ profile, onInterestSent }) {
         __html: `
         .js-premium-card {
           background: #fff;
-          border-radius: 12px;
-          border: 1px solid #edf2f7;
+          border-radius: 20px;
           overflow: hidden;
-          transition: transform 0.2s, box-shadow 0.2s;
-          cursor: pointer;
-          margin-bottom: 20px;
+          position: relative;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+          transition: all 0.3s ease;
           width: 100%;
+          max-width: 500px;
+          margin: 0 auto;
+          cursor: pointer;
         }
         .js-premium-card:hover {
-          box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+          transform: translateY(-4px);
+          box-shadow: 0 12px 30px rgba(0,0,0,0.12);
         }
 
-        .js-card-body {
-          display: flex;
-          padding: 0;
-        }
-
-        /* Photo Area */
         .js-photo-container {
-          width: 180px;
-          height: 240px;
-          flex-shrink: 0;
+          width: 100%;
+          height: 550px;
           position: relative;
           background: #f1f5f9;
         }
+        @media (max-width: 600px) {
+          .js-photo-container { height: 500px; }
+        }
+
         .js-profile-img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
-        .js-photo-placeholder {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          color: #94a3b8;
-          font-size: 10px;
-          text-align: center;
-          padding: 20px;
-          gap: 8px;
-        }
-        .js-photo-counter {
+
+        /* Top Right Overlay - Album Icon */
+        .js-top-right-overlay {
           position: absolute;
-          top: 10px;
-          right: 10px;
+          top: 16px;
+          right: 16px;
+          z-index: 20;
+        }
+        .js-photo-badge {
           background: rgba(0,0,0,0.6);
           color: #fff;
-          padding: 2px 8px;
-          border-radius: 4px;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 13px;
           display: flex;
           align-items: center;
-          gap: 4px;
-          font-size: 11px;
+          gap: 6px;
+          backdrop-filter: blur(8px);
+          cursor: pointer;
+          transition: transform 0.2s, background 0.2s;
+          border: 1px solid rgba(255,255,255,0.2);
+        }
+        .js-photo-badge:hover { 
+          background: rgba(0,0,0,0.8);
+          transform: scale(1.05);
         }
 
-        /* Info Area */
-        .js-info-container {
-          flex: 1;
-          padding: 20px;
+        /* Bottom Info Overlay (Compressed) */
+        .js-bottom-info-overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 40%;
+          background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 70%, transparent 100%);
+          padding: 40px 20px 20px;
+          color: #fff;
           display: flex;
           flex-direction: column;
+          justify-content: flex-end;
+          gap: 4px;
+          z-index: 15;
         }
-        .js-active-now {
-          font-size: 11px;
-          color: #10b981;
-          font-weight: 700;
-          margin-bottom: 4px;
-          display: block;
-        }
+
         .js-name-row {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-bottom: 12px;
-          flex-wrap: wrap;
+          gap: 12px;
         }
         .js-name-row h3 {
-          font-size: 20px;
+          font-size: 22px;
           font-weight: 800;
-          color: #1e293b;
           margin: 0;
         }
         .js-profile-id-badge {
-          font-size: 11px;
-          color: #94a3b8;
-          font-weight: 600;
-          background: #f1f5f9;
-          padding: 2px 6px;
-          border-radius: 4px;
-          letter-spacing: 0.5px;
-        }
-        .js-top-profile-badge {
-          background: #fbbf24;
-          color: #92400e;
+          background: rgba(255,255,255,0.15);
+          color: #cbd5e1;
           font-size: 10px;
-          font-weight: 800;
           padding: 2px 8px;
           border-radius: 4px;
-          margin-left: auto;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
-        .js-profile-details {
+        .js-quick-details-grid {
           display: flex;
           flex-direction: column;
-          gap: 8px;
-        }
-        .js-primary-detail {
-          font-size: 15px;
-          color: #475569;
-          font-weight: 500;
-        }
-        .js-detail-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #64748b;
           font-size: 13px;
-        }
-        .js-detail-icon {
-          color: #94a3b8;
-          flex-shrink: 0;
+          color: #e2e8f0;
+          font-weight: 500;
+          opacity: 0.9;
         }
 
-        /* Action Bar */
-        .js-action-footer {
-          display: flex;
-          border-top: 1px solid #f1f5f9;
-          background: #fff;
+        .js-managed-by {
+          font-size: 12px;
+          font-style: italic;
+          color: #94a3b8;
+          margin-top: 4px;
         }
-        .js-action-btn {
+
+        /* Circular Actions */
+        .js-action-overlay {
+          display: flex;
+          justify-content: space-between;
+          padding-top: 15px;
+          gap: 12px;
+        }
+
+        .js-circle-action {
           flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+        .js-icon-circle {
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.1);
+          backdrop-filter: blur(8px);
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          padding: 12px;
-          border: none;
-          background: none;
-          color: #D63447;
+          border: 1px solid rgba(255,255,255,0.15);
+          transition: all 0.2s;
+        }
+        .js-circle-action span {
+          color: #fff;
+          font-size: 10px;
           font-weight: 700;
-          font-size: 13px;
-          cursor: pointer;
-          transition: background 0.2s;
+          opacity: 0.9;
         }
-        .js-action-btn:not(:last-child) {
-          border-right: 1px solid #f1f5f9;
+        .js-circle-action.active .js-icon-circle { background: #D63447; border-color: #D63447; }
+        .js-circle-action.sent .js-icon-circle { background: #fff; border-color: #fff; }
+        .js-circle-action.sent span { color: #10b981; }
+
+        /* Photo Modal with High Blur */
+        /* Full-screen Scrollable Modal */
+        /* Full-screen Scrollable Modal */
+        .js-photo-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.05); /* Minimal darkening */
+          backdrop-filter: blur(4px); /* Very subtle blur */
+          z-index: 10000;
+          overflow-y: auto;
+          padding: 100px 20px 60px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
-        .js-action-btn:hover {
-          background: #fff1f2;
-        }
-        .js-action-btn.interest.active {
-          color: #D63447;
+        
+        .js-photo-modal-content {
+          width: 100%;
+          max-width: 500px;
+          display: flex;
+          flex-direction: column;
         }
 
+        .js-photo-vertical-container {
+          display: flex;
+          flex-direction: column;
+          gap: 20px; /* Reduced distance to 1/5th (20px) */
+          width: 100%;
+          padding-bottom: 80px;
+        }
+
+        .js-modal-card-wrap {
+          width: 100%;
+          border-radius: 24px;
+          overflow: hidden;
+          height: 550px;
+          box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+          background: #f1f5f9;
+        }
+        
         @media (max-width: 600px) {
-          .js-card-body { flex-direction: column; }
-          .js-photo-container { width: 100%; height: 220px; }
-          .js-info-container { padding: 14px; }
-          .js-name-row h3 { font-size: 17px; }
-          .js-primary-detail { font-size: 13px; }
+          .js-modal-card-wrap { height: 450px; }
+        }
+        
+        .js-modal-vertical-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
         }
 
-        @media (max-width: 400px) {
-          .js-action-btn span { display: none; }
-          .js-action-btn { padding: 12px 8px; }
+        .js-modal-close {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: rgba(255,255,255,0.2);
+          border: 1px solid rgba(255,255,255,0.3);
+          color: #fff;
+          cursor: pointer;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10001;
+          backdrop-filter: blur(10px);
+          transition: all 0.2s;
+        }
+        .js-modal-close:hover {
+          background: rgba(255,255,255,0.4);
+          transform: rotate(90deg);
+        }
+
+        .js-modal-hint {
+          text-align: center;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 500;
+          margin-top: 20px;
+          opacity: 0.8;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .js-modal-loader { 
+          color: #fff; 
+          text-align: center; 
+          margin-top: 100px; 
+          font-weight: 600;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
       `}} />
     </div>

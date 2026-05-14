@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { interestService } from '../../services/interestService';
+import { chatService } from '../../services/chatService';
 import {
   Search as SearchIcon,
   Home,
@@ -27,6 +29,8 @@ export default function TopNav() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
 
   // Close dropdown on outside click
@@ -56,6 +60,18 @@ export default function TopNav() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
+  useEffect(() => {
+    if (profile?.user_id) {
+      Promise.all([
+        interestService.getPendingCount(profile.user_id),
+        chatService.getUnreadCount(profile.user_id)
+      ]).then(([pc, uc]) => {
+        setPendingCount(pc);
+        setUnreadCount(uc);
+      });
+    }
+  }, [profile?.user_id, location.pathname]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/', { replace: true });
@@ -64,11 +80,16 @@ export default function TopNav() {
   const finalAvatarUrl = avatarUrl || '/images/default-avatar.png';
 
   const navLinks = [
-    { to: '/dashboard', icon: <Home size={18} />, label: 'Home' },
-    { to: '/interests', icon: <Star size={18} />, label: 'Interests' },
-    { to: '/inbox', icon: <MessageCircle size={18} />, label: 'Messages' },
+    { to: '/dashboard', icon: <Users size={18} />, label: 'Matches' },
+    { to: '/shortlisted', icon: <Star size={18} fill="#D63447" />, label: 'Shortlisted' },
+    { to: '/interests', icon: <Star size={18} />, label: 'Interests', badge: pendingCount },
+    { to: '/inbox', icon: <MessageCircle size={18} />, label: 'Messages', badge: unreadCount },
     { to: '/search', icon: <SearchIcon size={18} />, label: 'Search' },
   ];
+
+  if (isAdmin) {
+    navLinks.push({ to: '/admin', icon: <Settings size={18} />, label: 'Admin' });
+  }
 
   return (
     <>
@@ -87,7 +108,11 @@ export default function TopNav() {
                 to={link.to}
                 className={`js-nav-link ${location.pathname === link.to ? 'active' : ''}`}
               >
-                {link.icon} <span>{link.label}</span>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {link.icon} 
+                  <span>{link.label}</span>
+                  {link.badge > 0 && <span className="js-nav-badge">{link.badge}</span>}
+                </div>
               </Link>
             ))}
           </div>
@@ -363,6 +388,21 @@ export default function TopNav() {
         .js-nav-link.active { color: #D63447; border-bottom-color: #D63447; }
         .js-nav-link svg { color: #64748b; transition: color 0.2s; }
         .js-nav-link:hover svg, .js-nav-link.active svg { color: #D63447; }
+
+        .js-nav-badge {
+          position: absolute;
+          top: -4px;
+          right: -12px;
+          background: #ef4444;
+          color: #fff;
+          font-size: 9px;
+          font-weight: 800;
+          padding: 1px 4px;
+          border-radius: 8px;
+          min-width: 14px;
+          text-align: center;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
 
         /* Header Actions */
         .js-header-actions {

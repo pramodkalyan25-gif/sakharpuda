@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import { adminService } from '../services/adminService';
+import { reportService } from '../services/reportService';
 import { useAuth } from '../hooks/useAuth';
 
 const TABS = ['dashboard', 'profiles', 'contact_requests', 'photos', 'reports'];
@@ -61,7 +62,7 @@ export default function AdminPage() {
   const loadReported = useCallback(async () => {
     setLoading(true);
     try {
-      setReported(await adminService.getReportedInterests());
+      setReported(await reportService.getAllReports());
     } finally {
       setLoading(false);
     }
@@ -117,9 +118,9 @@ export default function AdminPage() {
     } catch (err) { toast.error(err.message); }
   };
 
-  const handleDismissReport = async (interestId) => {
+  const handleDismissReport = async (reportId) => {
     try {
-      await adminService.dismissReport(interestId);
+      await reportService.dismissReport(reportId);
       toast.success('Report dismissed');
       loadReported();
     } catch (err) { toast.error(err.message); }
@@ -279,30 +280,44 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Reported Interests */}
+        {/* Detailed Reports */}
         {tab === 'reports' && !loading && (
           <div>
-            <h2 className="admin-title">Reported Interactions</h2>
+            <h2 className="admin-title">User Reports</h2>
             {reported.length === 0 ? <p>No reports yet.</p> : (
               <div className="admin-table-wrap">
                 <table className="admin-table">
-                  <thead><tr><th>From</th><th>To</th><th>Status</th><th>Reported</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Reporter</th><th>Reported User</th><th>Reason & Details</th><th>Screenshot</th><th>Status</th><th>Actions</th></tr></thead>
                   <tbody>
-                    {reported.map((i) => (
-                      <tr key={i.id}>
-                        <td>{i.profiles?.name || i.sender_id}</td>
-                        <td>{i.profiles?.name || i.receiver_id}</td>
-                        <td><Badge variant="info">{i.status}</Badge></td>
-                        <td><Badge variant="danger">Reported</Badge></td>
+                    {reported.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.reporter_name}</td>
+                        <td>{r.reported_name}</td>
+                        <td style={{ maxWidth: '300px' }}>
+                          <strong>{r.reason}</strong>
+                          <p style={{ fontSize: '12px', margin: '4px 0', color: '#64748b' }}>{r.description}</p>
+                        </td>
+                        <td>
+                          {r.screenshot_url ? (
+                            <a href={r.screenshot_url} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>View Image</a>
+                          ) : 'None'}
+                        </td>
+                        <td>
+                          <Badge variant={r.status === 'pending' ? 'warning' : 'default'}>{r.status}</Badge>
+                        </td>
                         <td className="admin-actions">
-                          <Button size="sm" variant="danger"
-                            onClick={() => handleSuspendUser(i.sender_id)}>
-                            Suspend Sender
-                          </Button>
-                          <Button size="sm" variant="outline"
-                            onClick={() => handleDismissReport(i.id)}>
-                            Dismiss
-                          </Button>
+                          {r.status === 'pending' && (
+                            <>
+                              <Button size="sm" variant="danger"
+                                onClick={() => handleSuspendUser(r.reported_id)}>
+                                Suspend User
+                              </Button>
+                              <Button size="sm" variant="outline"
+                                onClick={() => handleDismissReport(r.id)}>
+                                Dismiss
+                              </Button>
+                            </>
+                          )}
                         </td>
                       </tr>
                     ))}

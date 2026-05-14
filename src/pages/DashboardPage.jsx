@@ -107,44 +107,15 @@ export default function DashboardPage() {
 
       <main className="js-main-grid js-layout-container">
         {/* LEFT SIDEBAR */}
-        <Sidebar>
-          <div className="js-community-trust-wrapper">
-            <span className="js-trust-label">COMMUNITY & TRUST</span>
-            <div className="js-trust-cards-stack">
-              <div className="js-trust-card">
-                <div className="js-trust-icon green">
-                  <CheckCircle size={22} />
-                </div>
-                <h5>Verified profiles</h5>
-                <p>We verify phone & email of every member</p>
-              </div>
-
-              <div className="js-trust-card">
-                <div className="js-trust-icon purple">
-                  <Users size={22} />
-                </div>
-                <h5>Community first</h5>
-                <p>Premium matchmaking for serious match-seekers</p>
-              </div>
-
-              <div className="js-trust-card">
-                <div className="js-trust-icon orange">
-                  <Lock size={22} />
-                </div>
-                <h5>Privacy protected</h5>
-                <p>Contact details hidden until you connect</p>
-              </div>
-            </div>
-          </div>
-        </Sidebar>
+        <Sidebar />
 
         {/* MIDDLE CONTENT */}
         <div className="js-content-area">
           <section className="js-dashboard-section">
             <div className="js-section-header">
-              <div className="js-title-row">
+              <div className="js-title-row" style={{ cursor: 'default' }}>
                 <TrendingUp size={20} className="red" />
-                <h2>Recommended Profiles</h2>
+                <h2>Daily Matches</h2>
               </div>
             </div>
 

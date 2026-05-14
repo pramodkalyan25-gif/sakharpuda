@@ -19,6 +19,8 @@ import InboxPage from './pages/InboxPage';
 import InterestsPage from './pages/InterestsPage';
 import MyMatchesPage from './pages/MyMatchesPage';
 import SettingsPage from './pages/SettingsPage';
+import ChatPage from './pages/ChatPage';
+import ShortlistedPage from './pages/ShortlistedPage';
 
 // Legal & Info Pages
 import TermsPage from './pages/TermsPage';
@@ -91,6 +93,9 @@ export default function App() {
             <Route path="/profile/:id" element={
               <ProtectedRoute><ViewProfilePage /></ProtectedRoute>
             } />
+            <Route path="/chat/:id" element={
+              <ProtectedRoute><ChatPage /></ProtectedRoute>
+            } />
             <Route path="/inbox" element={
               <ProtectedRoute><InboxPage /></ProtectedRoute>
             } />
@@ -99,6 +104,9 @@ export default function App() {
             } />
             <Route path="/my-matches" element={
               <ProtectedRoute><MyMatchesPage /></ProtectedRoute>
+            } />
+            <Route path="/shortlisted" element={
+              <ProtectedRoute><ShortlistedPage /></ProtectedRoute>
             } />
             <Route path="/settings" element={
               <ProtectedRoute><SettingsPage /></ProtectedRoute>
