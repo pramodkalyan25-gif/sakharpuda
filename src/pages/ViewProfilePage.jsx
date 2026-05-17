@@ -73,6 +73,7 @@ export default function ViewProfilePage() {
   const [bgType, setBgType]                   = useState('cream');
   const [showPhotoOnBio, setShowPhotoOnBio]   = useState(true);
   const [translitMode, setTranslitMode]       = useState('ai'); 
+  const [translitStatus, setTranslitStatus]   = useState('active'); // 'active' | 'failed'
 
   // REBUILT ROBUST HISTORY (UNDO) SYSTEM
   const [history, setHistory] = useState([]);
@@ -304,6 +305,40 @@ export default function ViewProfilePage() {
     });
   };
 
+  const offlineTransliterate = (text) => {
+    const word = text.toLowerCase().trim();
+    const dict = {
+      'nav': 'नाव', 'naam': 'नाव', 'purna': 'पूर्ण', 'naw': 'नाव',
+      'aai': 'आई', 'mother': 'आई', 'vadil': 'वडील', 'father': 'वडील',
+      'bhau': 'भाऊ', 'brother': 'भाऊ', 'bahin': 'बहीण', 'sister': 'बहीण',
+      'kaka': 'काका', 'mama': 'मामा', 'maternal': 'मामा', 'paternal': 'काका',
+      'chulte': 'चुलते', 'koutumbik': 'कौटुंबिक', 'kautumbik': 'कौटुंबिक',
+      'mahiti': 'माहिती', 'mahit': 'माहिती', 'vivah': 'विवाह', 'biodata': 'बायो-डाटा',
+      'shikshan': 'शिक्षण', 'nokri': 'नोकरी', 'vyavasay': 'व्यवसाय',
+      'kam': 'काम', 'rashi': 'राशी', 'rakta': 'रक्तगट', 'raktagat': 'रक्तगट',
+      'janma': 'जन्म', 'tarikh': 'तारीख', 'vel': 'वेळ', 'sthal': 'स्थळ',
+      'patta': 'पत्ता', 'unchi': 'उंची', 'jat': 'जात', 'caste': 'जात',
+      'shubh': 'शुभ', 'mangalam': 'मंगलम्', 'ganesh': 'गणेश', 'ganesha': 'गणेश',
+      'ganeshaya': 'गणेशाय', 'namah': 'नमः', 'shree': 'श्री', 'shri': 'श्री',
+      'mumbai': 'मुंबई', 'pune': 'पुणे', 'nashik': 'नाशिक', 'nagpur': 'नागपूर',
+      'satara': 'सातारा', 'sangli': 'सांगली', 'kolhapur': 'कोल्हापूर', 'kalyan': 'कल्याण'
+    };
+
+    if (dict[word]) return dict[word];
+
+    let res = word;
+    res = res.replace(/kautumbik/g, 'कौटुंबिक').replace(/koutumbik/g, 'कौटुंबिक');
+    res = res.replace(/mahiti/g, 'माहिती');
+    res = res.replace(/shree/g, 'श्री').replace(/shri/g, 'श्री');
+    res = res.replace(/namah/g, 'नमः').replace(/ganeshaya/g, 'गणेशाय');
+    res = res.replace(/janma/g, 'जन्म').replace(/sthal/g, 'स्थळ');
+    res = res.replace(/shikshan/g, 'शिक्षण').replace(/vyavasay/g, 'व्यवसाय');
+    res = res.replace(/nokri/g, 'नोकरी').replace(/vadil/g, 'वडील');
+    res = res.replace(/bahin/g, 'बहीण').replace(/bhau/g, 'भाऊ');
+    
+    return res === word ? text : res;
+  };
+
   const smartTransliterate = async (text) => {
     if (!text || biodataLang !== 'mr') return text;
     const cleanText = text.trim();
@@ -322,9 +357,16 @@ export default function ViewProfilePage() {
       const url = `https://inputtools.google.com/request?text=${encodeURIComponent(cleanText)}&ime=transliteration_en_mr&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=jsapi`;
       const response = await fetch(url);
       const data = await response.json();
-      if (data && data[0] === 'SUCCESS' && data[1][0] && data[1][0][1][0]) return data[1][0][1][0];
-    } catch (e) { console.warn("Translit Cloud failed", e); }
-    return cleanText;
+      if (data && data[0] === 'SUCCESS' && data[1][0] && data[1][0][1][0]) {
+        setTranslitStatus('active');
+        return data[1][0][1][0];
+      }
+    } catch (e) { 
+      console.warn("Translit Cloud failed, using offline fallback", e); 
+    }
+    
+    setTranslitStatus('failed');
+    return offlineTransliterate(cleanText);
   };
 
   const handleGenericTranslit = async (e, currentValue, onUpdate) => {
@@ -904,8 +946,23 @@ export default function ViewProfilePage() {
               </div>
 
               <div className="bm-preview-wrap">
-                <div className={`bm-card bm-card--${bgType}`} id="biodata-to-print">
-                  <div className="bm-card-inner-border"></div>
+                <div className="bm-preview-container">
+                  
+                  {/* Google Transliteration Status Button (Dynamic feedback indicator) */}
+                  <div className="bm-api-status-bar no-print">
+                    {translitStatus === 'active' ? (
+                      <button className="bm-status-btn bm-status-btn--success" disabled>
+                        <span className="bm-status-dot">●</span> Google Transliterator Connected
+                      </button>
+                    ) : (
+                      <button className="bm-status-btn bm-status-btn--danger" disabled>
+                        <span className="bm-status-dot">●</span> Google Transliterator Offline (Fallback Active)
+                      </button>
+                    )}
+                  </div>
+
+                  <div className={`bm-card bm-card--${bgType}`} id="biodata-to-print">
+                    <div className="bm-card-inner-border"></div>
 
                   {/* ── Card Header: 3-column [Ganesha | Title | Spacer] ── */}
                   <div className="bm-card-header">
@@ -970,6 +1027,7 @@ export default function ViewProfilePage() {
 
                 </div>
               </div>
+            </div>
 
             </div>{/* /bm-body */}
           </div>{/* /bm-modal */}
@@ -1338,6 +1396,17 @@ export default function ViewProfilePage() {
 
         /* RIGHT PREVIEW */
         .bm-preview-wrap { flex: 1; overflow-y: auto; background: #e2e8f0; display: flex; justify-content: center; padding: 20px; }
+        .bm-preview-container { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .bm-api-status-bar { width: 100%; display: flex; justify-content: flex-start; }
+        .bm-status-btn { display: flex; align-items: center; gap: 8px; padding: 7px 15px; font-size: 11px; font-weight: 800; border-radius: 20px; border: none; cursor: default; box-shadow: 0 4px 10px rgba(0,0,0,0.06); transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.5px; }
+        .bm-status-btn--success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .bm-status-btn--danger { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; animation: pulse-danger 2s infinite; }
+        .bm-status-dot { font-size: 10px; }
+        @keyframes pulse-danger {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+          70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
 
         /* THE CARD */
         .bm-card { position: relative; width: 680px; min-height: 960px; padding: 30px 50px 50px; font-family: 'Noto Sans Devanagari', 'Hind', sans-serif; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
