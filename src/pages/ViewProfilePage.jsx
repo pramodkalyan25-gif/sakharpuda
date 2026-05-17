@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { 
   Heart, 
   Star, 
@@ -36,6 +38,7 @@ import { interestService } from '../services/interestService';
 import { contactService } from '../services/contactService';
 import { photoService } from '../services/photoService';
 import { shortlistService } from '../services/shortlistService';
+import { searchService } from '../services/searchService';
 import { useAuth } from '../hooks/useAuth';
 import { differenceInYears, parseISO, format } from 'date-fns';
 
@@ -56,6 +59,305 @@ export default function ViewProfilePage() {
   const [prevId, setPrevId]               = useState(null);
   const [nextId, setNextId]               = useState(null);
   const [showBioDataModal, setShowBioDataModal] = useState(false);
+  const [biodataLang, setBiodataLang]           = useState('mr');
+  
+  // DRAG & DROP & UPLOAD & RESIZE STATES
+  const [sections, setSections]               = useState([]);
+  const [customGodPhoto, setCustomGodPhoto]   = useState(null);
+  const [customUserPhoto, setCustomUserPhoto] = useState(null);
+  const [godPos, setGodPos]                   = useState({ x: 40, y: 30, w: 43 });
+  const [userPos, setUserPos]                 = useState({ x: 510, y: 30, w: 140 });
+  const [godPhoto, setGodPhoto]               = useState('/ganesha.png');
+  const [showGodPhoto, setShowGodPhoto]       = useState(true);
+  const [godBlessingText, setGodBlessingText] = useState('॥ श्री गणेशाय नमः ॥');
+  const [bgType, setBgType]                   = useState('cream');
+  const [showPhotoOnBio, setShowPhotoOnBio]   = useState(true);
+  const [translitMode, setTranslitMode]       = useState('ai'); 
+
+  // REBUILT ROBUST HISTORY (UNDO) SYSTEM
+  const [history, setHistory] = useState([]);
+  const handleDragStart = (e, type) => {
+    const isTouch = e.type.startsWith('touch');
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+    
+    const initialPos = type === 'god' ? godPos : userPos;
+    const startX = clientX - initialPos.x;
+    const startY = clientY - initialPos.y;
+
+    const onMove = (moveE) => {
+      const mX = isTouch ? (moveE.touches ? moveE.touches[0].clientX : moveE.clientX) : moveE.clientX;
+      const mY = isTouch ? (moveE.touches ? moveE.touches[0].clientY : moveE.clientY) : moveE.clientY;
+      let nextX = mX - startX;
+      let nextY = mY - startY;
+      
+      // Document is 800px wide. Constrain to 0-730 for x (w:70) and 0-200 for y (header height)
+      nextX = Math.max(0, Math.min(nextX, 730));
+      nextY = Math.max(0, Math.min(nextY, 200));
+
+      if (type === 'god') setGodPos(p => ({ ...p, x: nextX, y: nextY }));
+      else setUserPos(p => ({ ...p, x: nextX, y: nextY }));
+    };
+
+    const onEnd = () => {
+      document.removeEventListener(isTouch ? 'touchmove' : 'mousemove', onMove);
+      document.removeEventListener(isTouch ? 'touchend' : 'mouseup', onEnd);
+      
+      // Save to history after drag ends
+      setSections(prev => {
+        saveHistory(prev, type === 'god' ? { x: 0, y: 0, w: 0 } : godPos, type === 'user' ? { x: 0, y: 0, w: 0 } : userPos); 
+        return prev;
+      });
+    };
+
+    document.addEventListener(isTouch ? 'touchmove' : 'mousemove', onMove);
+    document.addEventListener(isTouch ? 'touchend' : 'mouseup', onEnd);
+  };
+  const saveHistory = (s, g, u) => {
+    const snap = JSON.stringify({ sections: JSON.parse(JSON.stringify(s)), godPos: { ...g }, userPos: { ...u } });
+    setHistory(prev => {
+      if (prev[0] === snap) return prev; 
+      return [snap, ...prev].slice(0, 50);
+    });
+  };
+
+  const undo = () => {
+    setHistory(prev => {
+      if (prev.length <= 1) return prev;
+      const [_, last, ...rest] = prev;
+      const data = JSON.parse(last);
+      setSections(data.sections);
+      setGodPos(data.godPos);
+      setUserPos(data.userPos);
+      return [last, ...rest];
+    });
+  };
+
+  const handleDownloadImage = async () => {
+    const cardElement = document.getElementById('biodata-to-print');
+    if (!cardElement) return;
+    
+    const loadingToast = toast.loading('Generating Image...');
+    try {
+      const canvas = await html2canvas(cardElement, {
+        scale: 2, // High resolution crisp image
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = imgData;
+      link.download = `${profile?.name || 'biodata'}_biodata.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Image downloaded successfully!', { id: loadingToast });
+    } catch (err) {
+      console.error('Failed to generate image:', err);
+      toast.error('Failed to generate image. Please try again.', { id: loadingToast });
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    const cardElement = document.getElementById('biodata-to-print');
+    if (!cardElement) return;
+    
+    const loadingToast = toast.loading('Generating PDF...');
+    try {
+      const canvas = await html2canvas(cardElement, {
+        scale: 2, // Crisp rendering
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2] // perfect dimension matching the crisp scale
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`${profile?.name || 'biodata'}_biodata.pdf`);
+      toast.success('PDF downloaded successfully!', { id: loadingToast });
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      toast.error('Failed to generate PDF. Please try again.', { id: loadingToast });
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []); 
+
+  // High-Quality Maharashtrian Deity Options (stable Wikimedia URLs)
+  const godOptions = [
+    { name: '॥ श्री गणेशाय नमः ॥', url: '/ganesha.png' },
+    { name: 'विठ्ठल-रखुमाई', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Vithoba_Rukmini.jpg/240px-Vithoba_Rukmini.jpg' },
+    { name: 'खंडोबा (Khandoba)', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Khandoba_Mhalsa.jpg/240px-Khandoba_Mhalsa.jpg' },
+    { name: 'तुळजा भवानी', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Tulja_Bhavani_Idol.jpg/240px-Tulja_Bhavani_Idol.jpg' },
+    { name: 'कोल्हापूर महालक्ष्मी', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Mahalakshmi_Idol_Kolhapur.jpg/240px-Mahalakshmi_Idol_Kolhapur.jpg' },
+    { name: 'साई बाबा (Sai Baba)', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Shirdi_Sai_Baba.jpg/240px-Shirdi_Sai_Baba.jpg' },
+    { name: 'गजानन महाराज', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Gajanan_Maharaj_Shegaon.jpg/240px-Gajanan_Maharaj_Shegaon.jpg' },
+    { name: 'स्वामी समर्थ', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Swami_Samarth_Maharaj.jpg/240px-Swami_Samarth_Maharaj.jpg' }
+  ];
+
+  // Build default sections from profile data when modal opens
+  useEffect(() => {
+    if (showBioDataModal && profile) {
+      const mr = biodataLang === 'mr';
+      const dob = profile.dob ? (() => { const d = new Date(profile.dob); const dd = String(d.getDate()).padStart(2,'0'); const mm = String(d.getMonth()+1).padStart(2,'0'); const yyyy = d.getFullYear(); return `${dd}-${mm}-${yyyy}`; })() : '---';
+      const htCm = profile.height;
+      const htFt = htCm ? `${Math.floor(htCm / 30.48)}'${Math.round((htCm / 2.54) % 12)}"` : '---';
+      const initialSections = [
+        { id: 1, title: mr ? '❋ वैयक्तिक माहिती ❋' : '❋ Personal Details ❋', fields: [
+          { label: mr ? 'पूर्ण नाव' : 'Full Name', value: profile.name || '---' },
+          { label: mr ? 'जन्म तारीख' : 'Date of Birth', value: dob },
+          { label: mr ? 'जन्म वेळ' : 'Time of Birth', value: profile.tob || '---' },
+          { label: mr ? 'जन्म स्थळ' : 'Place of Birth', value: profile.pob || '---' },
+          { label: mr ? 'उंची' : 'Height', value: htFt },
+          { label: mr ? 'राशी' : 'Rashi', value: profile.rashi || '---' },
+          { label: mr ? 'रक्तगट' : 'Blood Group', value: profile.blood_group || '---' },
+          { label: mr ? 'जात' : 'Caste', value: profile.caste || '---' },
+          { label: mr ? 'शिक्षण' : 'Education', value: profile.education || '---' },
+          { label: mr ? 'नोकरी / व्यवसाय' : 'Profession', value: profile.profession || '---' },
+        ]},
+        { id: 2, title: mr ? '❋ कौटुंबिक माहिती ❋' : '❋ Family Details ❋', fields: [
+          { label: mr ? 'वडिलांचे नाव' : "Father's Name", value: profile.father_name || '---' },
+          { label: mr ? 'आईचे नाव' : "Mother's Name", value: profile.mother_name || '---' },
+          { label: mr ? 'भाऊ' : 'Brother', value: '---' },
+          { label: mr ? 'बहिण' : 'Sister', value: '---' },
+          { label: mr ? 'चुलते' : 'Paternal Uncle', value: '---' },
+          { label: mr ? 'मामा' : 'Maternal Uncle', value: profile.maternal_uncle || '---' },
+          { label: mr ? 'काका' : 'Paternal Uncle (Kaka)', value: '---' },
+          { label: mr ? 'नातेवाईक' : 'Relatives', value: '---' },
+        ]},
+        { id: 3, title: mr ? '❋ संपर्क ❋' : '❋ Contact ❋', fields: [
+          { label: mr ? 'नाव' : 'Contact Name', value: profile.name || '---' },
+          { label: mr ? 'मोबाईल नंबर' : 'Mobile', value: profile.mobile || '---' },
+          { label: mr ? 'घरचा पत्ता' : 'Home Address', value: [profile.city, profile.state].filter(Boolean).join(', ') || '---' },
+        ]},
+      ];
+      setSections(initialSections);
+      saveHistory(initialSections, { x: 20, y: 20, w: 43 }, { x: 480, y: 30, w: 150 });
+    }
+  }, [showBioDataModal, profile, biodataLang]);
+
+  const updateField = (sId, fIdx, key, val) => {
+    const cleanVal = val ? val.replace(/\u00A0/g, ' ') : val;
+    setSections(prev => {
+      const next = prev.map(s => s.id === sId ? { ...s, fields: s.fields.map((f, i) => i === fIdx ? { ...f, [key]: cleanVal } : f) } : s);
+      saveHistory(next, godPos, userPos);
+      return next;
+    });
+  };
+
+  const removeField = (sId, fIdx) => {
+    setSections(prev => {
+      const next = prev.map(s => s.id === sId ? { ...s, fields: s.fields.filter((_, i) => i !== fIdx) } : s);
+      saveHistory(next, godPos, userPos);
+      return next;
+    });
+  };
+
+  const addField = (sId) => {
+    setSections(prev => {
+      const next = prev.map(s => s.id === sId ? { ...s, fields: [...s.fields, { label: 'New Label', value: 'New Value' }] } : s);
+      saveHistory(next, godPos, userPos);
+      return next;
+    });
+  };
+
+  const addSection = (afterId) => {
+    const newId = Date.now();
+    setSections(prev => {
+      const newSection = { id: newId, title: biodataLang === 'mr' ? 'नवीन विभाग' : 'New Section', fields: [{ label: 'Field Name', value: 'Value' }] };
+      let next;
+      if (afterId) {
+        const idx = prev.findIndex(s => s.id === afterId);
+        next = [...prev.slice(0, idx + 1), newSection, ...prev.slice(idx + 1)];
+      } else {
+        next = [...prev, newSection];
+      }
+      saveHistory(next, godPos, userPos);
+      return next;
+    });
+  };
+
+  const removeSection = (id) => {
+    setSections(prev => {
+      const next = prev.filter(s => s.id !== id);
+      saveHistory(next, godPos, userPos);
+      return next;
+    });
+  };
+
+  const smartTransliterate = async (text) => {
+    if (!text || biodataLang !== 'mr') return text;
+    const cleanText = text.trim();
+    if (!cleanText || !/^[a-zA-Z]+$/.test(cleanText)) return text;
+    
+    const dictionary = { 
+      'pahune': 'पाहुणे', 'vayak': 'व्यक्ती', 'vayaktik': 'वैयक्तिक',
+      'nav': 'नाव', 'aai': 'आई', 'vadil': 'वडील', 'mulga': 'मुलगा', 'mulgi': 'मुलगी',
+      'patta': 'पत्ता', 'janma': 'जन्म', 'shikshan': 'शिक्षण', 'nokri': 'नोकरी',
+      'parichay': 'परिचय', 'vivah': 'विवाह', 'patra': 'पत्र', 'mahit': 'माहिती',
+      'shubh': 'शुभ', 'vivaha': 'विवाह', 'mangalam': 'मंगलम्', 'biadata': 'बायो-डाटा'
+    };
+    if (dictionary[cleanText.toLowerCase()]) return dictionary[cleanText.toLowerCase()];
+
+    try {
+      const url = `https://inputtools.google.com/request?text=${encodeURIComponent(cleanText)}&ime=transliteration_en_mr&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=jsapi`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data && data[0] === 'SUCCESS' && data[1][0] && data[1][0][1][0]) return data[1][0][1][0];
+    } catch (e) { console.warn("Translit Cloud failed", e); }
+    return cleanText;
+  };
+
+  const handleGenericTranslit = async (e, currentValue, onUpdate) => {
+    if (biodataLang !== 'mr') return;
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+
+    const el = e.target;
+    const isInput = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
+    if (!isInput) return;
+
+    const cursorPos = el.selectionStart;
+    const text = el.value;
+    const textBefore = text.substring(0, cursorPos);
+    const trimmed = textBefore.trimEnd();
+    const words = trimmed.split(/\s+/);
+    const lastWord = words[words.length - 1];
+    
+    if (!lastWord || !/^[a-zA-Z]+$/.test(lastWord)) return;
+    
+    const converted = await smartTransliterate(lastWord);
+    if (converted === lastWord) return;
+    
+    const beforeWord = textBefore.substring(0, textBefore.lastIndexOf(lastWord));
+    const newValue = beforeWord + converted + ' ' + text.substring(cursorPos);
+    
+    onUpdate(newValue.replace(/\u00A0/g, ' '));
+    
+    setTimeout(() => {
+      const newPos = beforeWord.length + converted.length + 1;
+      el.setSelectionRange(newPos, newPos);
+    }, 0);
+  };
+  
   const [showKundaliModal, setShowKundaliModal] = useState(false);
   const [sending, setSending]           = useState(false);
   const [isShortlisted, setIsShortlisted] = useState(false);
@@ -335,7 +637,7 @@ export default function ViewProfilePage() {
               <UserIcon size={18} />
               <h3>About {profile.name}</h3>
             </div>
-            <p className="js-bio-text">{profile.bio || "No description provided."}</p>
+            <p className="js-bio-text">{profile.bio || profile.about || "No description provided."}</p>
           </div>
 
           <div ref={basicRef} className="js-detail-card">
@@ -418,7 +720,7 @@ export default function ViewProfilePage() {
         </div>
       </div>
 
-      {/* STICKY BOTTOM ACTIONS (Matching ProfileCard logic) */}
+      {/* STICKY BOTTOM ACTIONS */}
       {!isOwn && (
         <div className="js-sticky-action-bar">
           <button 
@@ -457,71 +759,220 @@ export default function ViewProfilePage() {
 
       {/* TRADITIONAL BIO-DATA MODAL */}
       {showBioDataModal && (
-        <div className="js-biodata-overlay" onClick={() => setShowBioDataModal(false)}>
-          <div className="js-biodata-modal" onClick={e => e.stopPropagation()}>
-            <div className="js-biodata-actions no-print">
-              <button className="js-action-btn" onClick={() => window.print()}>
-                <Printer size={18} /> Print / Save PDF
-              </button>
-              <button className="js-close-btn" onClick={() => setShowBioDataModal(false)}>
-                <CloseIcon size={24} />
-              </button>
+        <div className="bm-overlay" onClick={() => setShowBioDataModal(false)}>
+          <div className="bm-modal" onClick={e => e.stopPropagation()}>
+
+            {/* ── TOP TOOLBAR ── */}
+            <div className="bm-toolbar no-print">
+              <div className="bm-toolbar-left">
+                {/* Language toggle */}
+                <div className="bm-lang-toggle">
+                  <button className={biodataLang === 'mr' ? 'active' : ''} onClick={() => setBiodataLang('mr')}>मराठी</button>
+                  <button className={biodataLang === 'en' ? 'active' : ''} onClick={() => setBiodataLang('en')}>English</button>
+                </div>
+                {/* Theme pills */}
+                <span className="bm-toolbar-label">Theme:</span>
+                {[
+                  { key: 'cream',       label: '🏺 Cream' },
+                  { key: 'saffron',     label: '🌸 Saffron' },
+                  { key: 'pink',        label: '🌷 Rose' },
+                  { key: 'green',       label: '🍃 Green' },
+                  { key: 'blue',        label: '🌊 Navy' },
+                  { key: 'floral',      label: '🌺 Floral' },
+                  { key: 'gold',        label: '✨ Gold' },
+                  { key: 'dark-royal',  label: '👑 Dark Royal' },
+                  { key: 'dark-maroon', label: '🍷 Dark Maroon' },
+                  { key: 'teal',        label: '🦚 Teal' },
+                  { key: 'modern',      label: '⚡ Modern' },
+                ].map(t => (
+                  <button key={t.key} className={`bm-theme-pill ${bgType === t.key ? 'active' : ''}`}
+                    onClick={() => setBgType(t.key)}>{t.label}</button>
+                ))}
+              </div>
+              <div className="bm-toolbar-right">
+                <button className="bm-btn-undo" onClick={undo} disabled={history.length < 2} title="Ctrl+Z">↩ Undo</button>
+                <button className="bm-btn-print" onClick={handleDownloadImage} style={{ background: '#059669', color: '#fff' }}><Download size={14} /> Download Image</button>
+                <button className="bm-btn-print" onClick={handleDownloadPDF} style={{ background: '#2563eb', color: '#fff' }}><FileText size={14} /> Download PDF</button>
+                <button className="bm-btn-print" onClick={() => window.print()}><Printer size={14} /> Print</button>
+                <button className="bm-btn-close" onClick={() => setShowBioDataModal(false)}><CloseIcon size={20} /></button>
+              </div>
             </div>
 
-            <div className="js-biodata-content" id="biodata-to-print">
-              <div className="js-biodata-header">
-                <div className="js-biodata-symbol">🚩</div>
-                <h1>|| विवाह बायो-डाटा ||</h1>
-                <h2>Marriage Bio-Data</h2>
+            {/* ── SPLIT BODY ── */}
+            <div className="bm-body">
+
+              {/* ══ LEFT: FORM EDITOR ══ */}
+              <div className="bm-editor no-print">
+                {/* God photo controls */}
+                <div className="bm-editor-section">
+                  <div className="bm-editor-sec-title">🙏 Blessing / Deity Photo</div>
+                  <div className="bm-ctrl-row">
+                    <label className="bm-check-label">
+                      <input type="checkbox" checked={showGodPhoto}
+                        onChange={e => setShowGodPhoto(e.target.checked)} />
+                      Show God Photo
+                    </label>
+                    <input type="file" id="bm-god-file" hidden accept="image/*"
+                      onChange={e => { const f = e.target.files[0]; if (f) setCustomGodPhoto(URL.createObjectURL(f)); }} />
+                    <button className="bm-upload-btn" onClick={() => document.getElementById('bm-god-file').click()}>
+                      ↑ Upload God Photo
+                    </button>
+                  </div>
+                  <div className="bm-ctrl-row">
+                    <label className="bm-small-label">Blessing Text</label>
+                    <input className="bm-field-value" value={godBlessingText}
+                      onChange={e => setGodBlessingText(e.target.value)}
+                      onKeyUp={e => handleGenericTranslit(e, godBlessingText, (val) => setGodBlessingText(val))}
+                      placeholder="e.g. ॥ श्री गणेशाय नमः ॥" style={{ flex: 1 }} />
+                  </div>
+                  <div className="bm-ctrl-row">
+                    <label className="bm-small-label">Size</label>
+                    <input type="range" min="40" max="180" value={godPos.w}
+                      onChange={e => setGodPos(p => ({ ...p, w: +e.target.value }))} style={{ flex: 1 }} />
+                    <span className="bm-small-label">{godPos.w}px</span>
+                  </div>
+                </div>
+
+                {/* Profile photo controls */}
+                <div className="bm-editor-section">
+                  <div className="bm-editor-sec-title">📸 Profile Photo</div>
+                  <div className="bm-ctrl-row">
+                    <label className="bm-check-label">
+                      <input type="checkbox" checked={showPhotoOnBio}
+                        onChange={e => setShowPhotoOnBio(e.target.checked)} />
+                      Show Photo
+                    </label>
+                    <input type="file" id="bm-user-file" hidden accept="image/*"
+                      onChange={e => { const f = e.target.files[0]; if (f) setCustomUserPhoto(URL.createObjectURL(f)); }} />
+                    <button className="bm-upload-btn" onClick={() => document.getElementById('bm-user-file').click()}>
+                      ↑ Upload Photo
+                    </button>
+                  </div>
+                  <div className="bm-ctrl-row">
+                    <label className="bm-small-label">Size</label>
+                    <input type="range" min="80" max="280" value={userPos.w}
+                      onChange={e => setUserPos(p => ({ ...p, w: +e.target.value }))} style={{ flex: 1 }} />
+                    <span className="bm-small-label">{userPos.w}px</span>
+                  </div>
+                </div>
+
+                {/* Section editor */}
+                {sections.map((sec, sIdx) => (
+                  <div key={sec.id} className="bm-editor-section">
+                    <div className="bm-editor-sec-header">
+                      <input className="bm-sec-title-input" value={sec.title}
+                        onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: e.target.value } : s))}
+                        onKeyUp={e => handleGenericTranslit(e, sec.title, (val) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: val } : s)))}
+                        placeholder="Section title..." />
+                      <div className="bm-sec-btns">
+                        {sIdx > 0 && (
+                          <button className="bm-sec-move" title="Move Up"
+                            onClick={() => setSections(prev => { const a = [...prev]; [a[sIdx-1], a[sIdx]] = [a[sIdx], a[sIdx-1]]; return a; })}>↑</button>
+                        )}
+                        {sIdx < sections.length - 1 && (
+                          <button className="bm-sec-move" title="Move Down"
+                            onClick={() => setSections(prev => { const a = [...prev]; [a[sIdx], a[sIdx+1]] = [a[sIdx+1], a[sIdx]]; return a; })}>↓</button>
+                        )}
+                        <button className="bm-sec-del" onClick={() => removeSection(sec.id)}>✕</button>
+                      </div>
+                    </div>
+
+                    {sec.fields.map((f, fIdx) => (
+                      <div key={fIdx} className="bm-field-row">
+                        <input className="bm-field-label" value={f.label}
+                          onChange={e => updateField(sec.id, fIdx, 'label', e.target.value)}
+                          onKeyUp={e => handleGenericTranslit(e, f.label, (val) => updateField(sec.id, fIdx, 'label', val))}
+                          placeholder="Label" />
+                        <span className="bm-colon">:</span>
+                        <input className="bm-field-value" value={f.value}
+                          onChange={e => updateField(sec.id, fIdx, 'value', e.target.value)}
+                          onKeyUp={e => handleGenericTranslit(e, f.value, (val) => updateField(sec.id, fIdx, 'value', val))}
+                          placeholder="Value" />
+                        <button className="bm-field-add" title="Add row below"
+                          onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? {
+                            ...s, fields: [...s.fields.slice(0, fIdx + 1), { label: '', value: '' }, ...s.fields.slice(fIdx + 1)]
+                          } : s))}>+</button>
+                        <button className="bm-field-del" title="Remove row"
+                          onClick={() => removeField(sec.id, fIdx)}>−</button>
+                      </div>
+                    ))}
+
+                    <button className="bm-add-section-below"
+                      onClick={() => addSection(sec.id)}>+ Add Section Below</button>
+                  </div>
+                ))}
               </div>
 
-              <div className="js-biodata-section">
-                <h3 className="js-section-title">✨ Personal Details ✨</h3>
-                <div className="js-info-grid">
-                  <div className="js-info-row"><strong>Full Name:</strong> <span>{profile.name}</span></div>
-                  <div className="js-info-row"><strong>Date of Birth:</strong> <span>{new Date(profile.dob).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
-                  <div className="js-info-row"><strong>Time of Birth:</strong> <span>{profile.tob || 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Place of Birth:</strong> <span>{profile.pob || 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Height:</strong> <span>{profile.height ? `${Math.floor(profile.height / 30.48)}'${Math.round((profile.height / 2.54) % 12)}"` : 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Blood Group:</strong> <span>{profile.blood_group || 'Not Provided'}</span></div>
+              <div className="bm-preview-wrap">
+                <div className={`bm-card bm-card--${bgType}`} id="biodata-to-print">
+                  <div className="bm-card-inner-border"></div>
+
+                  {/* ── Card Header: 3-column [Ganesha | Title | Spacer] ── */}
+                  <div className="bm-card-header">
+                    {/* Left: Deity image */}
+                    <div className="bm-card-header-god">
+                      {showGodPhoto && (
+                        <img src={customGodPhoto || godPhoto} alt="Deity"
+                          style={{ width: godPos.w, height: 'auto', display: 'block', cursor: 'move' }}
+                          onMouseDown={e => handleDragStart(e, 'god')}
+                          onTouchStart={e => handleDragStart(e, 'god')}
+                          onError={e => { e.target.style.display = 'none'; }} />
+                      )}
+                    </div>
+                    {/* Center: Title */}
+                    <div className="bm-card-header-center">
+                      <div className="bm-god-text">{godBlessingText}</div>
+                      <div className="bm-card-title">परिचय पत्रिका</div>
+                    </div>
+                    {/* Right: Spacer to keep title centered */}
+                    <div className="bm-card-header-spacer"></div>
+                  </div>
+
+                  {/* Sections — first section gets photo on right */}
+                  {sections.map((sec, secIdx) => (
+                    <div key={sec.id} className="bm-card-section">
+                      <div className="bm-card-sec-title">{sec.title}</div>
+                      {secIdx === 0 ? (
+                        /* First section: fields on left, profile photo on right */
+                        <div className="bm-sec1-layout">
+                          <div className="bm-card-fields bm-card-fields--sec1">
+                            {sec.fields.map((f, i) => (
+                              <div key={i} className="bm-card-field-row">
+                                <span className="bm-card-label">{f.label}</span>
+                                <span className="bm-card-colon"> : </span>
+                                <span className="bm-card-value">{f.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {showPhotoOnBio && (
+                            <div className="bm-sec1-photo">
+                              <div className="bm-photo-frame" style={{ width: userPos.w, height: Math.round(userPos.w * 1.3) }}>
+                                <img src={customUserPhoto || avatarUrl || '/images/default-avatar.png'} alt="Profile"
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Other sections: normal full-width layout */
+                        <div className="bm-card-fields">
+                          {sec.fields.map((f, i) => (
+                            <div key={i} className="bm-card-field-row">
+                              <span className="bm-card-label">{f.label}</span>
+                              <span className="bm-card-colon"> : </span>
+                              <span className="bm-card-value">{f.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
                 </div>
               </div>
 
-              <div className="js-biodata-section">
-                <h3 className="js-section-title">📚 Education & Career 📚</h3>
-                <div className="js-info-grid">
-                  <div className="js-info-row"><strong>Education:</strong> <span>{profile.education}</span></div>
-                  <div className="js-info-row"><strong>Profession:</strong> <span>{profile.profession}</span></div>
-                  <div className="js-info-row"><strong>Income (Annual):</strong> <span>{profile.salary || 'Not Provided'}</span></div>
-                </div>
-              </div>
-
-              <div className="js-biodata-section">
-                <h3 className="js-section-title">☸️ Horoscope Details ☸️</h3>
-                <div className="js-info-grid">
-                  <div className="js-info-row"><strong>Religion / Caste:</strong> <span>{profile.religion} - {profile.caste}</span></div>
-                  <div className="js-info-row"><strong>Gotra:</strong> <span>{profile.gotra || 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Rashi:</strong> <span>{profile.rashi || 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Nakshatra:</strong> <span>{profile.nakshatra || 'Not Provided'}</span></div>
-                </div>
-              </div>
-
-              <div className="js-biodata-section">
-                <h3 className="js-section-title">👨‍👩‍👧‍👦 Family Background 👨‍👩‍👧‍👦</h3>
-                <div className="js-info-grid">
-                  <div className="js-info-row"><strong>Father's Name:</strong> <span>{profile.father_name || 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Mother's Name:</strong> <span>{profile.mother_name || 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Siblings:</strong> <span>{profile.siblings || 'Not Provided'}</span></div>
-                  <div className="js-info-row"><strong>Maternal Uncle:</strong> <span>{profile.maternal_uncle || 'Not Provided'}</span></div>
-                </div>
-              </div>
-
-              <div className="js-biodata-footer">
-                <p>Generated via <strong>SakharPuda Matrimony</strong></p>
-                <p>www.sakharpuda.com</p>
-              </div>
-            </div>
-          </div>
+            </div>{/* /bm-body */}
+          </div>{/* /bm-modal */}
         </div>
       )}
 
@@ -825,50 +1276,300 @@ export default function ViewProfilePage() {
         .js-usp-btn.guna { border-color: #F47A20; background: #F47A20; color: #fff; }
         .js-usp-btn.guna:hover { background: #ea580c; border-color: #ea580c; }
 
-        /* BioData Modal */
+        /* BioData Modal - Fully Responsive */
         .js-biodata-overlay {
-          position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+          position: fixed; inset: 0; background: rgba(0,0,0,0.95);
           z-index: 3000; display: flex; align-items: flex-start; justify-content: center;
-          overflow-y: auto; padding: 40px 20px; backdrop-filter: blur(4px);
+          overflow-y: auto; padding: 10px; backdrop-filter: blur(12px);
         }
         .js-biodata-modal {
-          width: 100%; max-width: 700px; background: #fff;
-          border-radius: 12px; overflow: hidden; position: relative;
-          box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+          width: 100%; max-width: 850px; background: #fff;
+          border-radius: 20px; overflow: hidden; position: relative;
+          box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+          margin: 20px auto 40px;
         }
+
+        /* ── NEW BM BIODATA MAKER ── */
+        .bm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 3000; display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 0; backdrop-filter: blur(12px); }
+        .bm-modal { width: 100%; max-width: 1300px; background: #fff; border-radius: 0 0 20px 20px; overflow: hidden; display: flex; flex-direction: column; height: 100vh; min-height: 100vh; }
+
+        /* Toolbar */
+        .bm-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: #1e293b; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+        .bm-toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .bm-toolbar-right { display: flex; align-items: center; gap: 8px; }
+        .bm-toolbar-label { font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .bm-lang-toggle { display: flex; background: #334155; border-radius: 8px; overflow: hidden; }
+        .bm-lang-toggle button { padding: 5px 14px; border: none; background: transparent; color: #94a3b8; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .bm-lang-toggle button.active { background: #F47A20; color: #fff; }
+        .bm-theme-pill { padding: 5px 12px; border: 1.5px solid #475569; border-radius: 20px; background: transparent; color: #94a3b8; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+        .bm-theme-pill.active { border-color: #F47A20; background: #F47A20; color: #fff; }
+        .bm-theme-pill:hover:not(.active) { border-color: #F47A20; color: #F47A20; }
+        .bm-btn-undo { padding: 6px 12px; border: 1.5px solid #475569; border-radius: 8px; background: transparent; color: #94a3b8; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .bm-btn-undo:disabled { opacity: 0.3; cursor: not-allowed; }
+        .bm-btn-print { display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: #F47A20; border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
+        .bm-btn-close { width: 34px; height: 34px; border-radius: 8px; border: 1px solid #475569; background: transparent; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* Split body */
+        .bm-body { display: flex; flex: 1; overflow: hidden; }
+
+        /* LEFT EDITOR */
+        .bm-editor { width: 42%; min-width: 320px; overflow-y: auto; background: #0f172a; padding: 16px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+        .bm-editor-section { background: #1e293b; border-radius: 12px; padding: 14px; }
+        .bm-editor-sec-title { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: #F47A20; margin-bottom: 10px; }
+        .bm-editor-sec-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .bm-sec-title-input { flex: 1; padding: 6px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 13px; font-weight: 700; font-family: inherit; }
+        .bm-sec-title-input::placeholder { color: #475569; }
+        .bm-sec-btns { display: flex; gap: 4px; }
+        .bm-sec-move { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #94a3b8; cursor: pointer; font-size: 13px; }
+        .bm-sec-del { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #7f1d1d; background: #450a0a; color: #fca5a5; cursor: pointer; font-size: 13px; }
+        .bm-field-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+        .bm-field-label { width: 38%; padding: 6px 8px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #cbd5e1; font-size: 12px; font-family: inherit; }
+        .bm-field-value { flex: 1; padding: 6px 8px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #f1f5f9; font-size: 12px; font-family: inherit; }
+        .bm-colon { color: #475569; font-weight: 700; }
+        .bm-field-add { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #16a34a; background: #052e16; color: #4ade80; cursor: pointer; font-size: 16px; line-height: 1; }
+        .bm-field-del { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #991b1b; background: #3b0606; color: #fca5a5; cursor: pointer; font-size: 16px; line-height: 1; }
+        .bm-add-section-below { width: 100%; margin-top: 10px; padding: 7px; background: transparent; border: 1.5px dashed #334155; border-radius: 8px; color: #64748b; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .bm-add-section-below:hover { border-color: #22c55e; color: #22c55e; }
+        .bm-ctrl-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .bm-select { flex: 1; padding: 6px 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 12px; }
+        .bm-upload-btn { padding: 6px 12px; background: #F47A20; border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .bm-small-label { font-size: 11px; color: #64748b; white-space: nowrap; }
+        .bm-check-label { display: flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 12px; cursor: pointer; }
+
+        /* RIGHT PREVIEW */
+        .bm-preview-wrap { flex: 1; overflow-y: auto; background: #e2e8f0; display: flex; justify-content: center; padding: 20px; }
+
+        /* THE CARD */
+        .bm-card { position: relative; width: 680px; min-height: 960px; padding: 30px 50px 50px; font-family: 'Noto Sans Devanagari', 'Hind', sans-serif; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+
+        /* Themes — reference screenshot: thick dark outer frame + cream interior */
+        .bm-card--cream      { background: #fff9f0; border: 10px solid #1a3a4a; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+        .bm-card--saffron    { background: #fff8ed; border: 10px solid #7a3010; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .bm-card--pink       { background: #fff0f5; border: 10px solid #5c1a38; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .bm-card--green      { background: #f0faf0; border: 10px solid #0d3d1a; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .bm-card--blue       { background: #f0f4ff; border: 10px solid #0d1a5c; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .bm-card--floral     { background: #fff5f8; border: 10px solid #b5476b; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .bm-card--gold       { background: #fffbf0; border: 10px solid #8b6914; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .bm-card--dark-royal { background: #1a1035; color: #e8d5ff; border: 10px solid #6a0dad; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .bm-card--dark-maroon{ background: #1a0808; color: #fce8e8; border: 10px solid #6b0000; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .bm-card--teal       { background: #f0fafa; border: 10px solid #0d4a4a; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .bm-card--modern     { background: #ffffff; border: 6px solid #F47A20; border-top: 20px solid #1e293b; }
+
+        /* Inner border decoration for traditional frames (standard CSS instead of inset box-shadow) */
+        .bm-card-inner-border {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          right: 8px;
+          bottom: 8px;
+          border: 3px solid transparent;
+          pointer-events: none;
+          border-radius: 4px;
+          z-index: 1;
+        }
+        .bm-card--cream .bm-card-inner-border       { border-color: #8b1a1a; }
+        .bm-card--saffron .bm-card-inner-border     { border-color: #c2591a; }
+        .bm-card--pink .bm-card-inner-border        { border-color: #9b2a5c; }
+        .bm-card--green .bm-card-inner-border       { border-color: #1a6b2a; }
+        .bm-card--blue .bm-card-inner-border        { border-color: #1a2b7a; }
+        .bm-card--floral .bm-card-inner-border      { border-color: #e8a0b8; }
+        .bm-card--gold .bm-card-inner-border        { border-color: #d4a017; }
+        .bm-card--dark-royal .bm-card-inner-border  { border-color: #b57bee; }
+        .bm-card--dark-maroon .bm-card-inner-border { border-color: #c0392b; }
+        .bm-card--teal .bm-card-inner-border        { border-color: #1a8a8a; }
+        .bm-card--modern .bm-card-inner-border      { display: none; }
+        /* Dark theme text overrides */
+        .bm-card--dark-royal .bm-card-label, .bm-card--dark-royal .bm-god-text, .bm-card--dark-royal .bm-card-title, .bm-card--dark-royal .bm-card-sec-title { color: #d4aaff; }
+        .bm-card--dark-royal .bm-card-colon { color: #e8d5ff; }
+        .bm-card--dark-royal .bm-card-value { color: #f0e8ff; }
+        .bm-card--dark-maroon .bm-card-label, .bm-card--dark-maroon .bm-god-text, .bm-card--dark-maroon .bm-card-title, .bm-card--dark-maroon .bm-card-sec-title { color: #ffaaaa; }
+        .bm-card--dark-maroon .bm-card-colon { color: #fce8e8; }
+        .bm-card--dark-maroon .bm-card-value { color: #fff0f0; }
+        /* Floral / Gold / Teal label colors */
+        .bm-card--floral .bm-card-label, .bm-card--floral .bm-god-text, .bm-card--floral .bm-card-title, .bm-card--floral .bm-card-sec-title { color: #b5476b; }
+        .bm-card--gold   .bm-card-label, .bm-card--gold   .bm-god-text, .bm-card--gold   .bm-card-title, .bm-card--gold   .bm-card-sec-title { color: #8b6914; }
+        .bm-card--teal   .bm-card-label, .bm-card--teal   .bm-god-text, .bm-card--teal   .bm-card-title, .bm-card--teal   .bm-card-sec-title { color: #0d4a4a; }
+
+        /* Draggable deity */
+        .bm-drag-god { position: absolute; cursor: move; z-index: 10; touch-action: none; }
+        .bm-drag-god:hover { outline: 2px dashed #F47A20; outline-offset: 3px; }
+        .bm-drag-photo { position: absolute; cursor: move; z-index: 10; touch-action: none; }
+        .bm-drag-photo:hover { outline: 2px dashed #F47A20; outline-offset: 3px; }
+        .bm-photo-frame { overflow: hidden; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); background: #fff; }
+
+        /* Card header — 3-column flex */
+        .bm-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+        .bm-card-header-god { flex: 0 0 auto; min-width: 110px; max-width: 160px; }
+        .bm-card-header-center { flex: 1; text-align: center; overflow: hidden; }
+        .bm-card-header-spacer { flex: 0 0 auto; min-width: 110px; max-width: 160px; }
+        .bm-god-text { font-size: 13px; color: #8b1a1a; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
+        .bm-card-title { font-size: 26px; font-weight: 900; color: #8b1a1a; margin: 2px 0 0; letter-spacing: 2px; white-space: nowrap; font-family: 'Noto Sans Devanagari', serif; }
+        .bm-card--blue .bm-god-text, .bm-card--blue .bm-card-title { color: #1a2b7a; }
+        .bm-card--green .bm-god-text, .bm-card--green .bm-card-title { color: #1a6b2a; }
+        .bm-card--pink .bm-god-text, .bm-card--pink .bm-card-title { color: #9b2a5c; }
+        .bm-card--modern .bm-god-text, .bm-card--modern .bm-card-title { color: #F47A20; }
+
+        /* Card sections */
+        .bm-card-section { margin-bottom: 18px; }
+        .bm-card-sec-title { font-size: 15px; font-weight: 900; color: #8b1a1a; text-align: center; margin-bottom: 10px; letter-spacing: 1px; }
+        .bm-card--blue .bm-card-sec-title { color: #1a2b7a; }
+        .bm-card--green .bm-card-sec-title { color: #1a6b2a; }
+        .bm-card--pink .bm-card-sec-title { color: #9b2a5c; }
+        .bm-card--modern .bm-card-sec-title { color: #F47A20; }
+
+        /* Fields — CSS Grid so all colons align to the longest label */
+        .bm-card-fields { display: grid; grid-template-columns: max-content auto 1fr; row-gap: 5px; column-gap: 0; }
+        .bm-card-fields--sec1 { flex: 1; display: grid; grid-template-columns: max-content auto 1fr; row-gap: 5px; }
+        .bm-sec1-layout { display: flex; gap: 16px; align-items: flex-start; }
+        .bm-sec1-photo { flex-shrink: 0; display: flex; align-items: flex-start; }
+        .bm-card-field-row { display: contents; }
+        .bm-card-label { font-size: 14px; font-weight: 700; color: #8b1a1a; white-space: nowrap; padding-right: 2px; align-self: start; line-height: 1.6; }
+        .bm-card--blue .bm-card-label { color: #1a2b7a; }
+        .bm-card--green .bm-card-label { color: #1a6b2a; }
+        .bm-card--pink .bm-card-label { color: #9b2a5c; }
+        .bm-card--modern .bm-card-label { color: #F47A20; }
+        .bm-card-colon { color: #333; font-weight: 700; padding: 0 6px 0 2px; align-self: start; line-height: 1.6; white-space: nowrap; }
+        .bm-card-value { color: #222; font-weight: 500; font-size: 14px; line-height: 1.6; align-self: start; word-break: break-word; }
+        .bm-card-footer { margin-top: 30px; border-top: 1px solid #ccc; padding-top: 10px; text-align: center; font-size: 12px; color: #999; letter-spacing: 1px; }
+
+        /* Mobile responsive for split panel */
+        @media (max-width: 768px) {
+          .bm-modal { height: auto; min-height: 100vh; border-radius: 0; }
+          .bm-body { flex-direction: column; }
+          .bm-editor { width: 100%; min-width: 0; height: auto; }
+          .bm-preview-wrap { padding: 8px; }
+          .bm-card { width: 100%; min-height: auto; padding: 20px 16px 30px; }
+          .bm-card-header { gap: 6px; }
+          .bm-card-header-god { min-width: 70px; max-width: 90px; }
+          .bm-card-header-spacer { min-width: 70px; max-width: 90px; }
+          .bm-card-title { font-size: 16px; letter-spacing: 0; }
+          .bm-god-text { font-size: 11px; }
+          .bm-card-label, .bm-card-value, .bm-card-colon { font-size: 11px; }
+          .bm-toolbar { flex-wrap: wrap; }
+          .bm-sec1-layout { gap: 8px; }
+        }
+
+        /* Print */
+        @media print {
+          .no-print { display: none !important; }
+          .bm-overlay { position: static; background: #fff; display: block; }
+          .bm-modal { height: auto; display: block; border-radius: 0; }
+          .bm-body { display: block; }
+          .bm-editor { display: none !important; }
+          .bm-preview-wrap { padding: 0; background: #fff; display: block; }
+          .bm-card { width: 100%; box-shadow: none; border: 6px double #8b1a1a; min-height: auto; }
+        }
+
+        
         .js-biodata-actions {
-          padding: 15px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+          padding: 10px 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
           display: flex; justify-content: space-between; align-items: center;
+          gap: 10px; position: sticky; top: 0; z-index: 200;
         }
+        .js-lang-toggle {
+          display: flex; background: #e2e8f0; padding: 2px; border-radius: 6px; gap: 2px;
+        }
+        .js-lang-btn {
+          padding: 4px 10px; border: none; border-radius: 4px; font-size: 11px; font-weight: 800;
+          cursor: pointer; transition: all 0.2s; background: transparent; color: #64748b;
+        }
+        .js-lang-btn.active { background: #fff; color: #F47A20; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* Responsive Toolbar - Scrollable */
+        .js-biodata-toolbar {
+          padding: 10px 15px; background: #fff; border-bottom: 2px solid #F47A20;
+          display: flex; gap: 12px; align-items: center; overflow-x: auto;
+          scrollbar-width: none; -ms-overflow-style: none; white-space: nowrap;
+        }
+        .js-biodata-toolbar::-webkit-scrollbar { display: none; }
+        
+        .js-tool-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .js-tool-group label { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        .js-tool-group select { padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; background: #f8fafc; }
+        
         .js-action-btn {
-          background: #1e293b; color: #fff; border: none; padding: 8px 16px;
-          border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;
+          background: #1e293b; color: #fff; border: none; padding: 6px 12px;
+          border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer;
+          display: flex; align-items: center; gap: 4px; flex-shrink: 0;
         }
-        .js-close-btn { background: none; border: none; color: #64748b; cursor: pointer; }
+        .js-action-btn.secondary { background: #fff; color: #f47a20; border: 1.5px solid #f47a20; }
+        .js-action-btn.undo { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
+        .js-mini-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .js-mini-btn.js-upload-full { width: auto; padding: 0 12px; font-size: 11px; font-weight: 700; gap: 6px; color: #475569; }
+        .js-mini-btn:hover { border-color: #F47A20; background: #fffcf9; color: #F47A20; }
+
+        /* Document Preview with Smart Scaling */
+        .js-biodata-preview-wrap {
+          width: 100%; overflow: hidden; background: #f1f5f9;
+          display: flex; flex-direction: column; align-items: center;
+          padding: 40px 0;
+        }
         .js-biodata-content {
-          padding: 60px; background: #fff; color: #1e293b;
-          background-image: radial-gradient(#f1f5f9 1px, transparent 1px);
-          background-size: 20px 20px;
+          position: relative; min-height: 1100px; padding: 60px 50px; 
+          background: #fff; color: #1e293b;
+          transform-origin: top center;
+          width: 800px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-        .js-biodata-header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #F47A20; padding-bottom: 20px; }
-        .js-biodata-symbol { font-size: 32px; margin-bottom: 10px; }
-        .js-biodata-header h1 { font-family: 'Georgia', serif; color: #F47A20; margin-bottom: 5px; font-size: 28px; }
-        .js-biodata-header h2 { font-size: 16px; color: #64748b; letter-spacing: 2px; text-transform: uppercase; }
+        
+        @media (max-width: 820px) {
+          .js-biodata-preview-wrap { padding: 20px 0; }
+          .js-biodata-content {
+            transform: scale(calc((100vw - 40px) / 800));
+            /* Adjust parent height to compensate for scale */
+            margin-bottom: calc(-1100px * (1 - (100vw - 40px) / 800));
+          }
+        }
 
-        .js-biodata-section { margin-bottom: 30px; }
+        .js-biodata-header { text-align: center; margin-bottom: 50px; position: relative; min-height: 100px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .js-biodata-header h1 { font-family: 'Georgia', serif; color: #F47A20; margin-bottom: 5px; font-size: 32px; font-weight: 900; }
+        .js-biodata-header h2 { font-size: 14px; color: #94a3b8; letter-spacing: 4px; text-transform: uppercase; font-weight: 700; }
+
+        .js-drag-wrapper { position: absolute; cursor: move; z-index: 50; touch-action: none; transition: transform 0.1s; }
+        .js-drag-wrapper:hover { outline: 2px dashed #F47A20; outline-offset: 4px; border-radius: 4px; }
+        .js-drag-wrapper:active { transform: scale(1.05); opacity: 0.8; }
+        
+        .js-design-photo-box { border: 3px solid #F47A20; border-radius: 12px; overflow: hidden; background: #f8fafc; box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+
+        .js-biodata-section { margin-bottom: 40px; border: 1px solid transparent; transition: all 0.2s; position: relative; padding: 10px; }
+        .js-biodata-section:hover { background: rgba(244, 122, 32, 0.02); border-radius: 12px; border-color: rgba(244, 122, 32, 0.1); }
+        
         .js-section-title {
-          font-size: 14px; text-transform: uppercase; color: #F47A20;
-          letter-spacing: 1px; font-weight: 800; border-bottom: 1px solid #fecaca;
-          padding-bottom: 8px; margin-bottom: 15px; text-align: center;
+          font-size: 16px; text-transform: uppercase; color: #F47A20;
+          letter-spacing: 2px; font-weight: 900; border-bottom: 2.5px solid #F47A20;
+          padding-bottom: 10px; margin-bottom: 25px; text-align: center;
         }
-        .js-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .js-info-row { font-size: 15px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px; }
-        .js-info-row strong { color: #475569; display: inline-block; width: 140px; }
+        
+        .js-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; }
+        .js-info-row-container { display: flex; align-items: center; gap: 10px; position: relative; }
+        .js-info-row { flex: 1; font-size: 15px; border-bottom: 1.5px dashed #f1f5f9; padding-bottom: 8px; display: flex; gap: 15px; align-items: baseline; }
+        .js-info-row strong { color: #64748b; min-width: 130px; flex-shrink: 0; font-weight: 700; }
+        .js-info-row span { color: #1e293b; font-weight: 700; flex: 1; word-break: break-word; }
+
+        .js-row-remove { 
+          width: 24px; height: 24px; border-radius: 6px; background: #fff1f2; color: #e11d48; 
+          border: 1px solid #fecdd3; display: flex; align-items: center; justify-content: center; 
+          font-size: 14px; cursor: pointer; opacity: 0; transition: all 0.2s;
+        }
+        .js-info-row-container:hover .js-row-remove { opacity: 1; transform: scale(1.1); }
+        
+        .js-sec-actions { position: absolute; right: 0; top: -35px; display: flex; gap: 10px; opacity: 0; transition: all 0.2s; z-index: 10; }
+        .js-biodata-section:hover .js-sec-actions { opacity: 1; }
+        .js-sec-btn { font-size: 11px; font-weight: 900; padding: 5px 12px; border-radius: 8px; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .js-sec-btn.add { background: #22c55e; color: #fff; }
+        .js-sec-btn.remove { background: #ef4444; color: #fff; }
 
         .js-biodata-footer {
-          margin-top: 50px; text-align: center; border-top: 1px solid #e2e8f0;
-          padding-top: 20px; color: #94a3b8; font-size: 12px;
+          margin-top: 80px; text-align: center; border-top: 1.5px solid #f1f5f9;
+          padding-top: 30px; color: #94a3b8; font-size: 13px; font-style: italic; letter-spacing: 1px;
+        }
+
+        @media print {
+          .no-print { display: none !important; }
+          .js-biodata-overlay { background: #fff; padding: 0; display: block; position: static; overflow: visible; }
+          .js-biodata-modal { box-shadow: none; border-radius: 0; max-width: 100%; border: none; margin: 0; width: 100%; }
+          .js-biodata-preview-wrap { padding: 0; background: #fff; }
+          .js-biodata-content { padding: 50px; transform: none !important; margin: 0 !important; width: 100% !important; box-shadow: none; min-height: auto; }
         }
 
         /* Kundali Results */
