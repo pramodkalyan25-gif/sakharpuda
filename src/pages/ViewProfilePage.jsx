@@ -812,24 +812,33 @@ export default function ViewProfilePage() {
                   <button className={biodataLang === 'mr' ? 'active' : ''} onClick={() => setBiodataLang('mr')}>मराठी</button>
                   <button className={biodataLang === 'en' ? 'active' : ''} onClick={() => setBiodataLang('en')}>English</button>
                 </div>
-                {/* Theme pills */}
+                
+                {/* Theme Dropdown to save maximum space */}
                 <span className="bm-toolbar-label">Theme:</span>
-                {[
-                  { key: 'cream',       label: '🏺 Cream' },
-                  { key: 'saffron',     label: '🌸 Saffron' },
-                  { key: 'pink',        label: '🌷 Rose' },
-                  { key: 'green',       label: '🍃 Green' },
-                  { key: 'blue',        label: '🌊 Navy' },
-                  { key: 'floral',      label: '🌺 Floral' },
-                  { key: 'gold',        label: '✨ Gold' },
-                  { key: 'dark-royal',  label: '👑 Dark Royal' },
-                  { key: 'dark-maroon', label: '🍷 Dark Maroon' },
-                  { key: 'teal',        label: '🦚 Teal' },
-                  { key: 'modern',      label: '⚡ Modern' },
-                ].map(t => (
-                  <button key={t.key} className={`bm-theme-pill ${bgType === t.key ? 'active' : ''}`}
-                    onClick={() => setBgType(t.key)}>{t.label}</button>
-                ))}
+                <select className="bm-theme-select" value={bgType} onChange={e => setBgType(e.target.value)}>
+                  <option value="cream">🏺 Cream</option>
+                  <option value="saffron">🌸 Saffron</option>
+                  <option value="pink">🌷 Rose</option>
+                  <option value="green">🍃 Green</option>
+                  <option value="blue">🌊 Navy</option>
+                  <option value="floral">🌺 Floral</option>
+                  <option value="gold">✨ Gold</option>
+                  <option value="dark-royal">👑 Dark Royal</option>
+                  <option value="dark-maroon">🍷 Dark Maroon</option>
+                  <option value="teal">🦚 Teal</option>
+                  <option value="modern">⚡ Modern</option>
+                </select>
+
+                {/* Google Transliteration Status (Dynamic feedback button) */}
+                {translitStatus === 'active' ? (
+                  <button className="bm-status-btn bm-status-btn--success" disabled title="Google Transliteration Service is active and working successfully.">
+                    Google Translator ✔
+                  </button>
+                ) : (
+                  <button className="bm-status-btn bm-status-btn--danger" disabled title="Google Transliteration Service is disconnected. Using offline fallback dictionary.">
+                    Google Translator
+                  </button>
+                )}
               </div>
               <div className="bm-toolbar-right">
                 <button className="bm-btn-undo" onClick={undo} disabled={history.length < 2} title="Ctrl+Z">↩ Undo</button>
@@ -947,20 +956,6 @@ export default function ViewProfilePage() {
 
               <div className="bm-preview-wrap">
                 <div className="bm-preview-container">
-                  
-                  {/* Google Transliteration Status Button (Dynamic feedback indicator) */}
-                  <div className="bm-api-status-bar no-print">
-                    {translitStatus === 'active' ? (
-                      <button className="bm-status-btn bm-status-btn--success" disabled>
-                        <span className="bm-status-dot">●</span> Google Transliterator Connected
-                      </button>
-                    ) : (
-                      <button className="bm-status-btn bm-status-btn--danger" disabled>
-                        <span className="bm-status-dot">●</span> Google Transliterator Offline (Fallback Active)
-                      </button>
-                    )}
-                  </div>
-
                   <div className={`bm-card bm-card--${bgType}`} id="biodata-to-print">
                     <div className="bm-card-inner-border"></div>
 
@@ -1359,9 +1354,8 @@ export default function ViewProfilePage() {
         .bm-lang-toggle { display: flex; background: #334155; border-radius: 8px; overflow: hidden; }
         .bm-lang-toggle button { padding: 5px 14px; border: none; background: transparent; color: #94a3b8; font-size: 12px; font-weight: 700; cursor: pointer; }
         .bm-lang-toggle button.active { background: #F47A20; color: #fff; }
-        .bm-theme-pill { padding: 5px 12px; border: 1.5px solid #475569; border-radius: 20px; background: transparent; color: #94a3b8; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-        .bm-theme-pill.active { border-color: #F47A20; background: #F47A20; color: #fff; }
-        .bm-theme-pill:hover:not(.active) { border-color: #F47A20; color: #F47A20; }
+        .bm-theme-select { padding: 6px 12px; border: 1.5px solid #475569; border-radius: 8px; background: #334155; color: #f1f5f9; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; transition: all 0.15s; border-radius: 8px; font-family: inherit; }
+        .bm-theme-select:hover, .bm-theme-select:focus { border-color: #F47A20; background: #1e293b; color: #fff; }
         .bm-btn-undo { padding: 6px 12px; border: 1.5px solid #475569; border-radius: 8px; background: transparent; color: #94a3b8; font-size: 11px; font-weight: 700; cursor: pointer; }
         .bm-btn-undo:disabled { opacity: 0.3; cursor: not-allowed; }
         .bm-btn-print { display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: #F47A20; border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
