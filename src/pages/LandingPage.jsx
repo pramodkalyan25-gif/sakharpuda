@@ -132,8 +132,8 @@ export default function LandingPage() {
         <div className="container hero-content-rel">
           {/* Mobile: Simple CTA with tagline + button (Jeevansathi style) */}
           <div className="hero-mobile-cta mobile-only">
-            <h2 className="hero-mobile-tagline">Find Your Perfect Life Partner</h2>
-            <p className="hero-mobile-subtitle">The most trusted and secure premium matrimony platform</p>
+            <h2 className="hero-mobile-tagline">Built by a Maharashtrian, For Maharashtrians</h2>
+            <p className="hero-mobile-subtitle">Because we understand Maharashtrian culture, traditions and values</p>
             <button className="hero-mobile-register-btn" onClick={() => navigate('/register')}>Register Here</button>
             <p className="reg-terms-tiny" style={{ marginTop: '10px', color: 'rgba(255,255,255,0.8)' }}>
               By clicking on 'Register Here', you confirm that you accept the
@@ -147,8 +147,8 @@ export default function LandingPage() {
       <section className="trust-section-overlap">
         <div className="container">
           <div className="trust-tagline-container">
-            <h2 className="tagline-main">Find Your Perfect Life Partner</h2>
-            <p className="tagline-sub">The most trusted and secure premium matrimony platform</p>
+            <h2 className="tagline-main">Built by a Maharashtrian, For Maharashtrians</h2>
+            <p className="tagline-sub">Because we understand Maharashtrian culture, traditions and values</p>
           </div>
           <div className="trust-card-main">
             {/* TRUST SECTION */}
