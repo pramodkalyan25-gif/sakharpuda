@@ -349,8 +349,39 @@ export default function RegistrationPage() {
 
   const handleResendOTP = async () => {
     if (resendTimer > 0) return;
+
+    const isEmailValid = validateEmail(formData.email);
+    const isMobileValid = validateMobile(formData.mobile);
+
+    if (!isEmailValid || !isMobileValid) {
+      toast.error('Please enter a valid mobile number and email first.');
+      return;
+    }
+
     setIsVerifyingEmail(true);
     try {
+      // 1. Check Mobile & Email simultaneously using RPCs (completed profiles only)
+      const [mobileExists, emailExists] = await Promise.all([
+        authService.checkMobileExists(formData.mobile),
+        authService.checkEmailExists(formData.email)
+      ]);
+
+      if (mobileExists && emailExists) {
+        toast.error('Both Mobile Number and Email ID are already registered. Please login.');
+        setIsVerifyingEmail(false);
+        return;
+      }
+      if (mobileExists) {
+        toast.error('This Mobile Number is already registered.');
+        setIsVerifyingEmail(false);
+        return;
+      }
+      if (emailExists) {
+        toast.error('This Email ID is already registered.');
+        setIsVerifyingEmail(false);
+        return;
+      }
+
       await authService.sendSignupOTP(formData.email);
       toast.success(`New verification code sent to ${formData.email}`);
       setResendTimer(60);
