@@ -19,6 +19,17 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Inject noindex meta tag to prevent search engines from indexing the register page
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, []);
+
   const handleSignup = async (e) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {

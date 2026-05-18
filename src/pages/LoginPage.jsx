@@ -32,6 +32,17 @@ export default function LoginPage() {
     }
   }, [authLoading, user, profile, navigate, from]);
 
+  // Inject noindex meta tag to prevent search engines from indexing the login page
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, []);
+
   // --- Handlers ---
 
   const handlePasswordLogin = async (e) => {
