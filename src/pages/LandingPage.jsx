@@ -251,7 +251,7 @@ export default function LandingPage() {
                   <div className="mobile-mockup-frame">
                     <div className="mockup-screen scrollable-side">
                       <div className="usp-mockup-slide" id="usp-slide-1">
-                        <img src="/images/exclusive/Gemini_Generated_Image_e9s2bwe9s2bwe9s2.png" alt="Identity-Driven Transformation" />
+                        <img src="/images/exclusive/Gemini_Generated_Image_e9s2bwe9s2bwe9s2.jpg" loading="lazy" alt="Identity-Driven Transformation" />
                         <div className="floating-badge top-right animate-pop">
                           <span className="badge-icon red"><User size={14} /></span>
                           <span>Highly Compatible Match</span>
@@ -259,7 +259,7 @@ export default function LandingPage() {
                       </div>
 
                       <div className="usp-mockup-slide" id="usp-slide-2">
-                        <img src="/images/exclusive/Gemini_Generated_Image_vs0bnvs0bnvs0bnv.png" alt="Relevant Matches" />
+                        <img src="/images/exclusive/Gemini_Generated_Image_vs0bnvs0bnvs0bnv.jpg" loading="lazy" alt="Relevant Matches" />
                         <div className="floating-badge top-left animate-pop">
                           <span className="badge-icon pink"><Settings size={14} /></span>
                           <span>Hyper-Relevant</span>
@@ -267,7 +267,7 @@ export default function LandingPage() {
                       </div>
 
                       <div className="usp-mockup-slide" id="usp-slide-3">
-                        <img src="/images/exclusive/Gemini_Generated_Image_yyl2ylyyl2ylyyl2.png" alt="Total Privacy" />
+                        <img src="/images/exclusive/Gemini_Generated_Image_yyl2ylyyl2ylyyl2.jpg" loading="lazy" alt="Total Privacy" />
                         <div className="floating-badge top-right animate-pop">
                           <span className="badge-icon red"><ArrowRight size={14} /></span>
                           <span>Complete Privacy</span>
@@ -379,7 +379,7 @@ export default function LandingPage() {
               </div>
 
               <div className="exclusive-image-container">
-                <img src="/images/exclusive-banner-new.png" alt="Exclusive Service" className="exclusive-img" />
+                <img src="/images/exclusive-banner-new.jpg" loading="lazy" alt="Exclusive Service" className="exclusive-img" />
               </div>
 
               <div className="exclusive-features-grid">
@@ -649,7 +649,7 @@ export default function LandingPage() {
           min-height: 580px;
           background: 
             linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), 
-            url('/images/hero-bg-final.png') left center / cover no-repeat;
+            url('/images/hero-bg-final.jpg') left center / cover no-repeat;
           position: relative;
           display: flex;
           align-items: center;
