@@ -301,6 +301,77 @@ export default function RegistrationPage() {
     }
   };
 
+  const checkEmailDeliverability = async (email) => {
+    const parts = email.trim().toLowerCase().split('@');
+    if (parts.length !== 2) return { isValid: false, message: 'Entered emailid is not valid.' };
+    const [localPart, domain] = parts;
+
+    const typoMap = {
+      'gamil.com': 'gmail.com',
+      'gmial.com': 'gmail.com',
+      'gmal.com': 'gmail.com',
+      'gmaill.com': 'gmail.com',
+      'gamil.co': 'gmail.com',
+      'gmail.co': 'gmail.com',
+      'gmail.con': 'gmail.com',
+      'gamil.net': 'gmail.com',
+      'gamil.org': 'gmail.com',
+      'yaho.com': 'yahoo.com',
+      'yaboo.com': 'yahoo.com',
+      'yahou.com': 'yahoo.com',
+      'yahoo.co': 'yahoo.com',
+      'yahoo.con': 'yahoo.com',
+      'outlok.com': 'outlook.com',
+      'outlook.co': 'outlook.com',
+      'outlook.con': 'outlook.com',
+      'hotail.com': 'hotmail.com',
+      'hotmal.com': 'hotmail.com',
+      'hotmail.co': 'hotmail.com',
+      'hotmail.con': 'hotmail.com',
+      'redifmail.com': 'rediffmail.com',
+      'rediff.com': 'rediffmail.com',
+      'iclod.com': 'icloud.com',
+      'icloud.co': 'icloud.com',
+      'icloud.con': 'icloud.com',
+    };
+
+    if (typoMap[domain]) {
+      const suggestion = `${localPart}@${typoMap[domain]}`;
+      return { 
+        isValid: false, 
+        message: `Entered emailid is not valid. Did you mean ${suggestion}?` 
+      };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+      const response = await fetch(`https://dns.google/resolve?name=${domain}&type=MX`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+      
+      if (data.Status === 3) {
+        return { isValid: false, message: 'Entered emailid is not valid (the domain does not exist).' };
+      }
+
+      const hasMX = data.Answer && data.Answer.length > 0;
+      if (!hasMX) {
+        const majorDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'aol.com', 'zoho.com', 'protonmail.com', 'rediffmail.com', 'live.com'];
+        if (!majorDomains.includes(domain)) {
+          return { isValid: false, message: 'Entered emailid is not valid (the domain cannot receive emails).' };
+        }
+      }
+    } catch (err) {
+      console.warn('DNS MX check failed/timed out, skipping:', err);
+    }
+
+    return { isValid: true };
+  };
+
   const handleVerifyEmail = async () => {
     const isEmailValid = validateEmail(formData.email);
     const isMobileValid = validateMobile(formData.mobile);
@@ -312,6 +383,13 @@ export default function RegistrationPage() {
 
     setIsVerifyingEmail(true);
     try {
+      // 0. Perform email deliverability checks
+      const deliverability = await checkEmailDeliverability(formData.email);
+      if (!deliverability.isValid) {
+        toast.error(deliverability.message);
+        return;
+      }
+
       // 1. Check Mobile & Email simultaneously
       const [mobileExists, emailExists] = await Promise.all([
         authService.checkMobileExists(formData.mobile),
@@ -320,17 +398,14 @@ export default function RegistrationPage() {
 
       if (mobileExists && emailExists) {
         toast.error('Both Mobile Number and Email ID are already registered. Please login.');
-        setIsVerifyingEmail(false);
         return;
       }
       if (mobileExists) {
         toast.error('This Mobile Number is already registered.');
-        setIsVerifyingEmail(false);
         return;
       }
       if (emailExists) {
         toast.error('This Email ID is already registered.');
-        setIsVerifyingEmail(false);
         return;
       }
 
@@ -360,6 +435,13 @@ export default function RegistrationPage() {
 
     setIsVerifyingEmail(true);
     try {
+      // 0. Perform email deliverability checks
+      const deliverability = await checkEmailDeliverability(formData.email);
+      if (!deliverability.isValid) {
+        toast.error(deliverability.message);
+        return;
+      }
+
       // 1. Check Mobile & Email simultaneously using RPCs (completed profiles only)
       const [mobileExists, emailExists] = await Promise.all([
         authService.checkMobileExists(formData.mobile),
@@ -368,17 +450,14 @@ export default function RegistrationPage() {
 
       if (mobileExists && emailExists) {
         toast.error('Both Mobile Number and Email ID are already registered. Please login.');
-        setIsVerifyingEmail(false);
         return;
       }
       if (mobileExists) {
         toast.error('This Mobile Number is already registered.');
-        setIsVerifyingEmail(false);
         return;
       }
       if (emailExists) {
         toast.error('This Email ID is already registered.');
-        setIsVerifyingEmail(false);
         return;
       }
 

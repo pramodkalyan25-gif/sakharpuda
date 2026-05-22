@@ -1,0 +1,160 @@
+
+# Project Structure
+
+Here is the file structure of your project (excluding `node_modules`, `.git`, and `dist`). You can keep this artifact open on the side for reference, just like a VS Code sidebar!
+
+```
+matrimony-app
+├── .env
+├── .gitignore
+├── check_admin.js
+├── index.html
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── public
+│   ├── ganesha.png
+│   ├── icons.svg
+│   ├── images
+│   │   ├── exclusive
+│   │   │   ├── Gemini_Generated_Image_e9s2bwe9s2bwe9s2.jpg
+│   │   │   ├── Gemini_Generated_Image_vs0bnvs0bnvs0bnv.jpg
+│   │   │   └── Gemini_Generated_Image_yyl2ylyyl2ylyyl2.jpg
+│   │   ├── exclusive-banner-new.jpg
+│   │   ├── hero-bg-final.jpg
+│   │   ├── logo.png
+│   │   ├── sakharpuda-logo.png
+│   │   └── unused
+│   │       ├── exclusive-banner-new.png
+│   │       ├── Gemini_Generated_Image_e9s2bwe9s2bwe9s2.png
+│   │       ├── Gemini_Generated_Image_vs0bnvs0bnvs0bnv.png
+│   │       ├── Gemini_Generated_Image_yyl2ylyyl2ylyyl2.png
+│   │       ├── hero-bg-custom.jpg
+│   │       ├── hero-bg-final.png
+│   │       ├── logo_backup.png
+│   │       └── usp-3.jpg
+│   ├── robots.txt
+│   └── sitemap.xml
+├── schema_dump.sql
+├── src
+│   ├── App-components.css
+│   ├── App-layout.css
+│   ├── App.css
+│   ├── App.jsx
+│   ├── assets
+│   │   ├── hero.png
+│   │   ├── typescript.svg
+│   │   └── vite.svg
+│   ├── components
+│   │   ├── auth
+│   │   │   ├── OTPInput.jsx
+│   │   │   └── PhoneVerifyModal.jsx
+│   │   ├── interests
+│   │   │   └── InterestList.jsx
+│   │   ├── profile
+│   │   │   ├── EditProfileModal.jsx
+│   │   │   ├── PhotoGallery.jsx
+│   │   │   ├── PhotoUpload.jsx
+│   │   │   ├── ProfileCard.jsx
+│   │   │   └── RegistrationWizard.jsx
+│   │   ├── search
+│   │   │   ├── SearchFilters.jsx
+│   │   │   └── SearchResults.jsx
+│   │   └── ui
+│   │       ├── Avatar.jsx
+│   │       ├── Badge.jsx
+│   │       ├── Button.jsx
+│   │       ├── ChatBot.css
+│   │       ├── ChatBot.jsx
+│   │       ├── ErrorBoundary.jsx
+│   │       ├── Footer.jsx
+│   │       ├── Input.jsx
+│   │       ├── MobileBottomNav.jsx
+│   │       ├── Modal.jsx
+│   │       ├── RightSidebar.jsx
+│   │       ├── ScrollToTop.jsx
+│   │       ├── Sidebar.jsx
+│   │       ├── Spinner.jsx
+│   │       └── TopNav.jsx
+│   ├── config
+│   │   └── supabaseClient.js
+│   ├── context
+│   │   ├── AuthContext.jsx
+│   │   └── AuthContextInstance.js
+│   ├── counter.ts
+│   ├── data
+│   │   └── maharashtraData.js
+│   ├── hooks
+│   │   ├── useAuth.js
+│   │   ├── useInterests.js
+│   │   └── useProfile.js
+│   ├── index.css
+│   ├── main.jsx
+│   ├── main.ts
+│   ├── pages
+│   │   ├── AboutPage.jsx
+│   │   ├── AdminPage.jsx
+│   │   ├── ChatPage.css
+│   │   ├── ChatPage.jsx
+│   │   ├── ContactPage.jsx
+│   │   ├── CreateProfilePage.jsx
+│   │   ├── CreateProfileWizard.css
+│   │   ├── DashboardPage.jsx
+│   │   ├── FraudAlertPage.jsx
+│   │   ├── GrievancePage.jsx
+│   │   ├── HelpPage.jsx
+│   │   ├── InboxPage.jsx
+│   │   ├── InterestsPage.jsx
+│   │   ├── LandingPage.jsx
+│   │   ├── LoginPage.jsx
+│   │   ├── MyMatchesPage.jsx
+│   │   ├── PrivacyPage.jsx
+│   │   ├── RegisterPage.jsx
+│   │   ├── RegistrationPage.jsx
+│   │   ├── ResetPasswordPage.jsx
+│   │   ├── SafetyCenterPage.jsx
+│   │   ├── SearchPage.jsx
+│   │   ├── SettingsPage.jsx
+│   │   ├── ShortlistedPage.jsx
+│   │   ├── TermsPage.jsx
+│   │   ├── ViewProfilePage.jsx
+│   │   └── wizardData.js
+│   ├── router
+│   │   ├── AdminRoute.jsx
+│   │   └── ProtectedRoute.jsx
+│   ├── services
+│   │   ├── adminService.js
+│   │   ├── aiService.js
+│   │   ├── authService.js
+│   │   ├── chatService.js
+│   │   ├── contactService.js
+│   │   ├── interestService.js
+│   │   ├── phoneService.js
+│   │   ├── photoService.js
+│   │   ├── profileService.js
+│   │   ├── reportService.js
+│   │   ├── searchService.js
+│   │   └── shortlistService.js
+│   ├── style.css
+│   └── styles
+│       └── App-layout.css
+├── supabase
+│   ├── fix_rls.sql
+│   ├── migrate_chat.js
+│   ├── migration_add_columns.sql
+│   ├── migration_add_is_admin.sql
+│   ├── migration_add_messages.sql
+│   ├── migration_add_reports.sql
+│   ├── migration_add_shortlists.sql
+│   ├── rls_policies.sql
+│   ├── schema.sql
+│   ├── SETUP.md
+│   ├── storage.sql
+│   ├── triggers.sql
+│   └── update_checks.sql
+├── temp_original.jsx
+├── tsconfig.json
+├── vercel.json
+└── vite.config.js
+
+```
