@@ -237,3 +237,78 @@ CREATE POLICY "views_select_own_profile"
 --
 -- DELETE policy: auth.uid()::text = (storage.foldername(name))[1]
 --   → Users can only delete their own files
+
+
+-- ============================================================
+-- MESSAGES POLICIES
+-- ============================================================
+
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "messages_select" ON messages FOR SELECT
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+CREATE POLICY "messages_insert" ON messages FOR INSERT
+  WITH CHECK (auth.uid() = sender_id);
+
+CREATE POLICY "messages_update" ON messages FOR UPDATE
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+CREATE POLICY "messages_delete" ON messages FOR DELETE
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+
+-- ============================================================
+-- REPORTS POLICIES
+-- ============================================================
+
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "reports_select" ON reports FOR SELECT
+  USING (
+    auth.uid() = reporter_id 
+    OR EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE user_id = auth.uid() AND is_admin = true
+    )
+  );
+
+CREATE POLICY "reports_insert" ON reports FOR INSERT
+  WITH CHECK (auth.uid() = reporter_id);
+
+CREATE POLICY "reports_update" ON reports FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE user_id = auth.uid() AND is_admin = true
+    )
+  );
+
+CREATE POLICY "reports_delete" ON reports FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE user_id = auth.uid() AND is_admin = true
+    )
+  );
+
+
+-- ============================================================
+-- EXPLICIT SCHEMA & TABLE GRANTS (Supabase Security Best Practice)
+-- Required for API access (anon, authenticated, service_role)
+-- ============================================================
+
+-- Grant usage on schema public
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+-- Grant all permissions on all tables, sequences, and functions
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+
+-- Ensure future tables automatically inherit these permissions
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+
+
