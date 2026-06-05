@@ -48,18 +48,6 @@ export const searchService = {
 
     if (currentUserId) {
       query = query.neq('user_id', currentUserId);
-
-      // Exclude blocked profiles
-      const { data: blockedData } = await supabase
-        .from('interests')
-        .select('sender_id, receiver_id')
-        .eq('is_blocked', true)
-        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`);
-      
-      if (blockedData && blockedData.length > 0) {
-        const blockedIds = blockedData.map(b => b.sender_id === currentUserId ? b.receiver_id : b.sender_id);
-        query = query.not('user_id', 'in', `(${blockedIds.join(',')})`);
-      }
     }
 
     query = query.order('created_at', { ascending: false })
@@ -145,18 +133,6 @@ export const searchService = {
       query = query.eq('gender', oppositeGender.toLowerCase());
     }
 
-    // Exclude blocked profiles
-    const { data: blockedData } = await supabase
-      .from('interests')
-      .select('sender_id, receiver_id')
-      .eq('is_blocked', true)
-      .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`);
-    
-    if (blockedData && blockedData.length > 0) {
-      const blockedIds = blockedData.map(b => b.sender_id === currentUserId ? b.receiver_id : b.sender_id);
-      query = query.not('user_id', 'in', `(${blockedIds.join(',')})`);
-    }
-
     const { data, error } = await query;
     if (error) throw error;
     return data;
@@ -181,18 +157,6 @@ export const searchService = {
       
     if (oppositeGender) {
       query = query.eq('gender', oppositeGender.toLowerCase());
-    }
-
-    // Exclude blocked profiles
-    const { data: blockedData } = await supabase
-      .from('interests')
-      .select('sender_id, receiver_id')
-      .eq('is_blocked', true)
-      .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`);
-    
-    if (blockedData && blockedData.length > 0) {
-      const blockedIds = blockedData.map(b => b.sender_id === currentUserId ? b.receiver_id : b.sender_id);
-      query = query.not('user_id', 'in', `(${blockedIds.join(',')})`);
     }
 
     const { data, error } = await query;

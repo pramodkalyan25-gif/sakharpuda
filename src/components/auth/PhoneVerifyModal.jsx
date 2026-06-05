@@ -22,7 +22,7 @@ export default function PhoneVerifyModal({ isOpen, onClose, onVerified }) {
   const [e164, setE164]         = useState('');
 
   const startResendTimer = () => {
-    setResendTimer(60);
+    setResendTimer(30);
     const interval = setInterval(() => {
       setResendTimer((prev) => {
         if (prev <= 1) {

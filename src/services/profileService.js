@@ -4,8 +4,8 @@ import { supabase } from '../config/supabaseClient';
  * SAFE_SELECT — Fields that can be exposed to other users.
  * mobile_number is NEVER in this list.
  */
-const PUBLIC_PROFILE_FIELDS = 'user_id, name, first_name, last_name, gender, dob, height, religion, caste, sub_community, education, profession, salary, city, state, country, bio, marital_status, photo_visibility, profile_visibility, admin_verified, is_admin, profile_id, profile_for, college_name, company_type';
-const FULL_PROFILE_FIELDS = 'user_id, name, first_name, last_name, gender, dob, height, religion, caste, sub_community, education, profession, salary, city, state, country, bio, marital_status, mobile_verified, photo_visibility, profile_visibility, admin_verified, is_admin, daily_interest_count, profile_id, created_at, profile_for, college_name, company_type';
+const PUBLIC_PROFILE_FIELDS = 'user_id, name, first_name, last_name, gender, dob, height, religion, caste, sub_community, education, profession, salary, city, state, country, bio, marital_status, photo_visibility, profile_visibility, admin_verified, is_admin, profile_id, profile_for, college_name, company_type, time_of_birth, place_of_birth, birth_nakshatra';
+const FULL_PROFILE_FIELDS = 'user_id, name, first_name, last_name, gender, dob, height, religion, caste, sub_community, education, profession, salary, city, state, country, bio, marital_status, mobile_verified, photo_visibility, profile_visibility, admin_verified, is_admin, daily_interest_count, profile_id, created_at, profile_for, college_name, company_type, time_of_birth, place_of_birth, birth_nakshatra';
 
 /**
  * profileService — All profile CRUD operations.

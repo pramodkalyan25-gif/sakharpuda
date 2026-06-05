@@ -31,7 +31,8 @@ export default function ChatPage() {
   const [reportDescription, setReportDescription] = useState('');
   const [reportFile, setReportFile] = useState(null);
   const [submittingReport, setSubmittingReport] = useState(false);
-  const [hasBlockedLocally, setHasBlockedLocally] = useState(false);
+  // NOTE: hasBlockedLocally removed — we now rely on sender_id === user.id invariant
+  // (blockUserById guarantees sender_id = blocker after Phase-1 fix)
 
   const messagesEndRef = useRef(null);
 
@@ -72,15 +73,20 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Optional polling for new messages (every 5 seconds)
+  // Poll for new messages AND latest interest status every 5 seconds
   useEffect(() => {
     if (!user?.id || !id) return;
     const interval = setInterval(async () => {
       try {
-        const msgs = await chatService.getMessages(user.id, id);
+        const [msgs, interest] = await Promise.all([
+          chatService.getMessages(user.id, id).catch(() => null),
+          interestService.getInterestStatus(user.id, id).catch(() => null),
+        ]);
         if (msgs) setMessages(msgs);
+        // Only update if interest changed (avoid unnecessary re-renders)
+        if (interest !== undefined) setInterestStatus(interest);
       } catch (e) {
-        // ignore polling errors
+        // ignore polling errors silently
       }
     }, 5000);
     return () => clearInterval(interval);
@@ -89,17 +95,11 @@ export default function ChatPage() {
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!newMessage.trim()) return;
+    // Safety guard: never send a message if blocked (footer hides input, but be safe)
+    if (interestStatus?.is_blocked) return;
 
     setSending(true);
     try {
-      // If no interest exists or it's not accepted, send one automatically!
-      if (!interestStatus || interestStatus.status !== 'accepted') {
-        if (!interestStatus) {
-           await interestService.sendInterest(user.id, id, myProfile);
-           setInterestStatus({ status: 'pending', sender_id: user.id });
-        }
-      }
-
       const msg = await chatService.sendMessage(user.id, id, newMessage.trim());
       setMessages([...messages, msg]);
       setNewMessage('');
@@ -124,15 +124,47 @@ export default function ChatPage() {
     }
   };
 
+  const handleReject = async (interestId) => {
+    setLoading(true);
+    try {
+      await interestService.rejectInterest(interestId);
+      const updated = await interestService.getInterestStatus(user.id, id);
+      setInterestStatus(updated);
+      toast.success('Interest declined.');
+    } catch (err) {
+      toast.error('Failed to decline interest');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendInterest = async () => {
     if (!myProfile) return toast.error('Complete your profile first.');
     setSending(true);
     try {
-      await interestService.sendInterest(user.id, id, myProfile);
-      setInterestStatus({ status: 'pending', sender_id: user.id });
+      if (interestStatus?.id && isRejected && iAmSender) {
+        // Case A: I sent interest, they rejected — update same row back to pending
+        await interestService.resendInterest(interestStatus.id);
+      } else if (interestStatus?.id && isRejected && iAmReceiver) {
+        // Case B (Scenario 13): I rejected their interest, now I want to initiate
+        // Delete old row + re-insert with me as sender
+        await interestService.switchAndSendInterest(user.id, id, myProfile);
+      } else {
+        // Case C: No row exists — fresh send
+        await interestService.sendInterest(user.id, id, myProfile);
+      }
+      const updated = await interestService.getInterestStatus(user.id, id);
+      setInterestStatus(updated);
       toast.success('Interest sent!');
     } catch (err) {
-      toast.error(err.message);
+      const msg = err.message || '';
+      if (msg.includes('DUPLICATE')) {
+        toast.error('You have already sent interest to this profile.');
+      } else if (msg.includes('DAILY_LIMIT_REACHED')) {
+        toast.error(`Daily limit reached. You can send up to ${10} interests per day.`);
+      } else {
+        toast.error(msg || 'Failed to send interest.');
+      }
     } finally {
       setSending(false);
     }
@@ -145,7 +177,6 @@ export default function ChatPage() {
     try {
       const updated = await interestService.blockUserById(user.id, id);
       setInterestStatus(updated);
-      setHasBlockedLocally(true);
       toast.success('Profile blocked.');
     } catch (err) {
       toast.error('Failed to block profile');
@@ -159,7 +190,6 @@ export default function ChatPage() {
     try {
       const updated = await interestService.unblockUserById(user.id, id);
       setInterestStatus(updated);
-      setHasBlockedLocally(false);
       toast.success('Profile unblocked.');
     } catch (err) {
       toast.error('Failed to unblock profile');
@@ -206,16 +236,27 @@ export default function ChatPage() {
   if (!profile) return null;
 
   // Who blocked whom?
-  // isBlocked is true if a block exists. weAreBlocked is true if the other person blocked us.
-  const isBlocked = interestStatus?.is_blocked;
-  
-  // If we just clicked block, we definitely blocked them. 
-  // Otherwise, we guess based on sender_id (though imperfect, it's what we have without DB changes).
-  const weBlockedThem = hasBlockedLocally || (isBlocked && interestStatus.sender_id === user.id);
-  const weAreBlocked = isBlocked && !weBlockedThem;
+  // INVARIANT (guaranteed by blockUserById Phase-1 fix):
+  //   when is_blocked=true, sender_id = the user who blocked
+  const isBlocked    = !!interestStatus?.is_blocked;
+  const weBlockedThem = isBlocked && interestStatus?.sender_id === user.id;
+  const weAreBlocked  = isBlocked && !weBlockedThem;
 
   const isConnected = interestStatus?.status === 'accepted';
-  const showInterestHint = !isConnected && !isBlocked;
+
+  // Determine who sent the interest (if any row exists)
+  const iAmSender   = !!interestStatus && interestStatus.sender_id === user.id;
+  const iAmReceiver = !!interestStatus && interestStatus.sender_id !== user.id;
+  const isPending   = interestStatus?.status === 'pending';
+  const isRejected  = interestStatus?.status === 'rejected';
+
+  // Top bar buttons
+  // — Show "Send Interest" / "Re-send Interest" when: no row, OR rejected
+  const showSendInterestBtn  = !isBlocked && !isConnected && (!interestStatus || isRejected);
+  // — Show "Interest Sent – Waiting" pill only when I am the pending sender
+  const showInterestSentPill = !isBlocked && !isConnected && isPending && iAmSender;
+  // — Label for the send button
+  const sendBtnLabel = (isRejected && iAmSender) ? 'Re-send Interest' : 'Send Interest';
 
   // REPORT REASONS
   const reportReasons = [
@@ -251,23 +292,30 @@ export default function ChatPage() {
             {profile.caste || 'Caste N/A'} • {profile.salary || 'No Income'}
           </div>
         </div>
-        {isConnected && (
+        {/* ⋯ Menu button — always visible (not just when connected) to allow blocking/reporting */}
+        {!weAreBlocked && (
           <button className="chat-menu-btn" onClick={() => setShowMenu(true)}>
             <MoreVertical size={24} />
           </button>
         )}
       </header>
 
-      {/* SEND INTEREST BAR */}
-      {(!interestStatus || interestStatus.status === 'pending') && !isBlocked && (
+      {/* SEND INTEREST / INTEREST SENT BAR */}
+      {showSendInterestBtn && (
         <div className="chat-interest-bar">
-          <button 
-            className="send-interest-btn-top" 
-            onClick={handleSendInterest} 
-            disabled={interestStatus?.status === 'pending'}
+          <button
+            className="send-interest-btn-top"
+            onClick={handleSendInterest}
+            disabled={sending}
           >
-            <Send size={16} /> 
-            {interestStatus?.status === 'pending' ? 'Interest Sent' : 'Send Interest'}
+            <Send size={16} /> {sendBtnLabel}
+          </button>
+        </div>
+      )}
+      {showInterestSentPill && (
+        <div className="chat-interest-bar">
+          <button className="send-interest-btn-top" disabled style={{ opacity: 0.75, cursor: 'default' }}>
+            <Send size={16} /> Interest Sent – Waiting for {profile.name?.split(' ')[0]} to Accept
           </button>
         </div>
       )}
@@ -329,24 +377,41 @@ export default function ChatPage() {
           </div>
         ) : !isConnected ? (
           <div className="chat-blocked-state interest-pending-notice">
-            <p className="blocked-text">
-              {interestStatus?.sender_id === user.id 
-                ? "Waiting for candidate to accept your interest..." 
-                : "Accept interest to start chatting"}
-            </p>
-            {interestStatus?.sender_id !== user.id && interestStatus?.status === 'pending' && (
-              <button className="unblock-btn" onClick={() => handleAccept(interestStatus.id)} disabled={loading}>
-                Accept Interest
-              </button>
+            {/* Receiver sees Accept + Reject */}
+            {isPending && iAmReceiver ? (
+              <>
+                <p className="blocked-text">Accept interest to start chatting</p>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                  <button
+                    className="unblock-btn"
+                    onClick={() => handleAccept(interestStatus.id)}
+                    disabled={loading}
+                    style={{ background: '#16a34a', color: '#fff', border: 'none' }}
+                  >
+                    ✓ Accept
+                  </button>
+                  <button
+                    className="unblock-btn"
+                    onClick={() => handleReject(interestStatus.id)}
+                    disabled={loading}
+                    style={{ background: '#dc2626', color: '#fff', border: 'none' }}
+                  >
+                    ✗ Reject
+                  </button>
+                </div>
+              </>
+            ) : isPending && iAmSender ? (
+              <p className="blocked-text">Waiting for {profile.name?.split(' ')[0]} to accept your interest…</p>
+            ) : isRejected && iAmSender ? (
+              <p className="blocked-text">Interest not accepted. You can re-send above.</p>
+            ) : isRejected && iAmReceiver ? (
+              <p className="blocked-text">You declined this interest. You can send a new interest above.</p>
+            ) : (
+              <p className="blocked-text">Send interest above to start chatting.</p>
             )}
           </div>
         ) : (
           <div className="chat-input-wrapper">
-            {showInterestHint && (
-              <div className="chat-interest-hint">
-                Sending message will also send this member your interest
-              </div>
-            )}
             <form className="chat-input-form" onSubmit={handleSendMessage}>
               <input
                 type="text"

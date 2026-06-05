@@ -15,6 +15,8 @@ import {
   COMPREHENSIVE_EDUCATION,
   HEIGHTS_CM
 } from '../data/maharashtraData';
+// Birth details (time, place, nakshatra) are no longer collected during registration.
+// Users provide them later via the Dashboard "Generate Patrika" flow.
 import {
   HiUser,
   HiUserGroup,
@@ -92,6 +94,9 @@ export default function RegistrationPage() {
     dobDay: '',
     dobMonth: '',
     dobYear: '',
+    timeOfBirth: '',       // optional – "HH:MM"
+    placeOfBirth: '',      // optional – birth city/village
+    birthNakshatra: '',    // optional – manual Nakshatra selection
     district: '',
     taluka: '',
     maritalStatus: '',
@@ -169,7 +174,22 @@ export default function RegistrationPage() {
       finalValue = value.replace(/\D/g, '');
     }
 
-    setFormData(prev => ({ ...prev, [field]: finalValue }));
+    setFormData(prev => {
+      const nextData = { ...prev, [field]: finalValue };
+      if (field === 'email' || field === 'mobile') {
+        nextData.emailOTP = '';
+      }
+      return nextData;
+    });
+
+    // Reset email verification state if email or mobile are modified
+    if (field === 'email' || field === 'mobile') {
+      setEmailVerificationSent(false);
+      setIsEmailVerified(false);
+      setOtpExpiry(0);
+      setResendTimer(0);
+    }
+
     // Clear error for this field when user starts typing
     if (errors[field]) {
       setErrors(prev => {
@@ -252,6 +272,9 @@ export default function RegistrationPage() {
         profile_for: finalData.profileFor,
         college_name: finalData.college,
         company_type: finalData.workWith,
+        time_of_birth: finalData.timeOfBirth || null,
+        place_of_birth: finalData.placeOfBirth || null,
+        birth_nakshatra: finalData.birthNakshatra || null,
       };
 
       // 3. Create or Update profile
@@ -411,9 +434,8 @@ export default function RegistrationPage() {
 
       // 3. Unique! Send REAL OTP via Supabase
       await authService.sendSignupOTP(formData.email);
-      toast.success(`Verification code sent to ${formData.email}`);
       setEmailVerificationSent(true);
-      setResendTimer(60); // Allow resend after 1 minute
+      setResendTimer(30); // Allow resend after 30 seconds
       setOtpExpiry(600); // OTP valid for 10 minutes
     } catch (err) {
       toast.error(err.message || 'Verification failed');
@@ -462,8 +484,7 @@ export default function RegistrationPage() {
       }
 
       await authService.sendSignupOTP(formData.email);
-      toast.success(`New verification code sent to ${formData.email}`);
-      setResendTimer(60);
+      setResendTimer(30);
       setOtpExpiry(600); // Reset 10 min expiry from latest OTP
       setFormData(prev => ({ ...prev, emailOTP: '' }));
     } catch (err) {
@@ -844,6 +865,9 @@ export default function RegistrationPage() {
         </div>
       </div>
       {errors.dobDate && <p className="error-text text-center mt-2">{errors.dobDate}</p>}
+
+
+
       <button
         className="primary-btn full-width mt-6"
         onClick={() => {
@@ -1070,6 +1094,24 @@ export default function RegistrationPage() {
                   </button>
                   {otpExpiry <= 0 && <span style={{ fontSize: '13px', color: '#E53E3E' }}>OTP Expired!</span>}
                 </div>
+                <div style={{ 
+                  marginTop: '16px', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  backgroundColor: '#fffaf0', 
+                  border: '1px solid #feebc8', 
+                  fontSize: '12px', 
+                  color: '#c05621', 
+                  display: 'flex', 
+                  gap: '8px', 
+                  alignItems: 'flex-start',
+                  lineHeight: '1.5'
+                }}>
+                  <span style={{ fontSize: '16px', lineHeight: '1' }}>💡</span>
+                  <div>
+                    <strong>Didn't get the OTP?</strong> If the code doesn't arrive in 30 seconds, check your email address again for typing errors. You can edit the email field above to try again.
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -1085,11 +1127,18 @@ export default function RegistrationPage() {
               autoComplete="new-password"
               value={formData.password}
               onChange={(e) => updateForm('password', e.target.value)}
+              disabled={!isEmailVerified}
+              style={{ 
+                cursor: !isEmailVerified ? 'not-allowed' : 'text', 
+                backgroundColor: !isEmailVerified ? '#f7fafc' : '#fff',
+                borderColor: !isEmailVerified ? '#e2e8f0' : undefined
+              }}
             />
             <button 
               type="button" 
               className="password-toggle-btn" 
               onClick={() => setShowPassword(!showPassword)}
+              disabled={!isEmailVerified}
               style={{
                 position: 'absolute',
                 right: '12px',
@@ -1098,7 +1147,8 @@ export default function RegistrationPage() {
                 background: 'none',
                 border: 'none',
                 color: '#718096',
-                cursor: 'pointer'
+                cursor: !isEmailVerified ? 'not-allowed' : 'pointer',
+                opacity: !isEmailVerified ? 0.4 : 1
               }}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -1115,11 +1165,18 @@ export default function RegistrationPage() {
               placeholder="Re-enter your password"
               value={formData.confirmPassword}
               onChange={(e) => updateForm('confirmPassword', e.target.value)}
+              disabled={!isEmailVerified}
+              style={{ 
+                cursor: !isEmailVerified ? 'not-allowed' : 'text', 
+                backgroundColor: !isEmailVerified ? '#f7fafc' : '#fff',
+                borderColor: !isEmailVerified ? '#e2e8f0' : undefined
+              }}
             />
             <button 
               type="button" 
               className="password-toggle-btn" 
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              disabled={!isEmailVerified}
               style={{
                 position: 'absolute',
                 right: '12px',
@@ -1128,7 +1185,8 @@ export default function RegistrationPage() {
                 background: 'none',
                 border: 'none',
                 color: '#718096',
-                cursor: 'pointer'
+                cursor: !isEmailVerified ? 'not-allowed' : 'pointer',
+                opacity: !isEmailVerified ? 0.4 : 1
               }}
             >
               {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}

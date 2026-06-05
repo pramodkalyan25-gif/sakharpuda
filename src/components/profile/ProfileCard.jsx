@@ -10,7 +10,9 @@ import {
   Briefcase,
   GraduationCap,
   MapPin,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Ban,
+  Sparkles
 } from 'lucide-react';
 import { photoService } from '../../services/photoService';
 import { interestService } from '../../services/interestService';
@@ -22,7 +24,7 @@ import { differenceInYears, parseISO } from 'date-fns';
  * ProfileCard — Premium card styled after Jeevansathi.com.
  * Shows photo, basic info, and a horizontal action bar.
  */
-export default function ProfileCard({ profile, onInterestSent, onShortlistToggle }) {
+export default function ProfileCard({ profile, onInterestSent, onShortlistToggle, onMatchPatrika }) {
   const navigate = useNavigate();
   const { user, profile: myProfile } = useAuth();
   const [photoUrl, setPhotoUrl] = useState(null);
@@ -30,12 +32,24 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
   const [isShortlisted, setIsShortlisted] = useState(profile.isShortlisted || false);
   const [sending, setSending] = useState(false);
   const [shortlisting, setShortlisting] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   const age = profile?.dob
     ? differenceInYears(new Date(), parseISO(profile.dob))
     : null;
 
   const isOwnProfile = user?.id === profile?.user_id;
+
+  const isBlocked    = !!interestStatus?.is_blocked;
+  const weBlockedThem = isBlocked && interestStatus?.sender_id === user?.id;
+  const weAreBlocked  = isBlocked && !weBlockedThem;
+
+  const isConnected   = interestStatus?.status === 'accepted';
+  const isPending     = interestStatus?.status === 'pending';
+  const isRejected    = interestStatus?.status === 'rejected';
+
+  const iAmSender     = !!interestStatus && interestStatus.sender_id === user?.id;
+  const iAmReceiver   = !!interestStatus && interestStatus.sender_id !== user?.id;
 
   // Allow everyone to see photos as per user request
   const canSeePhoto = () => {
@@ -75,12 +89,36 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
     }
     setSending(true);
     try {
-      await interestService.sendInterest(user.id, profile.user_id, myProfile);
-      setInterestStatus({ status: 'pending', sender_id: user.id });
-      toast.success(`Interest sent to ${profile?.name}!`);
+      if (interestStatus?.id && isPending && iAmReceiver) {
+        // Case: I received a pending interest, clicked the heart to accept/send back
+        await interestService.acceptInterest(interestStatus.id);
+        toast.success(`Interest accepted! You are now connected with ${profile?.name || 'this candidate'}.`);
+      } else if (interestStatus?.id && isRejected && iAmSender) {
+        // Case: I sent, they rejected — re-send
+        await interestService.resendInterest(interestStatus.id);
+        toast.success(`Interest re-sent to ${profile?.name || 'this candidate'}!`);
+      } else if (interestStatus?.id && isRejected && iAmReceiver) {
+        // Case: I rejected, now I want to send (Scenario 13)
+        await interestService.switchAndSendInterest(user.id, profile.user_id, myProfile);
+        toast.success(`Interest sent to ${profile?.name || 'this candidate'}!`);
+      } else {
+        // Case: Fresh send
+        await interestService.sendInterest(user.id, profile.user_id, myProfile);
+        toast.success(`Interest sent to ${profile?.name || 'this candidate'}!`);
+      }
+      // Refresh status
+      const updated = await interestService.getInterestStatus(user.id, profile.user_id);
+      setInterestStatus(updated);
       onInterestSent?.();
     } catch (err) {
-      toast.error(err.message);
+      const msg = err.message || '';
+      if (msg.includes('DUPLICATE')) {
+        toast.error('You have already sent interest to this profile.');
+      } else if (msg.includes('DAILY_LIMIT_REACHED')) {
+        toast.error('Daily limit reached. You can send up to 10 interests per day.');
+      } else {
+        toast.error(msg || 'Failed to update interest.');
+      }
     } finally {
       setSending(false);
     }
@@ -107,7 +145,102 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
     }
   };
 
+  const handleShare = (e) => {
+    e.stopPropagation();
+    const profileUrl = `${window.location.origin}/profile/${profile?.user_id}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `${profile?.name || 'Candidate'} - Profile`,
+        text: `Check out ${profile?.name || 'this candidate'}'s profile on SakharPuda Matrimony!`,
+        url: profileUrl,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(profileUrl);
+      toast.success('Profile link copied to clipboard!');
+    }
+  };
+
+  const handleUnblock = async (e) => {
+    e.stopPropagation();
+    setBlocking(true);
+    try {
+      const updated = await interestService.unblockUserById(user.id, profile.user_id);
+      setInterestStatus(updated);
+      toast.success('Profile unblocked.');
+      if (onInterestSent) onInterestSent();
+    } catch (err) {
+      toast.error('Failed to unblock profile.');
+    } finally {
+      setBlocking(false);
+    }
+  };
+
+  const getInterestButton = () => {
+    if (weBlockedThem) {
+      return (
+        <button
+          className="js-circle-action"
+          onClick={handleUnblock}
+          disabled={blocking}
+        >
+          <div className="js-icon-circle" style={{ background: '#64748b', borderColor: '#64748b' }}>
+            <Ban size={22} color="#fff" />
+          </div>
+          <span style={{ color: '#64748b' }}>Unblock</span>
+        </button>
+      );
+    }
+
+    if (weAreBlocked) {
+      return (
+        <button className="js-circle-action" disabled>
+          <div className="js-icon-circle" style={{ background: '#64748b', borderColor: '#64748b' }}>
+            <X size={22} color="#fff" />
+          </div>
+          <span style={{ color: '#64748b' }}>Blocked</span>
+        </button>
+      );
+    }
+
+    if (isConnected) {
+      return (
+        <button className="js-circle-action" disabled>
+          <div className="js-icon-circle" style={{ background: '#10b981', borderColor: '#10b981' }}>
+            <CheckCircle size={22} color="#fff" />
+          </div>
+          <span style={{ color: '#10b981' }}>Connected</span>
+        </button>
+      );
+    }
+
+    if (isPending && iAmSender) {
+      return (
+        <button className="js-circle-action sent" disabled>
+          <div className="js-icon-circle">
+            <CheckCircle size={22} fill="#D63447" color="#fff" />
+          </div>
+          <span>Interest Sent</span>
+        </button>
+      );
+    }
+
+    // Default: no interest, rejected, or pending-received -> Show Heart (Interest/Re-send)
+    return (
+      <button 
+        className="js-circle-action"
+        onClick={handleSendInterest}
+        disabled={sending}
+      >
+        <div className="js-icon-circle">
+          <Heart size={22} color="#fff" />
+        </div>
+        <span>{isRejected && iAmSender ? 'Re-send' : 'Interest'}</span>
+      </button>
+    );
+  };
+
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+
   const [allPhotos, setAllPhotos] = useState([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [photoCount, setPhotoCount] = useState(profile?.photo_count || 0);
@@ -124,7 +257,7 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
 
   const handleOpenGallery = async (e) => {
     e.stopPropagation();
-    if (!profile?.user_id) return;
+    if (!profile?.user_id || weAreBlocked) return;
     
     setShowPhotoModal(true);
     if (allPhotos.length === 0) {
@@ -146,11 +279,11 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
       <div className="js-card-content">
         {/* PHOTO BOX */}
         <div className="js-photo-container">
-          <img src={photoUrl || '/images/default-avatar.png'} alt={profile?.name} className="js-profile-img" />
+          <img src={weAreBlocked ? '/images/default-avatar.png' : (photoUrl || '/images/default-avatar.png')} alt={profile?.name} className="js-profile-img" />
           
           {/* TOP RIGHT: PHOTO COUNTER ICON */}
           <div className="js-top-right-overlay">
-            {photoCount > 0 && (
+            {photoCount > 0 && !weAreBlocked && (
               <div className="js-photo-badge" onClick={handleOpenGallery}>
                 <ImageIcon size={16} />
                 <span>{photoCount}</span>
@@ -165,10 +298,16 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
               <span className="js-profile-id-badge">{profile?.profile_id || 'B262450'}</span>
             </div>
             
-            <div className="js-quick-details-grid">
-              <span>{profile?.height} • {profile?.location} • {profile?.caste}</span>
-              <span>{profile?.occupation} • {profile?.education} • {profile?.marital_status}</span>
-            </div>
+            {weAreBlocked ? (
+              <div className="js-quick-details-grid" style={{ fontStyle: 'italic', color: '#fda4af' }}>
+                <span>Profile Restricted</span>
+              </div>
+            ) : (
+              <div className="js-quick-details-grid">
+                <span>{profile?.height} • {profile?.location} • {profile?.caste}</span>
+                <span>{profile?.occupation} • {profile?.education} • {profile?.marital_status}</span>
+              </div>
+            )}
 
             {/* MANAGED BY LINE */}
             <div className="js-managed-by">
@@ -178,40 +317,47 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
             {/* ACTION BUTTONS OVERLAY */}
             {!isOwnProfile && (
               <div className="js-action-overlay">
-                <button 
-                  className={`js-circle-action ${interestStatus?.status === 'pending' ? 'sent' : ''}`}
-                  onClick={handleSendInterest}
-                  disabled={sending || interestStatus?.status === 'pending'}
-                >
-                  <div className="js-icon-circle">
-                    {interestStatus?.status === 'pending' ? (
-                      <CheckCircle size={22} fill="#D63447" color="#fff" />
-                    ) : (
-                      <Heart size={22} color="#fff" />
-                    )}
-                  </div>
-                  <span>{interestStatus?.status === 'pending' ? 'Interest Sent' : 'Interest'}</span>
-                </button>
+                {getInterestButton()}
 
                 <button 
                   className={`js-circle-action ${isShortlisted ? 'active' : ''}`}
                   onClick={handleToggleShortlist}
-                  disabled={shortlisting}
+                  disabled={shortlisting || weAreBlocked}
+                  style={weAreBlocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                 >
                   <div className="js-icon-circle">
                     <Star size={22} fill={isShortlisted ? "#fff" : "none"} color="#fff" />
                   </div>
                   <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
                 </button>
-
-                <button className="js-circle-action" onClick={(e) => { e.stopPropagation(); /* Ignore logic */ }}>
+                <button 
+                  className="js-circle-action" 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (weAreBlocked) return;
+                    if (onMatchPatrika) onMatchPatrika(profile);
+                  }}
+                  disabled={weAreBlocked}
+                  style={weAreBlocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                >
                   <div className="js-icon-circle">
-                    <X size={22} color="#fff" />
+                    <Sparkles size={22} color="#fff" />
                   </div>
-                  <span>Ignore</span>
+                  <span>Match Patrika</span>
                 </button>
-
-                <button className="js-circle-action" onClick={(e) => { e.stopPropagation(); navigate(`/chat/${profile?.user_id}`); }}>
+                <button 
+                  className="js-circle-action" 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (weAreBlocked) {
+                      toast.error('You cannot chat with this user.');
+                      return;
+                    }
+                    navigate(`/chat/${profile?.user_id}`); 
+                  }}
+                  disabled={weAreBlocked}
+                  style={weAreBlocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                >
                   <div className="js-icon-circle">
                     <MessageCircle size={22} color="#fff" />
                   </div>

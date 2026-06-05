@@ -118,7 +118,7 @@ export default function LandingPage() {
                 </a>
                 <Link to="/about" className="help-item">About Us</Link>
                 <Link to="/contact" className="help-item">Contact Us</Link>
-                <Link to="/fraud-alert" className="help-item">Safety Tips</Link>
+                <Link to="/safety-center" className="help-item">Safety Tips</Link>
                 <Link to="/help" className="help-item">Help Center / FAQ</Link>
                 <Link to="/grievances" className="help-item">Grievances</Link>
               </div>

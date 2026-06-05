@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -27,7 +27,8 @@ import {
   Sparkles,
   Printer,
   Download,
-  X as CloseIcon
+  X as CloseIcon,
+  Ban
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -41,11 +42,165 @@ import { shortlistService } from '../services/shortlistService';
 import { searchService } from '../services/searchService';
 import { useAuth } from '../hooks/useAuth';
 import { differenceInYears, parseISO, format } from 'date-fns';
+import { buildPatrika, calculateGunMilan, NAKSHATRAS, RASHIS, LABELS } from '../services/gunMilanService';
+import { calculateFullKundali, VEDIC_PLANETS } from '../services/kundaliService';
+import KundaliChart from '../components/profile/KundaliChart';
+import GunMilanModal from '../components/profile/GunMilanModal';
+
+// ─────────────────────────────────────────────────────────────
+// GUN MILAN MODAL — standalone component to avoid IIFE in JSX
+// ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// GENERATE KUNDALI MODAL — for viewing another user's Kundali
+// ─────────────────────────────────────────────────────────────
+function GenerateKundaliModal({ profile, onClose }) {
+  const [kundali, setKundali] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [lang, setLang] = useState('mr');
+  const printRef = useRef(null);
+
+  useEffect(() => {
+    if (!profile?.dob) return;
+    setLoading(true);
+    calculateFullKundali(profile.dob, profile.time_of_birth, profile.place_of_birth)
+      .then(data => setKundali(data))
+      .catch(err => console.error('Kundali calc error:', err))
+      .finally(() => setLoading(false));
+  }, [profile]);
+
+  const patrika = profile ? buildPatrika(profile) : null;
+  const L = lang;
+
+  const handleDownloadImage = async () => {
+    if (!printRef.current) return;
+    const { default: h2c } = await import('html2canvas');
+    const canvas = await h2c(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+    const link = document.createElement('a');
+    link.download = `kundali-${profile.name}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    const { default: h2c } = await import('html2canvas');
+    const { jsPDF: PDF } = await import('jspdf');
+    const canvas = await h2c(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const pdf = new PDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pW = pdf.internal.pageSize.getWidth();
+    const pH = (canvas.height * pW) / canvas.width;
+    pdf.addImage(imgData, 'JPEG', 0, 0, pW, pH);
+    pdf.save(`kundali-${profile.name}.pdf`);
+  };
+
+  const PatrikaRow = ({ labelMr, labelEn, value, valueMr }) => (
+    <div className="gm-patrika-row">
+      <span className="gm-patrika-label">{L === 'mr' ? labelMr : labelEn}</span>
+      <span className="gm-patrika-value">{L === 'mr' ? (valueMr || value) : value}</span>
+    </div>
+  );
+
+  return (
+    <div className="gm-overlay" onClick={onClose}>
+      <div className="gm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '860px' }}>
+        <div className="gm-toolbar no-print">
+          <div className="gm-toolbar-left">
+            <div className="gm-lang-toggle">
+              <button className={lang === 'mr' ? 'active' : ''} onClick={() => setLang('mr')}>मराठी</button>
+              <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>English</button>
+            </div>
+          </div>
+          <div className="gm-toolbar-right">
+            <button className="gm-dl-btn" onClick={handleDownloadImage}><Download size={14} /> Image</button>
+            <button className="gm-dl-btn pdf" onClick={handleDownloadPDF}><FileText size={14} /> PDF</button>
+            <button className="gm-close-btn" onClick={onClose}><CloseIcon size={20} /></button>
+          </div>
+        </div>
+
+        <div className="gm-body">
+          <div className="gm-print-area" ref={printRef}>
+            {loading ? (
+              <div style={{ padding: '60px', textAlign: 'center' }}><Spinner /><p>Calculating planet positions...</p></div>
+            ) : (
+              <div className="gm-patrika-card">
+                <div className="gm-patrika-header">
+                  <div className="gm-patrika-blessing">{L === 'mr' ? '॥ श्री गणेशाय नमः ॥' : '॥ Shri Ganeshaya Namah ॥'}</div>
+                  <h2 className="gm-patrika-title">{L === 'mr' ? 'जन्म कुंडली' : 'Janma Kundali'}</h2>
+                  <p className="gm-patrika-subtitle">{L === 'mr' ? 'सखरपुडा मॅट्रिमोनी' : 'SakharPuda Matrimony'}</p>
+                </div>
+                <div className="gm-person-banner">
+                  <span className="gm-person-name">{profile.name}</span>
+                  <span className="gm-person-id">{profile.profile_id}</span>
+                </div>
+
+                {patrika && (
+                  <div className="gm-patrika-grid">
+                    <PatrikaRow labelMr="जन्म तारीख" labelEn="Date of Birth" value={patrika.dob} valueMr={patrika.dob} />
+                    {patrika.timeOfBirth && <PatrikaRow labelMr="जन्म वेळ" labelEn="Time of Birth" value={patrika.timeOfBirth} valueMr={patrika.timeOfBirth} />}
+                    {patrika.placeOfBirth && <PatrikaRow labelMr="जन्म स्थान" labelEn="Place of Birth" value={patrika.placeOfBirth} valueMr={patrika.placeOfBirth} />}
+                    <PatrikaRow labelMr="जन्म नक्षत्र" labelEn="Janma Nakshatra"
+                      value={`${patrika.nakshatra.en} (Pada ${patrika.pada})`}
+                      valueMr={`${patrika.nakshatra.mr} (पाद ${patrika.pada})`} />
+                    <PatrikaRow labelMr="राशी" labelEn="Rashi (Moon Sign)" value={patrika.rashi.en} valueMr={patrika.rashi.mr} />
+                    <PatrikaRow labelMr="गण" labelEn="Gana" value={LABELS.en.gana[patrika.gana]} valueMr={LABELS.mr.gana[patrika.gana]} />
+                    <PatrikaRow labelMr="नाडी" labelEn="Nadi" value={LABELS.en.nadi[patrika.nadi]} valueMr={LABELS.mr.nadi[patrika.nadi]} />
+                    <PatrikaRow labelMr="योनि" labelEn="Yoni" value={LABELS.en.yoni[patrika.yoni]} valueMr={LABELS.mr.yoni[patrika.yoni]} />
+                    <PatrikaRow labelMr="नक्षत्र स्वामी" labelEn="Nakshatra Lord" value={patrika.nakshatraLord} valueMr={LABELS.mr.planets[patrika.nakshatraLord]} />
+                    <PatrikaRow labelMr="राशी स्वामी" labelEn="Rashi Lord" value={patrika.rashiLord} valueMr={LABELS.mr.planets[patrika.rashiLord]} />
+                    {kundali?.lagnaRashi && (
+                      <PatrikaRow labelMr="लग्न (Ascendant)" labelEn="Lagna (Ascendant)" value={kundali.lagnaRashi.en} valueMr={kundali.lagnaRashi.mr} />
+                    )}
+                  </div>
+                )}
+
+                {kundali && (
+                  <>
+                    <div style={{ padding: '16px 20px 0', textAlign: 'center' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#7c1d1d', margin: '0 0 4px', fontFamily: 'Georgia, serif' }}>
+                        {L === 'mr' ? '🪐 जन्म कुंडली चार्ट' : '🪐 Janma Kundali Chart'}
+                      </h3>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0, fontFamily: 'sans-serif' }}>
+                        {kundali.chartType === 'lagna'
+                          ? (L === 'mr' ? 'लग्न कुंडली — जन्म वेळ व स्थानावरून गणले' : 'Lagna Kundali — Calculated from birth time & place')
+                          : (L === 'mr' ? 'चंद्र कुंडली — जन्म तारखेवरून गणले' : 'Chandra Kundali — Calculated from DOB only')
+                        }
+                      </p>
+                    </div>
+                    <KundaliChart houses={kundali.houses} chartType={kundali.chartType} lagnaRashi={kundali.lagnaRashi} lang={lang} />
+                    <div style={{ padding: '0 20px 16px' }}>
+                      <table className="gm-koota-table" style={{ fontSize: '12px' }}>
+                        <thead><tr><th>{L === 'mr' ? 'ग्रह' : 'Planet'}</th><th>{L === 'mr' ? 'राशी' : 'Rashi'}</th><th>{L === 'mr' ? 'अंश' : 'Deg'}</th></tr></thead>
+                        <tbody>
+                          {kundali.planets.map((p, i) => (
+                            <tr key={i}><td style={{ fontWeight: 700 }}>{L === 'mr' ? p.mr : p.en}{p.isRetrograde ? ' (R)' : ''}</td><td>{L === 'mr' ? p.rashi.mr : p.rashi.en}</td><td>{p.degInRashi}°</td></tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+
+                {!profile.time_of_birth && (
+                  <p className="gm-note">{L === 'mr' ? '* जन्म वेळ उपलब्ध नसल्याने चंद्र कुंडली दाखवली आहे. पूर्ण लग्न कुंडलीसाठी जन्म वेळ व ठिकाण आवश्यक आहे.' : '* Birth time not available — showing Chandra Kundali. For full Lagna Kundali, birth time & place are needed.'}</p>
+                )}
+
+                <div className="gm-patrika-footer"><span>SakharPuda Matrimony</span><span>www.sakharpuda.com</span></div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ViewProfilePage() {
   const { id }      = useParams();
   const navigate    = useNavigate();
   const { user, profile: myProfile } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const [profile, setProfile]           = useState(null);
   const [loading, setLoading]           = useState(true);
@@ -60,6 +215,12 @@ export default function ViewProfilePage() {
   const [nextId, setNextId]               = useState(null);
   const [showBioDataModal, setShowBioDataModal] = useState(false);
   const [biodataLang, setBiodataLang]           = useState('mr');
+
+  useEffect(() => {
+    if (searchParams.get('biodata') === 'true') {
+      setShowBioDataModal(true);
+    }
+  }, [searchParams]);
   
   // DRAG & DROP & UPLOAD & RESIZE STATES
   const [sections, setSections]               = useState([]);
@@ -400,10 +561,13 @@ export default function ViewProfilePage() {
     }, 0);
   };
   
-  const [showKundaliModal, setShowKundaliModal] = useState(false);
+
   const [sending, setSending]           = useState(false);
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [shortlisting, setShortlisting] = useState(false);
+  const [showGunMilanModal, setShowGunMilanModal] = useState(false);
+  const [showGenKundali, setShowGenKundali] = useState(false);
+  const [gmTab, setGmTab] = useState('patrika'); // 'patrika' | 'milan'
   
   const aboutRef = useRef(null);
   const basicRef = useRef(null);
@@ -488,13 +652,72 @@ export default function ViewProfilePage() {
     }
     setSending(true);
     try {
-      await interestService.sendInterest(user.id, id, myProfile);
-      setInterestStatus({ status: 'pending', sender_id: user.id });
-      toast.success('Interest sent!');
+      // Compute sender/receiver before the async call using the current interestStatus
+      const myRow     = interestStatus;
+      const iSent     = !!myRow && myRow.sender_id === user.id;
+      const theyRejected = myRow?.status === 'rejected' && iSent;
+      const iRejected    = myRow?.status === 'rejected' && !iSent;
+
+      let successMsg = 'Interest sent!';
+      if (myRow?.id && myRow.status === 'pending' && !iSent) {
+        // Case: I received a pending interest, clicked the heart to accept/send back
+        await interestService.acceptInterest(myRow.id);
+        successMsg = 'Interest accepted! You are now connected.';
+      } else if (myRow?.id && theyRejected) {
+        // Case A: I sent, they rejected — update same row back to pending
+        await interestService.resendInterest(myRow.id);
+      } else if (myRow?.id && iRejected) {
+        // Case B (Scenario 13): I rejected their interest, now I want to initiate
+        await interestService.switchAndSendInterest(user.id, id, myProfile);
+      } else {
+        // Case C: No row — fresh send
+        await interestService.sendInterest(user.id, id, myProfile);
+      }
+      const updated = await interestService.getInterestStatus(user.id, id);
+      setInterestStatus(updated);
+      toast.success(successMsg);
     } catch (err) {
-      toast.error(err.message);
+      const msg = err.message || '';
+      if (msg.includes('DUPLICATE')) {
+        toast.error('You have already sent interest to this profile.');
+      } else if (msg.includes('DAILY_LIMIT_REACHED')) {
+        toast.error('Daily limit reached. You can send up to 10 interests per day.');
+      } else {
+        toast.error(msg || 'Failed to send interest.');
+      }
     } finally {
       setSending(false);
+    }
+  };
+
+  const [blocking, setBlocking] = useState(false);
+
+  const handleBlock = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to block this profile? They will only see your name, age and profile ID.')) return;
+    setBlocking(true);
+    try {
+      const updated = await interestService.blockUserById(user.id, id);
+      setInterestStatus(updated);
+      toast.success('Profile blocked.');
+    } catch (err) {
+      toast.error('Failed to block profile.');
+    } finally {
+      setBlocking(false);
+    }
+  };
+
+  const handleUnblock = async (e) => {
+    e.stopPropagation();
+    setBlocking(true);
+    try {
+      const updated = await interestService.unblockUserById(user.id, id);
+      setInterestStatus(updated);
+      toast.success('Profile unblocked.');
+    } catch (err) {
+      toast.error('Failed to unblock profile.');
+    } finally {
+      setBlocking(false);
     }
   };
 
@@ -578,6 +801,116 @@ export default function ViewProfilePage() {
   if (loading && !profile) return <div className="page-loading"><Spinner size="lg" /></div>;
   if (!profile) return <div className="page-loading"><h2>Profile not found</h2></div>;
 
+  // Compute interest/block derived state
+  // INVARIANT: when is_blocked=true, sender_id = the blocker (guaranteed by blockUserById)
+  const isAnyBlocked  = !!interestStatus?.is_blocked;
+  const iBlockedThem  = isAnyBlocked && interestStatus?.sender_id === user.id;
+  const iAmBlocked    = isAnyBlocked && !iBlockedThem;
+  const iAmSenderVP   = !!interestStatus && interestStatus.sender_id === user.id;
+  const iAmReceiverVP = !!interestStatus && interestStatus.sender_id !== user.id;
+  const isPendingVP   = interestStatus?.status === 'pending';
+  const isAcceptedVP  = interestStatus?.status === 'accepted';
+  const isRejectedVP  = interestStatus?.status === 'rejected';
+
+  if (iAmBlocked) {
+    return (
+      <div className="vp-page-wrapper">
+        <TopNav />
+        
+        <div className="js-view-profile-container" style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
+          {/* HERO SECTION WITH RESTRICTED INFO */}
+          <div className="js-profile-hero" style={{ marginBottom: '24px' }}>
+            <div className="js-hero-card" style={{ height: '350px' }}>
+              <div className="js-hero-photo-box" style={{ height: '100%' }}>
+                {/* Restricted blurred avatar */}
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  <UserIcon size={120} color="#94a3b8" />
+                  <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '20px',
+                    cursor: 'pointer',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    borderRadius: '50%',
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10
+                  }} onClick={() => navigate('/dashboard')}>
+                    <ArrowLeft size={24} color="#fff" />
+                  </div>
+                </div>
+
+                <div className="js-bottom-info-overlay">
+                  <div className="js-name-row">
+                    <h2 className="js-candidate-name">{profile.name},</h2>
+                    <span className="js-candidate-age">{age} yrs,</span>
+                    <span className="js-candidate-id">{profile.profile_id}</span>
+                  </div>
+                  <div className="js-managed-by">
+                    Profile managed by {profile.profile_for || 'Self'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RESTRICTED NOTICE CARD */}
+          <div className="js-detail-card" style={{
+            textAlign: 'center',
+            padding: '40px 30px',
+            background: '#fff',
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            border: '1px solid #fee2e2'
+          }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: '#fef2f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px'
+            }}>
+              <Ban size={32} color="#ef4444" />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '12px' }}>Access Restricted</h3>
+            <p style={{ color: '#64748b', fontSize: '15px', lineHeight: '1.6', marginBottom: '24px' }}>
+              This user has restricted access to their profile. You cannot view their photos, details, or communicate with them.
+            </p>
+            <Button
+              onClick={() => navigate('/dashboard')}
+              style={{
+                background: 'linear-gradient(135deg, #d63447 0%, #b02636 100%)',
+                color: '#fff',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(214, 52, 71, 0.2)'
+              }}
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const maskEmail = (email) => {
     if (!email) return 'N/A';
     return '********@****.***';
@@ -588,6 +921,8 @@ export default function ViewProfilePage() {
     return phone.length > 5 ? phone.substring(0, phone.length - 5) + '*****' : '*****';
   };
 
+  const candidateFirstName = profile?.name ? profile.name.trim().split(' ')[0] : 'Candidate';
+
   return (
     <div className="vp-page-wrapper">
       <TopNav />
@@ -597,11 +932,15 @@ export default function ViewProfilePage() {
         <div className="js-usp-container">
           <button className="js-usp-btn bio" onClick={() => setShowBioDataModal(true)}>
             <FileText size={18} />
-            <span>Generate Bio-Data</span>
+            <span>Generate Bio-Data of {candidateFirstName}</span>
           </button>
-          <button className="js-usp-btn guna" onClick={() => setShowKundaliModal(true)}>
+          <button className="js-usp-btn guna" onClick={() => { setGmTab('milan'); setShowGunMilanModal(true); }}>
             <Sparkles size={18} />
-            <span>Guna Milan Match</span>
+            <span>Match Your Patrika With {candidateFirstName}</span>
+          </button>
+          <button className="js-usp-btn patrika" onClick={() => setShowGenKundali(true)}>
+            <FileText size={18} />
+            <span>Generate Patrika of {candidateFirstName}</span>
           </button>
         </div>
       </div>
@@ -765,18 +1104,42 @@ export default function ViewProfilePage() {
       {/* STICKY BOTTOM ACTIONS */}
       {!isOwn && (
         <div className="js-sticky-action-bar">
-          <button 
-            className={`js-circle-action ${interestStatus?.status === 'pending' ? 'sent' : ''}`}
-            onClick={handleSendInterest}
-            disabled={sending || interestStatus?.status === 'pending'}
-          >
-            <div className="js-icon-circle">
-              {interestStatus?.status === 'pending' ? <CheckCircle size={24} fill="#D63447" color="#fff" /> : <Heart size={24} color="#fff" />}
-            </div>
-            <span>{interestStatus?.status === 'pending' ? 'Interest Sent' : 'Interest'}</span>
-          </button>
 
-          <button 
+          {/* INTEREST BUTTON — varies by scenario */}
+          {isAnyBlocked ? (
+            /* Blocked state — show block/unblock only */
+            iBlockedThem ? (
+              <button className="js-circle-action" onClick={handleUnblock} disabled={blocking}>
+                <div className="js-icon-circle" style={{ background: '#64748b' }}><Ban size={24} color="#fff" /></div>
+                <span>Unblock</span>
+              </button>
+            ) : null /* iAmBlocked — no interest action available */
+          ) : isAcceptedVP ? (
+            /* Mutual — show a connected tick */
+            <button className="js-circle-action" disabled>
+              <div className="js-icon-circle" style={{ background: '#16a34a' }}><CheckCircle size={24} fill="#fff" color="#fff" /></div>
+              <span>Connected</span>
+            </button>
+          ) : isPendingVP && iAmSenderVP ? (
+            /* I sent, waiting */
+            <button className="js-circle-action sent" disabled>
+              <div className="js-icon-circle"><CheckCircle size={24} fill="#D63447" color="#fff" /></div>
+              <span>Interest Sent</span>
+            </button>
+          ) : (
+            /* No interest, rejected or pending-received — show Send Interest */
+            <button
+              className="js-circle-action"
+              onClick={handleSendInterest}
+              disabled={sending}
+            >
+              <div className="js-icon-circle"><Heart size={24} color="#fff" /></div>
+              <span>{isRejectedVP && iAmSenderVP ? 'Re-send' : 'Interest'}</span>
+            </button>
+          )}
+
+          {/* SHORTLIST */}
+          <button
             className={`js-circle-action ${isShortlisted ? 'active' : ''}`}
             onClick={handleToggleShortlist}
             disabled={shortlisting}
@@ -786,16 +1149,24 @@ export default function ViewProfilePage() {
             </div>
             <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
           </button>
-
-          <button className="js-circle-action" onClick={() => navigate('/dashboard')}>
-            <div className="js-icon-circle"><X size={24} color="#fff" /></div>
-            <span>Ignore</span>
-          </button>
-
+          {/* SHARE */}
+          <button className="js-circle-action" onClick={() => setShowShareModal(true)}>
+            <div className="js-icon-circle"><Share2 size={24} color="#fff" /></div>
+            <span>Share</span>
+          </button>          {/* CHAT */}
           <button className="js-circle-action" onClick={() => navigate(`/chat/${id}`)}>
             <div className="js-icon-circle"><MessageCircle size={24} color="#fff" /></div>
             <span>Chat</span>
           </button>
+
+          {/* BLOCK — always available, shown last */}
+          {!isAnyBlocked && (
+            <button className="js-circle-action" onClick={handleBlock} disabled={blocking}>
+              <div className="js-icon-circle" style={{ background: '#64748b' }}><Ban size={24} color="#fff" /></div>
+              <span>Block</span>
+            </button>
+          )}
+
         </div>
       )}
 
@@ -1029,29 +1400,7 @@ export default function ViewProfilePage() {
         </div>
       )}
 
-      {/* KUNDALI MATCH MODAL */}
-      {showKundaliModal && (
-        <div className="js-share-modal-overlay" onClick={() => setShowKundaliModal(false)}>
-          <div className="js-share-modal-content kundali" onClick={e => e.stopPropagation()}>
-            <div className="js-share-header">
-              <Sparkles size={32} color="#F47A20" />
-              <h3>Guna Milan Match</h3>
-              <p>Astrological compatibility between you and {profile.name}</p>
-            </div>
-            
-            <div className="js-kundali-match-result">
-              <div className="js-score-circle">
-                <span className="js-score-num">28</span>
-                <span className="js-score-total">/ 36</span>
-              </div>
-              <h4>Good Compatibility!</h4>
-              <p>According to your birth details, this is a <strong>Shubh Match</strong> for a happy married life.</p>
-            </div>
 
-            <button className="js-modal-close-btn" onClick={() => setShowKundaliModal(false)}>Got it</button>
-          </div>
-        </div>
-      )}
 
       {/* PHOTO MODAL */}
       {showPhotoModal && (
@@ -1068,6 +1417,24 @@ export default function ViewProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* GUN MILAN MODAL */}
+      {showGunMilanModal && (
+        <GunMilanModal
+          profile={profile}
+          myProfile={myProfile}
+          defaultTab={gmTab}
+          onClose={() => setShowGunMilanModal(false)}
+        />
+      )}
+
+      {/* GENERATE KUNDALI MODAL */}
+      {showGenKundali && (
+        <GenerateKundaliModal
+          profile={profile}
+          onClose={() => setShowGenKundali(false)}
+        />
       )}
 
       {/* PREMIUM SHARE MODAL */}
@@ -1316,18 +1683,247 @@ export default function ViewProfilePage() {
         /* USP Bar */
         .js-usp-bar {
           background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 0;
-          position: sticky; top: 70px; z-index: 900;
         }
         .js-usp-container { max-width: 1200px; margin: 0 auto; display: flex; gap: 12px; padding: 0 20px; }
+        @media (max-width: 768px) {
+          .js-usp-container {
+            flex-direction: column;
+            gap: 8px;
+          }
+          .js-usp-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 13px !important;
+          }
+        }
         .js-usp-btn {
           flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
           padding: 10px; border-radius: 12px; border: 1.5px solid #e2e8f0;
-          font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+          font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s ease;
           background: #fff; color: #475569;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
-        .js-usp-btn:hover { border-color: #F47A20; color: #F47A20; background: #fffcf9; }
-        .js-usp-btn.guna { border-color: #F47A20; background: #F47A20; color: #fff; }
-        .js-usp-btn.guna:hover { background: #ea580c; border-color: #ea580c; }
+        .js-usp-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+        .js-usp-btn.bio {
+          border-color: var(--clr-primary);
+          color: var(--clr-primary);
+          background: #fff;
+        }
+        .js-usp-btn.bio:hover {
+          background: rgba(214, 52, 71, 0.03);
+          border-color: var(--clr-primary-light);
+          color: var(--clr-primary-light);
+        }
+        .js-usp-btn.guna {
+          border: none;
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #d97706 100%);
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(244, 122, 32, 0.2);
+        }
+        .js-usp-btn.guna:hover {
+          background: linear-gradient(135deg, #ea580c 0%, #d84a00 50%, #b45309 100%);
+          box-shadow: 0 6px 18px rgba(244, 122, 32, 0.35);
+        }
+        .js-usp-btn.patrika {
+          border: none;
+          background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+        .js-usp-btn.patrika:hover {
+          background: linear-gradient(135deg, #16133a 0%, #252269 50%, #3b1078 100%);
+          box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
+        }
+
+        /* MATCHING CHARTS */
+        .gm-matching-charts-section {
+          padding: 20px;
+          background: #fffbeb;
+          border-bottom: 1px solid #e2e8f0;
+          font-family: sans-serif;
+        }
+        .gm-matching-charts-title {
+          font-size: 16px;
+          font-weight: 800;
+          color: #7c1d1d;
+          text-align: center;
+          margin: 0 0 16px;
+        }
+        .gm-matching-charts-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+        .gm-chart-container-half {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background: #fff;
+          border: 1px solid #fde68a;
+          border-radius: 12px;
+          padding: 12px;
+        }
+        .gm-chart-label {
+          font-size: 13px;
+          font-weight: 700;
+          color: #1e293b;
+          margin: 0 0 8px;
+        }
+
+        /* ── GUN MILAN MODAL ── */
+        .gm-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+          z-index: 3000; display: flex; align-items: flex-start; justify-content: center;
+          overflow-y: auto; padding: 10px; backdrop-filter: blur(8px);
+        }
+        .gm-modal {
+          width: 100%; max-width: 820px; background: #fff;
+          border-radius: 20px; overflow: hidden; position: relative;
+          margin: auto; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        }
+        .gm-toolbar {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 12px 16px; background: #1e1b4b; gap: 12px; flex-wrap: wrap;
+        }
+        .gm-toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .gm-toolbar-right { display: flex; align-items: center; gap: 8px; }
+        .gm-lang-toggle { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
+        .gm-lang-toggle button { padding: 5px 12px; font-size: 12px; font-weight: 600; background: transparent; color: rgba(255,255,255,0.6); border: none; cursor: pointer; transition: all 0.2s; }
+        .gm-lang-toggle button.active { background: rgba(255,255,255,0.15); color: #fff; }
+        .gm-tab-btns { display: flex; gap: 6px; }
+        .gm-tab-btns button { padding: 5px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: none; cursor: pointer; transition: all 0.2s; }
+        .gm-tab-btns button.active { background: rgba(255,255,255,0.25); color: #fff; }
+        .gm-dl-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #059669; color: #fff; border: none; cursor: pointer; }
+        .gm-dl-btn.pdf { background: #2563eb; }
+        .gm-close-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; border-radius: 8px; padding: 6px; cursor: pointer; display: flex; align-items: center; }
+        .gm-body { overflow-y: auto; max-height: calc(100vh - 80px); }
+        .gm-print-area { background: #fff; }
+
+        /* PATRIKA CARD */
+        .gm-patrika-card, .gm-milan-card {
+          padding: 0;
+          font-family: 'Georgia', serif;
+        }
+        .gm-patrika-header, .gm-milan-header {
+          background: linear-gradient(135deg, #7c1d1d 0%, #b91c1c 40%, #f97316 100%);
+          padding: 24px 20px 20px;
+          text-align: center;
+          color: #fff;
+        }
+        .gm-patrika-blessing { font-size: 14px; opacity: 0.9; letter-spacing: 2px; margin-bottom: 8px; font-style: italic; }
+        .gm-patrika-title { font-size: 26px; font-weight: 800; margin: 0 0 4px; letter-spacing: 1px; }
+        .gm-patrika-subtitle { font-size: 13px; opacity: 0.85; margin: 0; }
+        .gm-person-banner {
+          display: flex; justify-content: space-between; align-items: center;
+          background: #fef3c7; padding: 10px 20px;
+          border-bottom: 2px solid #f59e0b;
+        }
+        .gm-person-name { font-size: 18px; font-weight: 700; color: #92400e; }
+        .gm-person-id { font-size: 12px; color: #78350f; opacity: 0.8; }
+        .gm-patrika-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0;
+          padding: 16px;
+          background: #fffbeb;
+        }
+        .gm-patrika-row {
+          display: flex; flex-direction: column; padding: 10px 14px;
+          border-bottom: 1px solid #fde68a;
+          border-right: 1px solid #fde68a;
+        }
+        .gm-patrika-row:nth-child(even) { border-right: none; }
+        .gm-patrika-label { font-size: 11px; color: #78350f; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; font-family: sans-serif; }
+        .gm-patrika-value { font-size: 15px; color: #1e293b; font-weight: 600; margin-top: 2px; }
+        .gm-note { font-size: 11px; color: #64748b; padding: 8px 20px; font-style: italic; text-align: center; font-family: sans-serif; }
+        .gm-patrika-footer {
+          display: flex; justify-content: space-between; padding: 12px 20px;
+          background: #7c1d1d; color: rgba(255,255,255,0.8); font-size: 12px; font-family: sans-serif;
+        }
+        .gm-no-data {
+          padding: 40px; text-align: center; color: #64748b; font-family: sans-serif;
+        }
+
+        /* MILAN CARD */
+        .gm-persons-compare {
+          display: flex; align-items: center; justify-content: center; gap: 12px;
+          padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+          font-family: sans-serif;
+        }
+        .gm-person-box { flex: 1; text-align: center; background: #fff; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; }
+        .gm-person-role { font-size: 11px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 1px; }
+        .gm-person-name-sm { font-size: 15px; font-weight: 700; color: #1e293b; margin: 4px 0; }
+        .gm-person-detail { font-size: 12px; color: #64748b; }
+        .gm-vs-circle { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+
+        .gm-score-wrap {
+          display: flex; align-items: center; gap: 20px; padding: 20px 24px;
+          background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-family: sans-serif;
+        }
+        .gm-score-wrap.excellent { background: #f0fdf4; border-color: #bbf7d0; }
+        .gm-score-wrap.good { background: #eff6ff; border-color: #bfdbfe; }
+        .gm-score-wrap.average { background: #fffbeb; border-color: #fde68a; }
+        .gm-score-wrap.poor { background: #fff1f2; border-color: #fecdd3; }
+        .gm-score-circle {
+          width: 80px; height: 80px; border-radius: 50%;
+          background: linear-gradient(135deg, #7c3aed, #4f46e5);
+          display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;
+          box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+        }
+        .gm-score-wrap.excellent .gm-score-circle { background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 4px 16px rgba(22,163,74,0.3); }
+        .gm-score-wrap.good .gm-score-circle { background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 16px rgba(37,99,235,0.3); }
+        .gm-score-wrap.average .gm-score-circle { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 4px 16px rgba(217,119,6,0.3); }
+        .gm-score-wrap.poor .gm-score-circle { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 16px rgba(220,38,38,0.3); }
+        .gm-score-num { font-size: 28px; font-weight: 800; color: #fff; line-height: 1; }
+        .gm-score-denom { font-size: 12px; color: rgba(255,255,255,0.8); }
+        .gm-score-label { flex: 1; }
+        .gm-score-level { font-size: 18px; font-weight: 700; color: #1e293b; }
+        .gm-score-verdict { font-size: 13px; color: #475569; margin-top: 4px; }
+
+        .gm-koota-table { width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 13px; }
+        .gm-koota-table thead { background: #1e1b4b; color: #fff; }
+        .gm-koota-table th { padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 600; }
+        .gm-koota-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+        .gm-koota-table tbody tr:hover { background: #f8fafc; }
+        .gm-row-dosha { background: #fff1f2 !important; }
+        .gm-row-full { background: #f0fdf4 !important; }
+        .gm-koota-name { padding: 10px 12px; min-width: 130px; }
+        .gm-dosha-badge { display: block; font-size: 10px; color: #dc2626; font-weight: 600; margin-top: 2px; }
+        .gm-koota-scored { padding: 10px 8px; width: 120px; }
+        .gm-bar-wrap { background: #f1f5f9; border-radius: 4px; height: 6px; margin-bottom: 4px; overflow: hidden; }
+        .gm-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .gm-scored-num { font-size: 13px; font-weight: 700; }
+        .gm-koota-max { padding: 10px 8px; color: #64748b; }
+        .gm-koota-detail { padding: 10px 8px; color: #475569; font-size: 12px; }
+        .gm-total-row { background: #1e1b4b !important; color: #fff; }
+        .gm-total-row td { padding: 10px 12px; font-size: 15px; }
+
+        .gm-dosha-warnings {
+          padding: 16px 20px; background: #fff7ed; border-top: 2px solid #fed7aa;
+          font-family: sans-serif;
+        }
+        .gm-dosha-warnings h4 { font-size: 14px; font-weight: 700; color: #c2410c; margin: 0 0 8px; }
+        .gm-dosha-warnings p { font-size: 13px; color: #7c2d12; margin: 4px 0; }
+
+        .gm-scale { padding: 16px 20px; font-family: sans-serif; }
+        .gm-scale-bar { position: relative; background: linear-gradient(90deg, #dc2626 0%, #f97316 50%, #16a34a 100%); height: 10px; border-radius: 5px; margin-bottom: 6px; }
+        .gm-scale-fill { position: absolute; top: 0; left: 0; height: 100%; background: transparent; }
+        .gm-scale-marker { position: absolute; top: -4px; width: 18px; height: 18px; background: #1e293b; border: 2px solid #fff; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .gm-scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; }
+        .gm-scale-text { font-size: 12px; color: #475569; text-align: center; margin-top: 4px; }
+
+        @media (max-width: 600px) {
+          .gm-modal { border-radius: 12px 12px 0 0; margin-top: auto; }
+          .gm-patrika-grid { grid-template-columns: 1fr; }
+          .gm-patrika-row { border-right: none !important; }
+          .gm-persons-compare { flex-direction: column; }
+          .gm-toolbar { flex-direction: column; align-items: flex-start; }
+          .gm-koota-detail { display: none; }
+        }
+
 
         /* BioData Modal - Fully Responsive */
         .js-biodata-overlay {

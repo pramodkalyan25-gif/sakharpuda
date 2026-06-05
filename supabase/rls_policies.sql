@@ -124,10 +124,15 @@ CREATE POLICY "interests_insert"
     )
   );
 
--- Only receiver can update interest status (accept/reject)
+-- Blocker (sender) or Receiver can update interest rows
 CREATE POLICY "interests_update"
   ON interests FOR UPDATE
-  USING (receiver_id = auth.uid());
+  USING (sender_id = auth.uid() OR receiver_id = auth.uid());
+
+-- Blocker (sender) or Receiver can delete interest rows
+CREATE POLICY "interests_delete"
+  ON interests FOR DELETE
+  USING (sender_id = auth.uid() OR receiver_id = auth.uid());
 
 -- ============================================================
 -- PHOTOS POLICIES

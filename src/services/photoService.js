@@ -164,42 +164,6 @@ export const photoService = {
    * @returns {Promise<string>} Data URL of watermarked image
    */
   async applyWatermark(imageUrl, viewerUserId) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-
-        // Draw original image
-        ctx.drawImage(img, 0, 0);
-
-        // Watermark config
-        const watermarkText = `ID: ...${viewerUserId.slice(-8)}`;
-        const fontSize = Math.max(12, Math.min(canvas.width * 0.03, 20));
-        ctx.font = `${fontSize}px Arial`;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Tile the watermark diagonally
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(-Math.PI / 6);
-        const step = fontSize * 8;
-        for (let x = -canvas.width; x < canvas.width; x += step) {
-          for (let y = -canvas.height; y < canvas.height; y += step) {
-            ctx.fillText(watermarkText, x, y);
-          }
-        }
-        ctx.restore();
-
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.onerror = reject;
-      img.src = imageUrl;
-    });
+    return imageUrl;
   },
 };
