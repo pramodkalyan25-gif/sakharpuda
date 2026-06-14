@@ -32,14 +32,25 @@ export default function LoginPage() {
     }
   }, [authLoading, user, profile, navigate, from]);
 
-  // Inject noindex meta tag to prevent search engines from indexing the login page
+  // Set page metadata dynamically for SEO indexability
   useEffect(() => {
-    const meta = document.createElement('meta');
-    meta.name = 'robots';
-    meta.content = 'noindex, nofollow';
-    document.head.appendChild(meta);
+    const originalTitle = document.title;
+    let originalDesc = '';
+    const descMeta = document.querySelector('meta[name="description"]');
+    if (descMeta) {
+      originalDesc = descMeta.getAttribute('content') || '';
+    }
+
+    document.title = 'Member Login | SakharPuda Matrimony';
+    if (descMeta) {
+      descMeta.setAttribute('content', 'Log in to your SakharPuda matrimony account. Enter your email/mobile and password or login with OTP to find and connect with Marathi brides and grooms.');
+    }
+
     return () => {
-      document.head.removeChild(meta);
+      document.title = originalTitle;
+      if (descMeta) {
+        descMeta.setAttribute('content', originalDesc);
+      }
     };
   }, []);
 

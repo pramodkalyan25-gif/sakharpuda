@@ -140,6 +140,28 @@ export default function RegistrationPage() {
     return () => clearInterval(timer);
   }, [otpExpiry]);
 
+  // Set page metadata dynamically for SEO indexability
+  useEffect(() => {
+    const originalTitle = document.title;
+    let originalDesc = '';
+    const descMeta = document.querySelector('meta[name="description"]');
+    if (descMeta) {
+      originalDesc = descMeta.getAttribute('content') || '';
+    }
+
+    document.title = 'Register Free | SakharPuda Matrimony';
+    if (descMeta) {
+      descMeta.setAttribute('content', 'Register free on SakharPuda Matrimony, Maharashtra\'s No. 1 matchmaking platform. Create your profile, select religion/caste, and find verified Marathi vadhu and var.');
+    }
+
+    return () => {
+      document.title = originalTitle;
+      if (descMeta) {
+        descMeta.setAttribute('content', originalDesc);
+      }
+    };
+  }, []);
+
   // Track custom "Other" values for all dropdowns
   const [customValues, setCustomValues] = useState({
     religion: '',
