@@ -1360,6 +1360,21 @@ export default function ViewProfilePage() {
 
               {/* ══ LEFT: FORM EDITOR ══ */}
               <div className="bm-editor no-print">
+                {biodataLang === 'mr' && (
+                  <div className="bm-translit-hint" style={{
+                    background: 'rgba(244, 122, 32, 0.08)',
+                    border: '1px solid rgba(244, 122, 32, 0.2)',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    marginBottom: '15px',
+                    fontSize: '12px',
+                    color: '#c2410c',
+                    lineHeight: '1.5',
+                    fontFamily: 'Outfit, sans-serif'
+                  }}>
+                    💡 English typed word will get converted into Marathi Automatically,After any word is typed just enter Space bar to get that word converted into  Marathi
+                  </div>
+                )}
                 {/* God photo controls */}
                 <div className="bm-editor-section">
                   <div className="bm-editor-sec-title">🙏 Blessing / Deity Photo</div>
