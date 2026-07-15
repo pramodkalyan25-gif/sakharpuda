@@ -663,7 +663,10 @@ export default function ViewProfilePage() {
 
   const handleGenericTranslit = async (e, currentValue, onUpdate) => {
     if (biodataLang !== 'mr') return;
-    if (e.key !== ' ' && e.key !== 'Enter') return;
+    
+    const isBlur = e.type === 'blur';
+    const allowedKeys = [' ', 'Enter', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    if (!isBlur && !allowedKeys.includes(e.key)) return;
 
     const el = e.target;
     const isInput = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
@@ -682,12 +685,13 @@ export default function ViewProfilePage() {
     if (converted === lastWord) return;
     
     const beforeWord = textBefore.substring(0, textBefore.lastIndexOf(lastWord));
-    const newValue = beforeWord + converted + ' ' + text.substring(cursorPos);
+    const shouldAddSpace = e.key === ' ' || e.key === 'Enter';
+    const newValue = beforeWord + converted + (shouldAddSpace ? ' ' : '') + text.substring(cursorPos);
     
     onUpdate(newValue.replace(/\u00A0/g, ' '));
     
     setTimeout(() => {
-      const newPos = beforeWord.length + converted.length + 1;
+      const newPos = beforeWord.length + converted.length + (shouldAddSpace ? 1 : 0);
       el.setSelectionRange(newPos, newPos);
     }, 0);
   };
@@ -1376,6 +1380,7 @@ export default function ViewProfilePage() {
                     <input className="bm-field-value" value={godBlessingText}
                       onChange={e => setGodBlessingText(e.target.value)}
                       onKeyUp={e => handleGenericTranslit(e, godBlessingText, (val) => setGodBlessingText(val))}
+                      onBlur={e => handleGenericTranslit(e, godBlessingText, (val) => setGodBlessingText(val))}
                       placeholder="e.g. ॥ श्री गणेशाय नमः ॥" style={{ flex: 1 }} />
                   </div>
                   <div className="bm-ctrl-row">
@@ -1416,6 +1421,7 @@ export default function ViewProfilePage() {
                       <input className="bm-sec-title-input" value={sec.title}
                         onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: e.target.value } : s))}
                         onKeyUp={e => handleGenericTranslit(e, sec.title, (val) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: val } : s)))}
+                        onBlur={e => handleGenericTranslit(e, sec.title, (val) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: val } : s)))}
                         placeholder="Section title..." />
                       <div className="bm-sec-btns">
                         {sIdx > 0 && (
@@ -1435,11 +1441,13 @@ export default function ViewProfilePage() {
                         <input className="bm-field-label" value={f.label}
                           onChange={e => updateField(sec.id, fIdx, 'label', e.target.value)}
                           onKeyUp={e => handleGenericTranslit(e, f.label, (val) => updateField(sec.id, fIdx, 'label', val))}
+                          onBlur={e => handleGenericTranslit(e, f.label, (val) => updateField(sec.id, fIdx, 'label', val))}
                           placeholder="Label" />
                         <span className="bm-colon">:</span>
                         <input className="bm-field-value" value={f.value}
                           onChange={e => updateField(sec.id, fIdx, 'value', e.target.value)}
                           onKeyUp={e => handleGenericTranslit(e, f.value, (val) => updateField(sec.id, fIdx, 'value', val))}
+                          onBlur={e => handleGenericTranslit(e, f.value, (val) => updateField(sec.id, fIdx, 'value', val))}
                           placeholder="Value" />
                         <button className="bm-field-add" title="Add row below"
                           onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? {
