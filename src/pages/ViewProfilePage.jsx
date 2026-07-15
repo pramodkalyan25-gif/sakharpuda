@@ -378,43 +378,171 @@ export default function ViewProfilePage() {
 
   // Build default sections from profile data when modal opens
   useEffect(() => {
+    let active = true;
     if (showBioDataModal && profile) {
       const mr = biodataLang === 'mr';
       const dob = profile.dob ? (() => { const d = new Date(profile.dob); const dd = String(d.getDate()).padStart(2,'0'); const mm = String(d.getMonth()+1).padStart(2,'0'); const yyyy = d.getFullYear(); return `${dd}-${mm}-${yyyy}`; })() : '---';
       const htCm = profile.height;
       const htFt = htCm ? `${Math.floor(htCm / 30.48)}'${Math.round((htCm / 2.54) % 12)}"` : '---';
-      const initialSections = [
-        { id: 1, title: mr ? '❋ वैयक्तिक माहिती ❋' : '❋ Personal Details ❋', fields: [
-          { label: mr ? 'पूर्ण नाव' : 'Full Name', value: profile.name || '---' },
-          { label: mr ? 'जन्म तारीख' : 'Date of Birth', value: dob },
-          { label: mr ? 'जन्म वेळ' : 'Time of Birth', value: profile.tob || '---' },
-          { label: mr ? 'जन्म स्थळ' : 'Place of Birth', value: profile.pob || '---' },
-          { label: mr ? 'उंची' : 'Height', value: htFt },
-          { label: mr ? 'राशी' : 'Rashi', value: profile.rashi || '---' },
-          { label: mr ? 'रक्तगट' : 'Blood Group', value: profile.blood_group || '---' },
-          { label: mr ? 'जात' : 'Caste', value: profile.caste || '---' },
-          { label: mr ? 'शिक्षण' : 'Education', value: profile.education || '---' },
-          { label: mr ? 'नोकरी / व्यवसाय' : 'Profession', value: profile.profession || '---' },
-        ]},
-        { id: 2, title: mr ? '❋ कौटुंबिक माहिती ❋' : '❋ Family Details ❋', fields: [
-          { label: mr ? 'वडिलांचे नाव' : "Father's Name", value: profile.father_name || '---' },
-          { label: mr ? 'आईचे नाव' : "Mother's Name", value: profile.mother_name || '---' },
-          { label: mr ? 'भाऊ' : 'Brother', value: '---' },
-          { label: mr ? 'बहिण' : 'Sister', value: '---' },
-          { label: mr ? 'चुलते' : 'Paternal Uncle', value: '---' },
-          { label: mr ? 'मामा' : 'Maternal Uncle', value: profile.maternal_uncle || '---' },
-          { label: mr ? 'काका' : 'Paternal Uncle (Kaka)', value: '---' },
-          { label: mr ? 'नातेवाईक' : 'Relatives', value: '---' },
-        ]},
-        { id: 3, title: mr ? '❋ संपर्क ❋' : '❋ Contact ❋', fields: [
-          { label: mr ? 'नाव' : 'Contact Name', value: profile.name || '---' },
-          { label: mr ? 'मोबाईल नंबर' : 'Mobile', value: profile.mobile || '---' },
-          { label: mr ? 'घरचा पत्ता' : 'Home Address', value: [profile.city, profile.state].filter(Boolean).join(', ') || '---' },
-        ]},
-      ];
-      setSections(initialSections);
-      saveHistory(initialSections, { x: 20, y: 20, w: 43 }, { x: 480, y: 30, w: 150 });
+
+      const initializeData = async () => {
+        let nameVal = profile.name || '---';
+        let tobVal = profile.time_of_birth || profile.tob || '---';
+        let pobVal = profile.place_of_birth || profile.pob || '---';
+        let bloodVal = profile.blood_group || '---';
+        let casteVal = profile.caste || '---';
+        let eduVal = profile.education || '---';
+        let profVal = profile.profession || '---';
+        let fatherVal = profile.father_name || '---';
+        let motherVal = profile.mother_name || '---';
+        let uncleVal = profile.maternal_uncle || '---';
+        let addrVal = [profile.city, profile.state].filter(Boolean).join(', ') || '---';
+
+        // Calculate Rashi using buildPatrika
+        const patrika = profile ? buildPatrika(profile) : null;
+        let rashiVal = patrika?.rashi ? (mr ? patrika.rashi.mr : patrika.rashi.en) : (profile.rashi || '---');
+
+        if (mr) {
+          const translateText = async (val) => {
+            if (!val || val === '---') return '---';
+
+            const dict = {
+              // Castes
+              'maratha': 'मराठा', 'kunbi': 'कुणबी', 'chambhar': 'चांभार', 'mahar': 'महार',
+              'mali': 'माळी', 'dhangar': 'धनगर', 'brahmin': 'ब्राह्मण', 'bramhin': 'ब्राह्मण',
+              'agri': 'आगरी', 'koli': 'कोळी', 'bhandari': 'भंडारी', 'nhavi': 'न्हावी',
+              'sutar': 'सुतार', 'lohar': 'लोहार', 'shimpi': 'शिंपी', 'sonar': 'सोनार',
+              'teli': 'तेली', 'lingayat': 'लिंगायत', 'gurav': 'गुरव', 'mang': 'मांग',
+              'wadari': 'वडारी', 'vanjari': 'वंजारी', 'marwadi': 'मारवाडी',
+
+              // Religions
+              'hindu': 'हिंदू', 'buddhist': 'बौद्ध', 'jain': 'जैन', 'christian': 'ख्रिश्चन',
+              'sikh': 'शीख', 'muslim': 'मुस्लिम',
+
+              // Cities / States
+              'pune': 'पुणे', 'mumbai': 'मुंबई', 'thane': 'ठाणे', 'nashik': 'नाशिक',
+              'nasik': 'नाशिक', 'nagpur': 'नागपूर', 'solapur': 'सोलापूर',
+              'kolhapur': 'कोल्हापूर', 'amravati': 'अमरावती', 'nanded': 'नांदेड',
+              'latur': 'लातूर', 'sangli': 'सांगली', 'satara': 'सातारा',
+              'jalgaon': 'जळगाव', 'akola': 'अकोला', 'chandrapur': 'चंद्रपूर',
+              'dhule': 'धुळे', 'jalna': 'जालना', 'wardha': 'वर्धा',
+              'yavatmal': 'यवतमाळ', 'beed': 'बीड', 'gondia': 'गोंदिया',
+              'bhandara': 'भंडारा', 'gadchiroli': 'गडचिरोली', 'hingoli': 'हिंगोली',
+              'nandurbar': 'नंदुरबार', 'osmanabad': 'धाराशिव', 'dharashiv': 'धाराशिव',
+              'parbhani': 'परभणी', 'ratnagiri': 'रत्नागिरी', 'sindhudurg': 'सिंधुदुर्ग',
+              'washim': 'वाशीम', 'buldhana': 'बुलढाणा', 'palghar': 'पालघर',
+              'raigad': 'रायगड', 'ahmednagar': 'अहमदनगर', 'maharashtra': 'महाराष्ट्र',
+
+              // Common designations/qualifications
+              'engineer': 'अभियंता', 'software engineer': 'सॉफ्टवेअर अभियंता',
+              'doctor': 'डॉक्टर', 'teacher': 'शिक्षक', 'business': 'व्यवसाय',
+              'service': 'नोकरी', 'farmer': 'शेतकरी', 'farming': 'शेती'
+            };
+
+            const clean = val.trim().toLowerCase();
+            if (dict[clean]) return dict[clean];
+
+            // Handle comma-separated lists (like City, State)
+            const parts = val.split(', ');
+            if (parts.length > 1) {
+              const transParts = await Promise.all(parts.map(p => translateText(p)));
+              return transParts.join(', ');
+            }
+
+            // Word by word fallback
+            const words = val.split(/\s+/);
+            const transWords = await Promise.all(
+              words.map(async (word) => {
+                if (/^[a-zA-Z]+$/.test(word)) {
+                  return await smartTransliterate(word);
+                }
+                return word;
+              })
+            );
+            return transWords.join(' ');
+          };
+
+          const [
+            tName,
+            tTob,
+            tPob,
+            tBlood,
+            tCaste,
+            tEdu,
+            tProf,
+            tFather,
+            tMother,
+            tUncle,
+            tAddr
+          ] = await Promise.all([
+            translateText(nameVal),
+            translateText(tobVal),
+            translateText(pobVal),
+            translateText(bloodVal),
+            translateText(casteVal),
+            translateText(eduVal),
+            translateText(profVal),
+            translateText(fatherVal),
+            translateText(motherVal),
+            translateText(uncleVal),
+            translateText(addrVal)
+          ]);
+
+          if (active) {
+            nameVal = tName;
+            tobVal = tTob;
+            pobVal = tPob;
+            bloodVal = tBlood;
+            casteVal = tCaste;
+            eduVal = tEdu;
+            profVal = tProf;
+            fatherVal = tFather;
+            motherVal = tMother;
+            uncleVal = tUncle;
+            addrVal = tAddr;
+          }
+        }
+
+        if (active) {
+          const initialSections = [
+            { id: 1, title: mr ? '❋ वैयक्तिक माहिती ❋' : '❋ Personal Details ❋', fields: [
+              { label: mr ? 'पूर्ण नाव' : 'Full Name', value: nameVal },
+              { label: mr ? 'जन्म तारीख' : 'Date of Birth', value: dob },
+              { label: mr ? 'जन्म वेळ' : 'Time of Birth', value: tobVal },
+              { label: mr ? 'जन्म स्थळ' : 'Place of Birth', value: pobVal },
+              { label: mr ? 'उंची' : 'Height', value: htFt },
+              { label: mr ? 'राशी' : 'Rashi', value: rashiVal },
+              { label: mr ? 'रक्तगट' : 'Blood Group', value: bloodVal },
+              { label: mr ? 'जात' : 'Caste', value: casteVal },
+              { label: mr ? 'शिक्षण' : 'Education', value: eduVal },
+              { label: mr ? 'नोकरी / व्यवसाय' : 'Profession', value: profVal },
+            ]},
+            { id: 2, title: mr ? '❋ कौटुंबिक माहिती ❋' : '❋ Family Details ❋', fields: [
+              { label: mr ? 'वडिलांचे नाव' : "Father's Name", value: fatherVal },
+              { label: mr ? 'आईचे नाव' : "Mother's Name", value: motherVal },
+              { label: mr ? 'भाऊ' : 'Brother', value: '---' },
+              { label: mr ? 'बहिण' : 'Sister', value: '---' },
+              { label: mr ? 'चुलते' : 'Paternal Uncle', value: '---' },
+              { label: mr ? 'मामा' : 'Maternal Uncle', value: uncleVal },
+              { label: mr ? 'काका' : 'Paternal Uncle (Kaka)', value: '---' },
+              { label: mr ? 'नातेवाईक' : 'Relatives', value: '---' },
+            ]},
+            { id: 3, title: mr ? '❋ संपर्क ❋' : '❋ Contact ❋', fields: [
+              { label: mr ? 'नाव' : 'Contact Name', value: nameVal },
+              { label: mr ? 'मोबाईल नंबर' : 'Mobile', value: profile.mobile || '---' },
+              { label: mr ? 'घरचा पत्ता' : 'Home Address', value: addrVal },
+            ]},
+          ];
+          setSections(initialSections);
+          saveHistory(initialSections, { x: 20, y: 20, w: 43 }, { x: 480, y: 30, w: 150 });
+        }
+      };
+
+      initializeData();
     }
+    return () => {
+      active = false;
+    };
   }, [showBioDataModal, profile, biodataLang]);
 
   const updateField = (sId, fIdx, key, val) => {
