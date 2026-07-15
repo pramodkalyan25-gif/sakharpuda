@@ -7,14 +7,14 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkAdminStatus() {
   const email = 'pramod.gogadare@zohomail.in';
-  
+
   const { data, error } = await supabase
     .from('profiles')
     .select('user_id, name, is_admin')
     .eq('name', 'Pramod Gogadare'); // Assuming this is the name
 
   if (error) {
-    console.error('Error fetching profile:', error);
+    console.error('Error fetching profile :', error);
     return;
   }
 

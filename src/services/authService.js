@@ -85,6 +85,9 @@ export const authService = {
       if (msg.includes('signups not allowed') || msg.includes('not found') || msg.includes('invalid') || error.status === 400) {
         throw new Error('User does not have an account. Please create one first.');
       }
+      if (msg.includes('magic link') || msg.includes('email provider') || error.status === 500) {
+        throw new Error('Error sending OTP email. If you are using Supabase default email limits (3/hour), they may have been exceeded. Please configure a custom SMTP provider in your Supabase Dashboard (Settings -> Authentication -> SMTP Settings).');
+      }
       throw error;
     }
     return data;
@@ -101,7 +104,13 @@ export const authService = {
         shouldCreateUser: true,
       },
     });
-    if (error) throw error;
+    if (error) {
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('magic link') || msg.includes('email provider') || error.status === 500) {
+        throw new Error('Error sending OTP email. If you are using Supabase default email limits (3/hour), they may have been exceeded. Please configure a custom SMTP provider in your Supabase Dashboard (Settings -> Authentication -> SMTP Settings).');
+      }
+      throw error;
+    }
     return data;
   },
 
