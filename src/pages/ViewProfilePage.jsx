@@ -515,7 +515,10 @@ export default function ViewProfilePage() {
     if (dictionary[cleanText.toLowerCase()]) return dictionary[cleanText.toLowerCase()];
 
     try {
-      const url = `https://inputtools.google.com/request?text=${encodeURIComponent(cleanText)}&ime=transliteration_en_mr&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=jsapi`;
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const url = isLocal 
+        ? `https://inputtools.google.com/request?text=${encodeURIComponent(cleanText)}&ime=transliteration_en_mr&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=jsapi`
+        : `/api/transliterate?text=${encodeURIComponent(cleanText)}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data && data[0] === 'SUCCESS' && data[1][0] && data[1][0][1][0]) {
