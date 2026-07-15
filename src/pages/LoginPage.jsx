@@ -247,7 +247,7 @@ export default function LoginPage() {
             <form className="login-form" onSubmit={handleVerifyOTP}>
               <p className="login-hint">We've sent a 6-digit code to <strong>{email}</strong></p>
               <div className="otp-wrapper">
-                <OTPInput value={otp} onChange={setOtp} length={6} disabled={loading} />
+                <OTPInput value={otp} onChange={setOtp} length={6} disabled={authLoading || loadingAction !== null} />
               </div>
               <div className="login-actions">
                 <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loadingAction || otp.length < 6}>
