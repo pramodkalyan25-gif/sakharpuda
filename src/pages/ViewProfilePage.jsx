@@ -643,10 +643,7 @@ export default function ViewProfilePage() {
     if (dictionary[cleanText.toLowerCase()]) return dictionary[cleanText.toLowerCase()];
 
     try {
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const url = isLocal 
-        ? `https://inputtools.google.com/request?text=${encodeURIComponent(cleanText)}&ime=transliteration_en_mr&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=jsapi`
-        : `/api/transliterate?text=${encodeURIComponent(cleanText)}`;
+      const url = `/api/transliterate?text=${encodeURIComponent(cleanText)}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data && data[0] === 'SUCCESS' && data[1][0] && data[1][0][1][0]) {
@@ -665,15 +662,19 @@ export default function ViewProfilePage() {
     if (biodataLang !== 'mr') return;
     
     const isBlur = e.type === 'blur';
-    const allowedKeys = [' ', 'Enter', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-    if (!isBlur && !allowedKeys.includes(e.key)) return;
-
     const el = e.target;
     const isInput = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
     if (!isInput) return;
 
     const cursorPos = el.selectionStart;
     const text = el.value;
+
+    const lastChar = cursorPos > 0 ? text.substring(cursorPos - 1, cursorPos) : '';
+    const isSpaceOrEnter = lastChar === ' ' || lastChar === '\n';
+    const isAllowedKey = e.key === ' ' || e.key === 'Enter' || e.key === 'Tab';
+
+    if (!isBlur && !isSpaceOrEnter && !isAllowedKey) return;
+
     const textBefore = text.substring(0, cursorPos);
     const trimmed = textBefore.trimEnd();
     const words = trimmed.split(/\s+/);
@@ -685,7 +686,7 @@ export default function ViewProfilePage() {
     if (converted === lastWord) return;
     
     const beforeWord = textBefore.substring(0, textBefore.lastIndexOf(lastWord));
-    const shouldAddSpace = e.key === ' ' || e.key === 'Enter';
+    const shouldAddSpace = e.key === ' ' || e.key === 'Enter' || isSpaceOrEnter;
     const newValue = beforeWord + converted + (shouldAddSpace ? ' ' : '') + text.substring(cursorPos);
     
     onUpdate(newValue.replace(/\u00A0/g, ' '));
@@ -711,6 +712,9 @@ export default function ViewProfilePage() {
   const contactRef = useRef(null);
 
   const isOwn = user?.id === id;
+  const loggedInGender = (myProfile?.gender || '').toLowerCase();
+  const candidateGender = (profile?.gender || '').toLowerCase();
+  const isOppositeGender = loggedInGender && candidateGender && loggedInGender !== candidateGender;
   const age   = profile?.dob ? differenceInYears(new Date(), parseISO(profile.dob)) : null;
 
   useEffect(() => {
@@ -1065,15 +1069,34 @@ export default function ViewProfilePage() {
       {/* USP ACTION BAR */}
       <div className="js-usp-bar">
         <div className="js-usp-container">
-          <button className="js-usp-btn bio" onClick={() => setShowBioDataModal(true)}>
+          <button className="js-usp-btn bio" onClick={() => {
+            if (!isOwn && !isOppositeGender) {
+              toast.error("You can only generate Bio-Data for candidates of the opposite gender.");
+              return;
+            }
+            setShowBioDataModal(true);
+          }}>
             <FileText size={18} />
             <span>Generate Bio-Data of {candidateFirstName}</span>
           </button>
-          <button className="js-usp-btn guna" onClick={() => { setGmTab('milan'); setShowGunMilanModal(true); }}>
+          <button className="js-usp-btn guna" onClick={() => {
+            if (!isOwn && !isOppositeGender) {
+              toast.error("You can only match Kundali with candidates of the opposite gender.");
+              return;
+            }
+            setGmTab('milan');
+            setShowGunMilanModal(true);
+          }}>
             <Sparkles size={18} />
             <span>Match Your Patrika With {candidateFirstName}</span>
           </button>
-          <button className="js-usp-btn patrika" onClick={() => setShowGenKundali(true)}>
+          <button className="js-usp-btn patrika" onClick={() => {
+            if (!isOwn && !isOppositeGender) {
+              toast.error("You can only generate Patrika for candidates of the opposite gender.");
+              return;
+            }
+            setShowGenKundali(true);
+          }}>
             <FileText size={18} />
             <span>Generate Patrika of {candidateFirstName}</span>
           </button>
@@ -1347,7 +1370,9 @@ export default function ViewProfilePage() {
                 )}
               </div>
               <div className="bm-toolbar-right">
-                <button className="bm-btn-undo" onClick={undo} disabled={history.length < 2} title="Ctrl+Z">↩ Undo</button>
+                {isOwn && (
+                  <button className="bm-btn-undo" onClick={undo} disabled={history.length < 2} title="Ctrl+Z">↩ Undo</button>
+                )}
                 <button className="bm-btn-print" onClick={handleDownloadImage} style={{ background: '#059669', color: '#fff' }}><Download size={14} /> Download Image</button>
                 <button className="bm-btn-print" onClick={handleDownloadPDF} style={{ background: '#2563eb', color: '#fff' }}><FileText size={14} /> Download PDF</button>
                 <button className="bm-btn-print" onClick={() => window.print()}><Printer size={14} /> Print</button>
@@ -1359,125 +1384,127 @@ export default function ViewProfilePage() {
             <div className="bm-body">
 
               {/* ══ LEFT: FORM EDITOR ══ */}
-              <div className="bm-editor no-print">
-                {biodataLang === 'mr' && (
-                  <div className="bm-translit-hint" style={{
-                    background: 'rgba(244, 122, 32, 0.08)',
-                    border: '1px solid rgba(244, 122, 32, 0.2)',
-                    borderRadius: '8px',
-                    padding: '10px 12px',
-                    marginBottom: '15px',
-                    fontSize: '12px',
-                    color: '#c2410c',
-                    lineHeight: '1.5',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>
-                    💡 English typed word will get converted into Marathi Automatically,After any word is typed just enter Space bar to get that word converted into  Marathi
-                  </div>
-                )}
-                {/* God photo controls */}
-                <div className="bm-editor-section">
-                  <div className="bm-editor-sec-title">🙏 Blessing / Deity Photo</div>
-                  <div className="bm-ctrl-row">
-                    <label className="bm-check-label">
-                      <input type="checkbox" checked={showGodPhoto}
-                        onChange={e => setShowGodPhoto(e.target.checked)} />
-                      Show God Photo
-                    </label>
-                    <input type="file" id="bm-god-file" hidden accept="image/*"
-                      onChange={e => { const f = e.target.files[0]; if (f) setCustomGodPhoto(URL.createObjectURL(f)); }} />
-                    <button className="bm-upload-btn" onClick={() => document.getElementById('bm-god-file').click()}>
-                      ↑ Upload God Photo
-                    </button>
-                  </div>
-                  <div className="bm-ctrl-row">
-                    <label className="bm-small-label">Blessing Text</label>
-                    <input className="bm-field-value" value={godBlessingText}
-                      onChange={e => setGodBlessingText(e.target.value)}
-                      onKeyUp={e => handleGenericTranslit(e, godBlessingText, (val) => setGodBlessingText(val))}
-                      onBlur={e => handleGenericTranslit(e, godBlessingText, (val) => setGodBlessingText(val))}
-                      placeholder="e.g. ॥ श्री गणेशाय नमः ॥" style={{ flex: 1 }} />
-                  </div>
-                  <div className="bm-ctrl-row">
-                    <label className="bm-small-label">Size</label>
-                    <input type="range" min="40" max="180" value={godPos.w}
-                      onChange={e => setGodPos(p => ({ ...p, w: +e.target.value }))} style={{ flex: 1 }} />
-                    <span className="bm-small-label">{godPos.w}px</span>
-                  </div>
-                </div>
-
-                {/* Profile photo controls */}
-                <div className="bm-editor-section">
-                  <div className="bm-editor-sec-title">📸 Profile Photo</div>
-                  <div className="bm-ctrl-row">
-                    <label className="bm-check-label">
-                      <input type="checkbox" checked={showPhotoOnBio}
-                        onChange={e => setShowPhotoOnBio(e.target.checked)} />
-                      Show Photo
-                    </label>
-                    <input type="file" id="bm-user-file" hidden accept="image/*"
-                      onChange={e => { const f = e.target.files[0]; if (f) setCustomUserPhoto(URL.createObjectURL(f)); }} />
-                    <button className="bm-upload-btn" onClick={() => document.getElementById('bm-user-file').click()}>
-                      ↑ Upload Photo
-                    </button>
-                  </div>
-                  <div className="bm-ctrl-row">
-                    <label className="bm-small-label">Size</label>
-                    <input type="range" min="80" max="280" value={userPos.w}
-                      onChange={e => setUserPos(p => ({ ...p, w: +e.target.value }))} style={{ flex: 1 }} />
-                    <span className="bm-small-label">{userPos.w}px</span>
-                  </div>
-                </div>
-
-                {/* Section editor */}
-                {sections.map((sec, sIdx) => (
-                  <div key={sec.id} className="bm-editor-section">
-                    <div className="bm-editor-sec-header">
-                      <input className="bm-sec-title-input" value={sec.title}
-                        onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: e.target.value } : s))}
-                        onKeyUp={e => handleGenericTranslit(e, sec.title, (val) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: val } : s)))}
-                        onBlur={e => handleGenericTranslit(e, sec.title, (val) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: val } : s)))}
-                        placeholder="Section title..." />
-                      <div className="bm-sec-btns">
-                        {sIdx > 0 && (
-                          <button className="bm-sec-move" title="Move Up"
-                            onClick={() => setSections(prev => { const a = [...prev]; [a[sIdx-1], a[sIdx]] = [a[sIdx], a[sIdx-1]]; return a; })}>↑</button>
-                        )}
-                        {sIdx < sections.length - 1 && (
-                          <button className="bm-sec-move" title="Move Down"
-                            onClick={() => setSections(prev => { const a = [...prev]; [a[sIdx], a[sIdx+1]] = [a[sIdx+1], a[sIdx]]; return a; })}>↓</button>
-                        )}
-                        <button className="bm-sec-del" onClick={() => removeSection(sec.id)}>✕</button>
-                      </div>
+              {isOwn && (
+                <div className="bm-editor no-print">
+                  {biodataLang === 'mr' && (
+                    <div className="bm-translit-hint" style={{
+                      background: 'rgba(244, 122, 32, 0.08)',
+                      border: '1px solid rgba(244, 122, 32, 0.2)',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      marginBottom: '15px',
+                      fontSize: '12px',
+                      color: '#c2410c',
+                      lineHeight: '1.5',
+                      fontFamily: 'Outfit, sans-serif'
+                    }}>
+                      💡 English typed word will get converted into Marathi Automatically,After any word is typed just enter Space bar to get that word converted into  Marathi
                     </div>
-
-                    {sec.fields.map((f, fIdx) => (
-                      <div key={fIdx} className="bm-field-row">
-                        <input className="bm-field-label" value={f.label}
-                          onChange={e => updateField(sec.id, fIdx, 'label', e.target.value)}
-                          onKeyUp={e => handleGenericTranslit(e, f.label, (val) => updateField(sec.id, fIdx, 'label', val))}
-                          onBlur={e => handleGenericTranslit(e, f.label, (val) => updateField(sec.id, fIdx, 'label', val))}
-                          placeholder="Label" />
-                        <span className="bm-colon">:</span>
-                        <input className="bm-field-value" value={f.value}
-                          onChange={e => updateField(sec.id, fIdx, 'value', e.target.value)}
-                          onKeyUp={e => handleGenericTranslit(e, f.value, (val) => updateField(sec.id, fIdx, 'value', val))}
-                          onBlur={e => handleGenericTranslit(e, f.value, (val) => updateField(sec.id, fIdx, 'value', val))}
-                          placeholder="Value" />
-                        <button className="bm-field-add" title="Add row below"
-                          onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? {
-                            ...s, fields: [...s.fields.slice(0, fIdx + 1), { label: '', value: '' }, ...s.fields.slice(fIdx + 1)]
-                          } : s))}>+</button>
-                        <button className="bm-field-del" title="Remove row"
-                          onClick={() => removeField(sec.id, fIdx)}>−</button>
-                      </div>
-                    ))}
-
-                    <button className="bm-add-section-below"
-                      onClick={() => addSection(sec.id)}>+ Add Section Below</button>
+                  )}
+                  {/* God photo controls */}
+                  <div className="bm-editor-section">
+                    <div className="bm-editor-sec-title">🙏 Blessing / Deity Photo</div>
+                    <div className="bm-ctrl-row">
+                      <label className="bm-check-label">
+                        <input type="checkbox" checked={showGodPhoto}
+                          onChange={e => setShowGodPhoto(e.target.checked)} />
+                        Show God Photo
+                      </label>
+                      <input type="file" id="bm-god-file" hidden accept="image/*"
+                        onChange={e => { const f = e.target.files[0]; if (f) setCustomGodPhoto(URL.createObjectURL(f)); }} />
+                      <button className="bm-upload-btn" onClick={() => document.getElementById('bm-god-file').click()}>
+                        ↑ Upload God Photo
+                      </button>
+                    </div>
+                    <div className="bm-ctrl-row">
+                      <label className="bm-small-label">Blessing Text</label>
+                      <input className="bm-field-value" value={godBlessingText}
+                        onChange={e => setGodBlessingText(e.target.value)}
+                        onKeyUp={e => handleGenericTranslit(e, godBlessingText, (val) => setGodBlessingText(val))}
+                        onBlur={e => handleGenericTranslit(e, godBlessingText, (val) => setGodBlessingText(val))}
+                        placeholder="e.g. ॥ श्री गणेशाय नमः ॥" style={{ flex: 1 }} />
+                    </div>
+                    <div className="bm-ctrl-row">
+                      <label className="bm-small-label">Size</label>
+                      <input type="range" min="40" max="180" value={godPos.w}
+                        onChange={e => setGodPos(p => ({ ...p, w: +e.target.value }))} style={{ flex: 1 }} />
+                      <span className="bm-small-label">{godPos.w}px</span>
+                    </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Profile photo controls */}
+                  <div className="bm-editor-section">
+                    <div className="bm-editor-sec-title">📸 Profile Photo</div>
+                    <div className="bm-ctrl-row">
+                      <label className="bm-check-label">
+                        <input type="checkbox" checked={showPhotoOnBio}
+                          onChange={e => setShowPhotoOnBio(e.target.checked)} />
+                        Show Photo
+                      </label>
+                      <input type="file" id="bm-user-file" hidden accept="image/*"
+                        onChange={e => { const f = e.target.files[0]; if (f) setCustomUserPhoto(URL.createObjectURL(f)); }} />
+                      <button className="bm-upload-btn" onClick={() => document.getElementById('bm-user-file').click()}>
+                        ↑ Upload Photo
+                      </button>
+                    </div>
+                    <div className="bm-ctrl-row">
+                      <label className="bm-small-label">Size</label>
+                      <input type="range" min="80" max="280" value={userPos.w}
+                        onChange={e => setUserPos(p => ({ ...p, w: +e.target.value }))} style={{ flex: 1 }} />
+                      <span className="bm-small-label">{userPos.w}px</span>
+                    </div>
+                  </div>
+
+                  {/* Section editor */}
+                  {sections.map((sec, sIdx) => (
+                    <div key={sec.id} className="bm-editor-section">
+                      <div className="bm-editor-sec-header">
+                        <input className="bm-sec-title-input" value={sec.title}
+                          onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: e.target.value } : s))}
+                          onKeyUp={e => handleGenericTranslit(e, sec.title, (val) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: val } : s)))}
+                          onBlur={e => handleGenericTranslit(e, sec.title, (val) => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, title: val } : s)))}
+                          placeholder="Section title..." />
+                        <div className="bm-sec-btns">
+                          {sIdx > 0 && (
+                            <button className="bm-sec-move" title="Move Up"
+                              onClick={() => setSections(prev => { const a = [...prev]; [a[sIdx-1], a[sIdx]] = [a[sIdx], a[sIdx-1]]; return a; })}>↑</button>
+                          )}
+                          {sIdx < sections.length - 1 && (
+                            <button className="bm-sec-move" title="Move Down"
+                              onClick={() => setSections(prev => { const a = [...prev]; [a[sIdx], a[sIdx+1]] = [a[sIdx+1], a[sIdx]]; return a; })}>↓</button>
+                          )}
+                          <button className="bm-sec-del" onClick={() => removeSection(sec.id)}>✕</button>
+                        </div>
+                      </div>
+
+                      {sec.fields.map((f, fIdx) => (
+                        <div key={fIdx} className="bm-field-row">
+                          <input className="bm-field-label" value={f.label}
+                            onChange={e => updateField(sec.id, fIdx, 'label', e.target.value)}
+                            onKeyUp={e => handleGenericTranslit(e, f.label, (val) => updateField(sec.id, fIdx, 'label', val))}
+                            onBlur={e => handleGenericTranslit(e, f.label, (val) => updateField(sec.id, fIdx, 'label', val))}
+                            placeholder="Label" />
+                          <span className="bm-colon">:</span>
+                          <input className="bm-field-value" value={f.value}
+                            onChange={e => updateField(sec.id, fIdx, 'value', e.target.value)}
+                            onKeyUp={e => handleGenericTranslit(e, f.value, (val) => updateField(sec.id, fIdx, 'value', val))}
+                            onBlur={e => handleGenericTranslit(e, f.value, (val) => updateField(sec.id, fIdx, 'value', val))}
+                            placeholder="Value" />
+                          <button className="bm-field-add" title="Add row below"
+                            onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? {
+                              ...s, fields: [...s.fields.slice(0, fIdx + 1), { label: '', value: '' }, ...s.fields.slice(fIdx + 1)]
+                            } : s))}>+</button>
+                          <button className="bm-field-del" title="Remove row"
+                            onClick={() => removeField(sec.id, fIdx)}>−</button>
+                        </div>
+                      ))}
+
+                      <button className="bm-add-section-below"
+                        onClick={() => addSection(sec.id)}>+ Add Section Below</button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="bm-preview-wrap">
                 <div className="bm-preview-container">
@@ -1490,9 +1517,9 @@ export default function ViewProfilePage() {
                     <div className="bm-card-header-god">
                       {showGodPhoto && (
                         <img src={customGodPhoto || godPhoto} alt="Deity"
-                          style={{ width: godPos.w, height: 'auto', display: 'block', cursor: 'move' }}
-                          onMouseDown={e => handleDragStart(e, 'god')}
-                          onTouchStart={e => handleDragStart(e, 'god')}
+                          style={{ width: godPos.w, height: 'auto', display: 'block', cursor: isOwn ? 'move' : 'default' }}
+                          onMouseDown={isOwn ? e => handleDragStart(e, 'god') : undefined}
+                          onTouchStart={isOwn ? e => handleDragStart(e, 'god') : undefined}
                           onError={e => { e.target.style.display = 'none'; }} />
                       )}
                     </div>
