@@ -55,6 +55,11 @@
   --transition: 0.2s ease;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Cabin', sans-serif;
   background: var(--clr-bg);

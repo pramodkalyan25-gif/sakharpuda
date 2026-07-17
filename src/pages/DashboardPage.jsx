@@ -380,6 +380,10 @@ export default function DashboardPage() {
           display: flex;
           align-items: center;
           gap: 14px;
+          min-width: 0;
+        }
+        .patrika-cta-text {
+          min-width: 0;
         }
         .patrika-cta-icon-wrapper {
           width: 44px;
@@ -399,7 +403,7 @@ export default function DashboardPage() {
           color: #fff;
           margin: 0;
           line-height: 1.2;
-          white-space: nowrap;
+          white-space: normal;
         }
         .patrika-cta-status-row {
           margin-top: 4px;
@@ -507,12 +511,12 @@ export default function DashboardPage() {
             width: 16px;
             height: 16px;
           }
-          .patrika-cta-warning, .patrika-cta-ready {
+          .patrika-cta-warning, .patrika-cta-ready, .patrika-cta-warning-highlighted {
             font-size: 8px;
             padding: 2px 4px;
             gap: 2px;
           }
-          .patrika-cta-warning svg, .patrika-cta-ready svg {
+          .patrika-cta-warning svg, .patrika-cta-ready svg, .patrika-cta-warning-highlighted svg {
             width: 10px;
             height: 10px;
           }

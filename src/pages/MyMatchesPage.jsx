@@ -294,6 +294,10 @@ export default function MyMatchesPage() {
           display: flex;
           align-items: center;
           gap: 14px;
+          min-width: 0;
+        }
+        .patrika-cta-text {
+          min-width: 0;
         }
         .patrika-cta-icon-wrapper {
           width: 44px;
@@ -313,7 +317,7 @@ export default function MyMatchesPage() {
           color: #fff;
           margin: 0;
           line-height: 1.2;
-          white-space: nowrap;
+          white-space: normal;
         }
         .patrika-cta-status-row {
           margin-top: 4px;

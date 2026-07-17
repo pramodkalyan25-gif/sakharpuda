@@ -168,6 +168,26 @@ export default function Footer() {
             margin: 0 0 20px;
           }
         }
+
+        @media (max-width: 480px) {
+          .footer-links-grid {
+            grid-template-columns: 1fr;
+            gap: 25px;
+            text-align: center;
+          }
+          .footer-col nav {
+            align-items: center;
+          }
+          .footer-intro {
+            text-align: center;
+          }
+          .footer-logo {
+            margin: 0 auto 20px;
+          }
+          .footer-about-title {
+            font-size: 18px;
+          }
+        }
       `}} />
     </footer>
   );

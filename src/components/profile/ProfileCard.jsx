@@ -521,6 +521,7 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
           background: none;
           border: none;
           cursor: pointer;
+          min-width: 0;
         }
         .js-icon-circle {
           width: 46px;
@@ -539,10 +540,31 @@ export default function ProfileCard({ profile, onInterestSent, onShortlistToggle
           font-size: 10px;
           font-weight: 700;
           opacity: 0.9;
+          text-align: center;
+          word-break: break-word;
         }
         .js-circle-action.active .js-icon-circle { background: #D63447; border-color: #D63447; }
         .js-circle-action.sent .js-icon-circle { background: #fff; border-color: #fff; }
         .js-circle-action.sent span { color: #10b981; }
+
+        @media (max-width: 480px) {
+          .js-action-overlay {
+            gap: 4px;
+            padding-top: 10px;
+          }
+          .js-circle-action span {
+            font-size: 8px;
+            gap: 4px;
+          }
+          .js-icon-circle {
+            width: 38px;
+            height: 38px;
+          }
+          .js-icon-circle svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
 
         /* Photo Modal with High Blur */
         /* Full-screen Scrollable Modal */
